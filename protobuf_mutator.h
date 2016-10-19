@@ -15,12 +15,30 @@
 #ifndef LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 #define LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 
+#include <stdint.h>
+
 class Message;
+class FieldDescriptor;
+class EnumValueDescriptor;
+
 
 class ProtobufMutator {
  public:
+  ProtobufMutator(uint32_t seed);
+  virtual ~ProtobufMutator();
+
   bool Mutate(Message* proto);
   bool CrossOver(const Message& with, Message* proto);
+
+  virtual bool MutateField(const FieldDescriptor& field, int32_t* value);
+  virtual bool MutateField(const FieldDescriptor& field, int64_t* value);
+  virtual bool MutateField(const FieldDescriptor& field, uint32_t* value);
+  virtual bool MutateField(const FieldDescriptor& field, uint64_t* value);
+  virtual bool MutateField(const FieldDescriptor& field, double* value);
+  virtual bool MutateField(const FieldDescriptor& field, float* value);
+  virtual bool MutateField(const FieldDescriptor& field, bool* value);
+  virtual bool MutateField(const FieldDescriptor& field, const EnumValueDescriptor** value);
+  virtual bool MutateField(const FieldDescriptor& field, Message* value);
 
  private:
 };
