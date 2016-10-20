@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "protobuf_mutator.h"
+#include "zlib.h"
 
 class Message;
 
