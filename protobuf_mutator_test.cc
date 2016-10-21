@@ -15,7 +15,10 @@
 #include "protobuf_mutator.h"
 #include "gtest/gtest.h"
 
+#include "addressbook.pb.h"
+
 TEST(ProtobufMutator, Empty) {
+  tutorial::AddressBook message;
   EXPECT_TRUE(1);
 }
 

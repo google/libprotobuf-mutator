@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include (ExternalProject)
-include (FindGTest)
-
 set(GTEST_TARGET external.googletest)
 set(GTEST_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_TARGET})
-list(APPEND GTEST_LIBS gtest gtest_main)
 
-foreach(lib IN LISTS GTEST_LIBS)
+set(GTEST_INCLUDE_DIRS ${GTEST_INSTALL_DIR}/include)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+set(GTEST_LIBRARIES gtest)
+set(GTEST_MAIN_LIBRARIES gtest_main)
+set(GTEST_BOTH_LIBRARIES ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+
+foreach(lib IN LISTS GTEST_BOTH_LIBRARIES)
   list(APPEND GTEST_BUILD_BYPRODUCTS ${GTEST_INSTALL_DIR}/lib/lib${lib}.a)
 
   add_library(${lib} STATIC IMPORTED)
@@ -28,6 +31,7 @@ foreach(lib IN LISTS GTEST_LIBS)
   add_dependencies(${lib} ${GTEST_TARGET})
 endforeach(lib)
 
+include (ExternalProject)
 ExternalProject_Add(${GTEST_TARGET}
     PREFIX ${GTEST_TARGET}
     #GIT_REPOSITORY https://github.com/google/googletest.git
@@ -36,5 +40,3 @@ ExternalProject_Add(${GTEST_TARGET}
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
     BUILD_BYPRODUCTS ${GTEST_BUILD_BYPRODUCTS}
 )
-
-include_directories(${GTEST_INSTALL_DIR}/include)

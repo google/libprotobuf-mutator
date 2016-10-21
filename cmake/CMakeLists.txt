@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 project(LibProtobufMutator CXX)
 
 # External dependencies
@@ -21,21 +21,26 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 # External dependencies
 include(googletest)
 include(protobuf)
-#include(zlib)
+include(zlib)
 
 find_package (Threads)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_library(protobuf-mutator ../protobuf_mutator.cc)
 
-enable_testing()
-add_executable(protobuf_mutator_test ../protobuf_mutator_test.cc)
-target_link_libraries(protobuf_mutator_test ${GTEST_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(protobuf_mutator_test protobuf)
-#target_link_libraries(protobuf_mutator_test z)
-add_dependencies(protobuf_mutator_test external.protobuf)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../addressbook.proto)
+#message (--3333- ${PROTO_SRCS})
 
-GTEST_ADD_TESTS(protobuf_mutator_test --gtest_color=yes AUTO)
+enable_testing()
+add_executable(protobuf_mutator_test ../protobuf_mutator_test.cc ${PROTO_SRCS} ${PROTO_HDRS})
+target_link_libraries(protobuf_mutator_test
+                      ${ZLIB_LIBRARIES}
+                      ${PROTOBUF_LIBRARY}
+                      ${GTEST_BOTH_LIBRARIES}
+                      ${CMAKE_THREAD_LIBS_INIT})
+
+#GTEST_ADD_TESTS(protobuf_mutator_test --gtest_color=yes AUTO)
+add_test(test.protobuf_mutator_test protobuf_mutator_test --gtest_color=yes AUTO)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose
                   DEPENDS protobuf_mutator_test)
