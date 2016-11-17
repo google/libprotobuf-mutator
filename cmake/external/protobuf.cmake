@@ -38,8 +38,7 @@ list(APPEND PROTOFUB_BUILD_BYPRODUCTS ${PROTOBUF_PROTOC_EXECUTABLE})
 include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
     PREFIX ${PROTOBUF_TARGET}
-    #GIT_REPOSITORY https://github.com/google/protobuf.git
-    GIT_REPOSITORY /usr/local/google/home/vitalybuka/src/protobuf/.git
+    GIT_REPOSITORY https://github.com/google/protobuf.git
     GIT_TAG master
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOFUB_INSTALL_DIR}/src/${PROTOBUF_TARGET}/cmake
         -G${CMAKE_GENERATOR}

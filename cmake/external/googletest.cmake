@@ -34,8 +34,7 @@ endforeach(lib)
 include (ExternalProject)
 ExternalProject_Add(${GTEST_TARGET}
     PREFIX ${GTEST_TARGET}
-    #GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_REPOSITORY /usr/local/google/home/vitalybuka/src/googletest/.git
+    GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG master
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
     BUILD_BYPRODUCTS ${GTEST_BUILD_BYPRODUCTS}

@@ -32,8 +32,7 @@ endforeach(lib)
 include (ExternalProject)
 ExternalProject_Add(${ZLIB_TARGET}
     PREFIX ${ZLIB_TARGET}
-    #GIT_REPOSITORY https://github.com/madler/zlib
-    GIT_REPOSITORY /usr/local/google/home/vitalybuka/src/zlib/.git
+    GIT_REPOSITORY https://github.com/madler/zlib
     GIT_TAG master
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${ZLIB_INSTALL_DIR}
     BUILD_BYPRODUCTS ${ZLIB_BUILD_BYPRODUCTS}
