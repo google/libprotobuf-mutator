@@ -15,9 +15,9 @@
 #include "protobuf_mutator.h"
 #include "gtest/gtest.h"
 
-#include "addressbook.pb.h"
+#include "protobuf_mutator.pb.h"
 
 TEST(ProtobufMutator, Empty) {
-  tutorial::AddressBook message;
+  protobuf_mutator::Msg message;
   EXPECT_TRUE(1);
 }

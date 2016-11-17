@@ -29,7 +29,7 @@ find_package (Threads)
 
 add_library(protobuf-mutator ../protobuf_mutator.cc)
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../addressbook.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../protobuf_mutator.proto)
 #message (--3333- ${PROTO_SRCS})
 
 enable_testing()
