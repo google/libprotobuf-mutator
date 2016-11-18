@@ -15,6 +15,10 @@ message Msg {
     ENUM_9 = 9;
   }
 
+  message SubMsg {
+    optional int64 optional_int64 = 1;
+  }
+
   required double required_double = 1;
   required float required_float = 2;
   required int32 required_int32 = 3;
@@ -31,7 +35,7 @@ message Msg {
   required string required_string = 14;
   required bytes required_bytes = 15;
   required Enum required_enum = 16;
-  required Msg required_msg = 17;
+  required SubMsg required_msg = 17;
 
   optional double optional_double = 18;
   optional float optional_float = 19;
@@ -89,9 +93,11 @@ message Msg {
     Msg oneof_msg = 68;
   }
 
-  map<int32, int32> map_field = 69;
-}
+  map<string, uint64> map = 69;
 
-// message AddressBook {
-//   repeated Person person = 1;
-// }
+  optional group Group = 70 {
+    required bool required_bool = 1;
+    optional bool optional_bool = 2;
+    repeated bool repeated_bool = 3;
+  }
+}
