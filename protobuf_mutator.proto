@@ -95,7 +95,7 @@ message Msg {
 
   map<string, uint64> map = 69;
 
-  optional group Group = 70 {
+  required group Group = 70 {
     required bool required_bool = 1;
     optional bool optional_bool = 2;
     repeated bool repeated_bool = 3;
