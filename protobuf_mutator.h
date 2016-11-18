@@ -15,32 +15,51 @@
 #ifndef LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 #define LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 
-#include <stdint.h>
+#include <random>
 
+namespace google {
+namespace protobuf {
 class Message;
 class FieldDescriptor;
 class EnumValueDescriptor;
-
+}
+}
 
 class ProtobufMutator {
  public:
-  ProtobufMutator(uint32_t seed);
+  ProtobufMutator(uint32_t seed, bool always_initialized);
   virtual ~ProtobufMutator();
 
-  bool Mutate(Message* proto);
-  bool CrossOver(const Message& with, Message* proto);
+  bool Mutate(google::protobuf::Message* proto);
+  bool CrossOver(const google::protobuf::Message& with,
+                 google::protobuf::Message* message);
 
-  virtual bool MutateField(const FieldDescriptor& field, int32_t* value);
-  virtual bool MutateField(const FieldDescriptor& field, int64_t* value);
-  virtual bool MutateField(const FieldDescriptor& field, uint32_t* value);
-  virtual bool MutateField(const FieldDescriptor& field, uint64_t* value);
-  virtual bool MutateField(const FieldDescriptor& field, double* value);
-  virtual bool MutateField(const FieldDescriptor& field, float* value);
-  virtual bool MutateField(const FieldDescriptor& field, bool* value);
-  virtual bool MutateField(const FieldDescriptor& field, const EnumValueDescriptor** value);
-  virtual bool MutateField(const FieldDescriptor& field, Message* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           int32_t* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           int64_t* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           uint32_t* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           uint64_t* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           double* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           float* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           bool* value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           const google::protobuf::EnumValueDescriptor** value);
+  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
+                           google::protobuf::Message* value);
 
  private:
+  // Returns true with probability n/m;
+  bool GetRandom(size_t n, size_t m);
+  size_t GetRandomIndex(size_t count);
+
+  bool always_initialized_ = true;
+  std::mt19937_64 rng_;
 };
 
 #endif  // LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
