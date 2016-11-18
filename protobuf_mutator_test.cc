@@ -149,7 +149,7 @@ TEST_F(ProtobufMutatorTest, Default) {
 TEST_F(ProtobufMutatorTest, De1fault) {
   // Reset();
   mutator_.Mutate(&message_);
-  //for (int i = 0; i < 100000; ++i) mutator_.Mutate(&message_);
+  // for (int i = 0; i < 100000; ++i) mutator_.Mutate(&message_);
 
   std::string tmp_out;
   EXPECT_TRUE(TextFormat::PrintToString(message_, &tmp_out));

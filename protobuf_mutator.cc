@@ -240,8 +240,8 @@ bool ProtobufMutator::Mutate(Message* message) {
     }
   } else {
     if (selected_field->is_repeated()) {
-      //if (!reflection->FieldSize(*message, selected_field))
-        mutation = Mutation::AddRepeated;
+      // if (!reflection->FieldSize(*message, selected_field))
+      mutation = Mutation::AddRepeated;
     } else {
       if (!reflection->HasField(*message, selected_field))
         mutation = Mutation::Add;
@@ -270,12 +270,10 @@ bool ProtobufMutator::Mutate(Message* message) {
   assert(selected_field);
   switch (mutation) {
     case Mutation::Add:
-      if (!field_mutator.CreateField())
-        return false;
+      if (!field_mutator.CreateField()) return false;
       break;
     case Mutation::AddRepeated:
-      if (!field_mutator.CreateRepeatedField())
-        return false;
+      if (!field_mutator.CreateRepeatedField()) return false;
       break;
   }
 
@@ -374,11 +372,9 @@ bool ProtobufMutator::MutateField(const FieldDescriptor& field,
 void ProtobufMutator::InitializeMessage(Message* message) {
   const Descriptor* descriptor = message->GetDescriptor();
   const Reflection* reflection = message->GetReflection();
-  // Pick field to mutate.
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
-    if (!field->is_required())
-      continue;
+    if (!field->is_required()) continue;
 
     if (!reflection->HasField(*message, field)) {
       FieldMutator field_mutator(message, *field, &rng_);

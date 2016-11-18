@@ -56,8 +56,6 @@ class ProtobufMutator {
   void InitializeMessage(google::protobuf::Message* message);
 
  private:
-  
-
   // Returns true with probability n/m;
   bool GetRandom(size_t n, size_t m);
   size_t GetRandomIndex(size_t count);
