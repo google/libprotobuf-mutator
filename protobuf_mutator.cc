@@ -36,7 +36,9 @@ const size_t kSwapWeight = 4;
 const size_t kReplaceWeight = 1;
 
 enum class Mutation {
+  None,
   Add,
+  AddRepeated,
   Delete,
   Update,
   Swap,
@@ -44,6 +46,78 @@ enum class Mutation {
 };
 
 std::map<std::string, int> stat;
+
+class FieldMutator {
+ public:
+  FieldMutator(Message* message, const FieldDescriptor& field,
+               std::mt19937_64* rng)
+      : message_(message), field_(field), rng_(rng) {}
+
+  bool CreateField() {
+    const Reflection* reflection = message_->GetReflection();
+
+    switch (field_.cpp_type()) {
+      case FieldDescriptor::CPPTYPE_INT32:
+        reflection->SetInt32(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_int32() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_INT64:
+        reflection->SetInt64(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_int64() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_UINT32:
+        reflection->SetUInt32(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_uint32() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_UINT64:
+        reflection->SetUInt64(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_uint64() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_DOUBLE:
+        reflection->SetDouble(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_double() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_FLOAT:
+        reflection->SetFloat(
+            message_, &field_,
+            field_.has_default_value() ? field_.default_value_float() : 0);
+        break;
+      case FieldDescriptor::CPPTYPE_BOOL:
+        reflection->SetBool(message_, &field_, field_.has_default_value() &&
+                                                   field_.default_value_bool());
+        break;
+      case FieldDescriptor::CPPTYPE_ENUM:
+        reflection->SetEnum(message_, &field_,
+                            field_.has_default_value()
+                                ? field_.default_value_enum()
+                                : field_.enum_type()->value(0));
+        break;
+      case FieldDescriptor::CPPTYPE_STRING:
+        reflection->SetString(message_, &field_,
+                              field_.has_default_value()
+                                  ? field_.default_value_string()
+                                  : std::string());
+        break;
+      case FieldDescriptor::CPPTYPE_MESSAGE:
+        reflection->MutableMessage(message_, &field_);
+        break;
+      default:
+        assert(!"Unknown type");
+        return false;
+    };
+    return true;
+  }
+
+ private:
+  Message* message_;
+  const FieldDescriptor& field_;
+  std::mt19937_64* rng_;
+};
 
 }  // namespace
 
@@ -65,7 +139,6 @@ bool ProtobufMutator::Mutate(Message* message) {
 
   size_t current_weight = 0;
   const FieldDescriptor* selected_field = nullptr;
-  Mutation mutation = {};
 
   // Pick field to mutate.
   for (int i = 0; i < descriptor->field_count(); ++i) {
@@ -94,15 +167,30 @@ bool ProtobufMutator::Mutate(Message* message) {
     // }
   }
 
+  assert(selected_field);
+
   current_weight = 0;
+  Mutation mutation = Mutation::None;
 
   if (const OneofDescriptor* oneof = selected_field->containing_oneof()) {
     selected_field = reflection->GetOneofFieldDescriptor(*message, oneof);
     if (!selected_field) {
-      // std::cout << GetRandomIndex(oneof->field_count());
       selected_field = oneof->field(GetRandomIndex(oneof->field_count()));
+      mutation = Mutation::Add;
     }
   } else {
+    if (selected_field->is_repeated()) {
+      if (!reflection->FieldSize(*message, selected_field))
+        mutation = Mutation::AddRepeated;
+    } else {
+      if (!reflection->HasField(*message, selected_field))
+        mutation = Mutation::Add;
+    }
+    // if (!reflection->FieldSize(*message, selected_field)) {
+    //   mutation = Mutation::AddRepeated;
+    // } else if (!selected_field->is_repeated() && !)) {
+
+    // }
     switch (selected_field->label()) {
       case FieldDescriptor::LABEL_REQUIRED:
         break;
@@ -116,6 +204,14 @@ bool ProtobufMutator::Mutate(Message* message) {
   }
 
   stat[selected_field->full_name()]++;
+
+  FieldMutator field_mutator(message, *selected_field, &rng_);
+
+  assert(selected_field);
+  switch (mutation) {
+    case Mutation::Add:
+      return field_mutator.CreateField();
+  }
 
   // for (int i = 0; i < descriptor->field_count(); ++i) {
   //   const FieldDescriptor* field = descriptor->field(i);
