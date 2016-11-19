@@ -30,7 +30,8 @@ class ProtobufMutator {
   ProtobufMutator(uint32_t seed, bool always_initialized);
   virtual ~ProtobufMutator();
 
-  bool Mutate(google::protobuf::Message* message);
+  bool Mutate(google::protobuf::Message* message, size_t current_size,
+              size_t max_size);
   bool CrossOver(const google::protobuf::Message& with,
                  google::protobuf::Message* message);
 
@@ -55,9 +56,9 @@ class ProtobufMutator {
 
   void InitializeMessage(google::protobuf::Message* message);
 
+  virtual size_t Mutate(void* data, size_t size, size_t max_size);
+
  private:
-  // Returns true with probability n/m;
-  bool GetRandom(size_t n, size_t m);
   size_t GetRandomIndex(size_t count);
 
   bool always_initialized_ = true;
