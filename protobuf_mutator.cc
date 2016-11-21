@@ -658,13 +658,11 @@ void ProtobufMutator::InitializeMessage(Message* message) {
   const Reflection* reflection = message->GetReflection();
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
-    if (field->is_required()) {
-      if (!reflection->HasField(*message, field)) {
-        ScopedStackUpdater stack_updated(&stack_, field, 0);
-        if (stack_.size() > kMaxStackSize) return;
-        FieldMutator field_mutator(this, message, *field, &rng_);
-        field_mutator.CreateField(0);
-      }
+    if (field->is_required() && !reflection->HasField(*message, field)) {
+      ScopedStackUpdater stack_updated(&stack_, field, 0);
+      if (stack_.size() > kMaxStackSize) return;
+      FieldMutator field_mutator(this, message, *field, &rng_);
+      field_mutator.CreateField(0);
     }
 
     if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {

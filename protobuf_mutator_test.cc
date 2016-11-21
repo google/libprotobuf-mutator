@@ -21,6 +21,7 @@
 using google::protobuf::TextFormat;
 using protobuf_mutator::Msg;
 using protobuf_mutator::Msg2;
+using protobuf_mutator::Msg3;
 
 struct RequiredDoubleHelper {
   std::vector<double> kValues = {-1.1, 2.7, 322};
@@ -147,11 +148,25 @@ TEST_F(ProtobufMutatorTest, Default) {
   EXPECT_TRUE(TextFormat::ParseFromString(tmp_out, &tmp));
 }
 
-TEST_F(ProtobufMutatorTest, De1fault) {
+TEST_F(ProtobufMutatorTest, Message) {
   // Reset();
   // mutator_.Mutate(&message_);
 
   Msg2 message;
+
+  for (int i = 0; i < 10000; ++i) mutator_.Mutate(&message, 0, 100);
+
+  std::string tmp_out;
+  EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
+  std::cout << tmp_out << "\n";
+  std::cout << "SIZE: " << tmp_out.size() << "\n";
+}
+
+TEST_F(ProtobufMutatorTest, Grop) {
+  // Reset();
+  // mutator_.Mutate(&message_);
+
+  Msg3 message;
 
   for (int i = 0; i < 10000; ++i) mutator_.Mutate(&message, 0, 100);
 

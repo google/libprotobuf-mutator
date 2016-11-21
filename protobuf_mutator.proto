@@ -105,3 +105,9 @@ message Msg {
 message Msg2 {
   optional Msg2 optional_msg = 1;
 }
+
+message Msg3 {
+  optional group Group = 1 {
+    optional Msg3 optional_msg = 1;
+  }
+}
