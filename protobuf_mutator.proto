@@ -101,3 +101,7 @@ message Msg {
     repeated bool repeated_bool = 3;
   }
 }
+
+message Msg2 {
+  optional Msg2 optional_msg = 1;
+}

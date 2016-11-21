@@ -32,6 +32,8 @@ using google::protobuf::TextFormat;
 
 namespace {
 
+const size_t kMaxStackSize = 32;
+
 const size_t kAddWeight = 1;
 const size_t kDeleteWeight = 1;
 const size_t kUpdateWeight = 4;
@@ -61,10 +63,9 @@ class FieldMutator {
 
   bool CreateField(size_t additional_size);
   bool CreateRepeatedField(size_t additional_size);
+  bool MutateField(size_t additional_size);
 
-  // bool MutateField()
-
-  // bool MutateRepeatedField()
+  // bool MutateRepeatedField(size_t additional_size)
 
   bool DeleteField();
   bool DeleteRepeatedField();
@@ -250,65 +251,58 @@ bool FieldMutator::CreateRepeatedField(size_t additional_size) {
   return true;
 }
 
-// bool FieldMutator::MutateField() {
-//   const Reflection* reflection = message_->GetReflection();
+bool FieldMutator::MutateField(size_t additional_size) {
+  const Reflection* reflection = message_->GetReflection();
 
-//   switch (field_.cpp_type()) {
-//     case FieldDescriptor::CPPTYPE_INT32:
-//       reflection->SetInt32(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_int32() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_INT64:
-//       reflection->SetInt64(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_int64() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_UINT32:
-//       reflection->SetUInt32(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_uint32() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_UINT64:
-//       reflection->SetUInt64(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_uint64() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_DOUBLE:
-//       reflection->SetDouble(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_double() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_FLOAT:
-//       reflection->SetFloat(
-//           message_, &field_,
-//           field_.has_default_value() ? field_.default_value_float() : 0);
-//       break;
-//     case FieldDescriptor::CPPTYPE_BOOL:
-//       reflection->SetBool(message_, &field_, field_.has_default_value() &&
-//                                                  field_.default_value_bool());
-//       break;
-//     case FieldDescriptor::CPPTYPE_ENUM:
-//       reflection->SetEnum(message_, &field_,
-//                           field_.has_default_value()
-//                               ? field_.default_value_enum()
-//                               : field_.enum_type()->value(0));
-//       break;
-//     case FieldDescriptor::CPPTYPE_STRING:
-//       reflection->SetString(message_, &field_,
-//                             field_.has_default_value()
-//                                 ? field_.default_value_string()
-//                                 : std::string());
-//       break;
-//     case FieldDescriptor::CPPTYPE_MESSAGE:
-//       reflection->MutableMessage(message_, &field_);
-//       break;
-//     default:
-//       assert(!"Unknown type");
-//       return false;
-//   };
-//   return true;
-// }
+  switch (field_.cpp_type()) {
+    case FieldDescriptor::CPPTYPE_INT32:
+      reflection->SetInt32(message_, &field_,
+                           Mutate(reflection->GetInt32(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_INT64:
+      reflection->SetInt64(message_, &field_,
+                           Mutate(reflection->GetInt64(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_UINT32:
+      reflection->SetUInt32(message_, &field_,
+                            Mutate(reflection->GetUInt32(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_UINT64:
+      reflection->SetUInt64(message_, &field_,
+                            Mutate(reflection->GetUInt64(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_DOUBLE:
+      reflection->SetDouble(message_, &field_,
+                            Mutate(reflection->GetDouble(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_FLOAT:
+      reflection->SetFloat(message_, &field_,
+                           Mutate(reflection->GetFloat(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_BOOL:
+      reflection->SetBool(message_, &field_,
+                          MutateBool(reflection->GetBool(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_ENUM:
+      reflection->SetEnum(message_, &field_,
+                          MutateEnum(reflection->GetEnum(*message_, &field_)));
+      break;
+    case FieldDescriptor::CPPTYPE_STRING:
+      reflection->SetString(
+          message_, &field_,
+          MutateString(reflection->GetString(*message_, &field_),
+                       additional_size));
+      break;
+    case FieldDescriptor::CPPTYPE_MESSAGE:
+      mutator_->Mutate(reflection->MutableMessage(message_, &field_), 0,
+                       additional_size);
+      break;
+    default:
+      assert(!"Unknown type");
+      return false;
+  };
+  return true;
+}
 
 // bool FieldMutator::MutateRepeatedField() {
 //   const Reflection* reflection = message_->GetReflection();
@@ -397,6 +391,22 @@ class WeightedReservoirSampler {
   std::mt19937_64* rng_;
 };
 
+class ScopedStackUpdater {
+ public:
+  ScopedStackUpdater(
+      std::vector<std::pair<const google::protobuf::FieldDescriptor*, int>>*
+          stack,
+      const google::protobuf::FieldDescriptor* field, int index)
+      : stack_(stack) {
+    stack_->push_back({field, index});
+  }
+
+  ~ScopedStackUpdater() { stack_->pop_back(); }
+
+ private:
+  std::vector<std::pair<const google::protobuf::FieldDescriptor*, int>>* stack_;
+};
+
 }  // namespace
 
 ProtobufMutator::ProtobufMutator(uint32_t seed, bool always_initialized)
@@ -419,7 +429,6 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
   const FieldDescriptor* selected_field = nullptr;
 
   // Pick field to mutate.
-
   {
     WeightedReservoirSampler field_sampler(&rng_);
     for (int i = 0; i < descriptor->field_count(); ++i) {
@@ -454,6 +463,7 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
   assert(selected_field);
 
   Mutation mutation = Mutation::None;
+  int selected_index = 0;
 
   WeightedReservoirSampler mutation_sampler(&rng_);
   if (const OneofDescriptor* oneof = selected_field->containing_oneof()) {
@@ -477,6 +487,7 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
     if (selected_field->is_repeated()) {
       if (mutation_sampler.Pick(1)) mutation = Mutation::AddRepeated;
       if (int field_size = reflection->FieldSize(*message, selected_field)) {
+        selected_index = GetRandomIndex(field_size);
         if (mutation_sampler.Pick(1)) mutation = Mutation::DeleteRepeated;
         if (mutation_sampler.Pick(field_size))
           mutation = Mutation::MutateRepeated;
@@ -512,36 +523,40 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
   stat[selected_field->full_name()]++;
 
   FieldMutator field_mutator(this, message, *selected_field, &rng_);
+  size_t additional_size = (max_size - current_size) / 2;
 
-  assert(selected_field);
-  switch (mutation) {
-    case Mutation::None:
-      break;
-    case Mutation::Add:
-      if (!field_mutator.CreateField((max_size - current_size) / 2))
-        return false;
-      break;
-    case Mutation::AddRepeated:
-      if (!field_mutator.CreateRepeatedField((max_size - current_size) / 2))
-        return false;
-      break;
-    case Mutation::Mutate:
-      // if (!field_mutator.MutateField()) return false;
-      break;
-    case Mutation::MutateRepeated:
-      // if (!field_mutator.MutateRepeatedField()) return false;
-      break;
-    case Mutation::Delete:
-      if (!field_mutator.DeleteField()) return false;
-      break;
-    case Mutation::DeleteRepeated:
-      if (!field_mutator.DeleteRepeatedField()) return false;
-      break;
-    default:
-      assert(!"unexpected mutation");
+  {
+    ScopedStackUpdater stack_updated(&stack_, selected_field, selected_index);
+    if (stack_.size() > kMaxStackSize) return false;
+
+    assert(selected_field);
+    switch (mutation) {
+      case Mutation::None:
+        break;
+      case Mutation::Add:
+        if (!field_mutator.CreateField(additional_size)) return false;
+        break;
+      case Mutation::AddRepeated:
+        if (!field_mutator.CreateRepeatedField(additional_size)) return false;
+        break;
+      case Mutation::Mutate:
+        if (!field_mutator.MutateField(additional_size)) return false;
+        break;
+      case Mutation::MutateRepeated:
+        // if (!field_mutator.MutateRepeatedField()) return false;
+        break;
+      case Mutation::Delete:
+        if (!field_mutator.DeleteField()) return false;
+        break;
+      case Mutation::DeleteRepeated:
+        if (!field_mutator.DeleteRepeatedField()) return false;
+        break;
+      default:
+        assert(!"unexpected mutation");
+    }
   }
 
-  if (always_initialized_ && !message->IsInitialized()) {
+  if (stack_.empty() && always_initialized_ && !message->IsInitialized()) {
     InitializeMessage(message);
 
     std::string tmp_out;
@@ -645,6 +660,8 @@ void ProtobufMutator::InitializeMessage(Message* message) {
     const FieldDescriptor* field = descriptor->field(i);
     if (field->is_required()) {
       if (!reflection->HasField(*message, field)) {
+        ScopedStackUpdater stack_updated(&stack_, field, 0);
+        if (stack_.size() > kMaxStackSize) return;
         FieldMutator field_mutator(this, message, *field, &rng_);
         field_mutator.CreateField(0);
       }
@@ -656,12 +673,19 @@ void ProtobufMutator::InitializeMessage(Message* message) {
         for (int j = 0; j < field_size; ++j) {
           Message* nested_message =
               reflection->MutableRepeatedMessage(message, field, j);
-          if (!nested_message->IsInitialized())
+          if (!nested_message->IsInitialized()) {
+            ScopedStackUpdater stack_updated(&stack_, field, j);
+            if (stack_.size() > kMaxStackSize) return;
             InitializeMessage(nested_message);
+          }
         }
       } else if (reflection->HasField(*message, field)) {
         Message* nested_message = reflection->MutableMessage(message, field);
-        if (!nested_message->IsInitialized()) InitializeMessage(nested_message);
+        if (!nested_message->IsInitialized()) {
+          ScopedStackUpdater stack_updated(&stack_, field, 0);
+          if (stack_.size() > kMaxStackSize) return;
+          InitializeMessage(nested_message);
+        }
       }
     }
   }

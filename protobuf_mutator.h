@@ -63,6 +63,8 @@ class ProtobufMutator {
 
   bool always_initialized_ = true;
   std::mt19937_64 rng_;
+
+  std::vector<std::pair<const google::protobuf::FieldDescriptor*, int>> stack_;
 };
 
 #endif  // LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
