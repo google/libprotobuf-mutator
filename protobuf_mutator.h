@@ -56,7 +56,7 @@ class ProtobufMutator {
 
   void InitializeMessage(google::protobuf::Message* message);
 
-  virtual size_t Mutate(void* data, size_t size, size_t max_size);
+  virtual size_t MutateBytes(void* data, size_t size, size_t max_size);
 
  private:
   size_t GetRandomIndex(size_t count);

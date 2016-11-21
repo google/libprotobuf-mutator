@@ -73,7 +73,7 @@ class FieldMutator {
  private:
   template <class T>
   T Mutate(T v) {
-    size_t s = mutator_->Mutate(&v, sizeof(v), sizeof(v));
+    size_t s = mutator_->MutateBytes(&v, sizeof(v), sizeof(v));
     assert(s <= sizeof(v));
     memset(reinterpret_cast<uint8_t*>(&v) + s, 0, sizeof(v) - s);
     return v;
@@ -106,7 +106,7 @@ std::string FieldMutator::MutateString(const std::string& v,
   size_t max_size = additional_size + v.size();
   if (!max_size) return result;
   result.resize(max_size);
-  result.resize(mutator_->Mutate(&result[0], result.size(), max_size));
+  result.resize(mutator_->MutateBytes(&result[0], result.size(), max_size));
   return result;
 }
 
@@ -691,7 +691,7 @@ void ProtobufMutator::InitializeMessage(Message* message) {
   }
 }
 
-size_t ProtobufMutator::Mutate(void* data, size_t size, size_t max_size) {
+size_t ProtobufMutator::MutateBytes(void* data, size_t size, size_t max_size) {
   size_t new_size = GetRandomIndex(max_size + 1);
   std::uniform_int_distribution<uint8_t> distrib(0, 255);
   uint8_t* bytes = reinterpret_cast<uint8_t*>(data);
