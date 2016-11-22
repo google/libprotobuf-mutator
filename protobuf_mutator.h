@@ -15,6 +15,10 @@
 #ifndef LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 #define LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <memory>
 #include <random>
 
 namespace google {
@@ -27,44 +31,30 @@ class EnumValueDescriptor;
 
 class ProtobufMutator {
  public:
-  ProtobufMutator(uint32_t seed, bool always_initialized);
-  virtual ~ProtobufMutator();
+  using RandomEngine = std::minstd_rand0;
+
+  class Customization {
+   public:
+    virtual ~Customization() = default;
+
+    virtual size_t MutateBytes(void* data, size_t size, size_t max_size) = 0;
+  };
+
+  ProtobufMutator(uint32_t seed, bool keep_initialized,
+                  Customization* customization = nullptr);
 
   bool Mutate(google::protobuf::Message* message, size_t current_size,
               size_t max_size);
   bool CrossOver(const google::protobuf::Message& with,
                  google::protobuf::Message* message);
 
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           int32_t* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           int64_t* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           uint32_t* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           uint64_t* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           double* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           float* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           bool* value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           const google::protobuf::EnumValueDescriptor** value);
-  virtual bool MutateField(const google::protobuf::FieldDescriptor& field,
-                           google::protobuf::Message* value);
-
-  void InitializeMessage(google::protobuf::Message* message);
-
-  virtual size_t MutateBytes(void* data, size_t size, size_t max_size);
+  void InitializeMessage(google::protobuf::Message* message, int max_depth);
 
  private:
-  size_t GetRandomIndex(size_t count);
-
-  bool always_initialized_ = true;
-  std::mt19937_64 rng_;
-
-  std::vector<std::pair<const google::protobuf::FieldDescriptor*, int>> stack_;
+  bool keep_initialized_ = false;
+  RandomEngine random_;
+  Customization* customization_ = nullptr;
+  std::unique_ptr<ProtobufMutator::Customization> defaults_;
 };
 
 #endif  // LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H

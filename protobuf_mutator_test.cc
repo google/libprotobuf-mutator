@@ -126,7 +126,7 @@ class ProtobufMutatorTest : public testing::Test {
 
  protected:
   Msg message_;
-  ProtobufMutator mutator_ = {17, 512};
+  ProtobufMutator mutator_ = {17, false};
 };
 
 TEST_F(ProtobufMutatorTest, Empty) {
@@ -148,30 +148,51 @@ TEST_F(ProtobufMutatorTest, Default) {
   EXPECT_TRUE(TextFormat::ParseFromString(tmp_out, &tmp));
 }
 
-TEST_F(ProtobufMutatorTest, Message) {
+TEST_F(ProtobufMutatorTest, Large) {
   // Reset();
   // mutator_.Mutate(&message_);
 
-  Msg2 message;
-
-  for (int i = 0; i < 10000; ++i) mutator_.Mutate(&message, 0, 100);
-
   std::string tmp_out;
-  EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
+  for (int i = 0; i < 10000; ++i) {
+    mutator_.Mutate(&message_, tmp_out.size(), 30000);
+    std::string prev = tmp_out;
+    EXPECT_TRUE(TextFormat::PrintToString(message_, &tmp_out));
+    if (tmp_out.size() > 35000) {
+      std::cout << prev << "\n";
+      std::cout << tmp_out << "\n";
+      assert(0);
+    }
+    std::cout << "SIZE: " << tmp_out.size() << "\n";
+  }
+
   std::cout << tmp_out << "\n";
   std::cout << "SIZE: " << tmp_out.size() << "\n";
 }
 
-TEST_F(ProtobufMutatorTest, Grop) {
-  // Reset();
-  // mutator_.Mutate(&message_);
+// TEST_F(ProtobufMutatorTest, Message) {
+//   // Reset();
+//   // mutator_.Mutate(&message_);
 
-  Msg3 message;
+//   Msg2 message;
 
-  for (int i = 0; i < 10000; ++i) mutator_.Mutate(&message, 0, 100);
+//   for (int i = 0; i < 1000; ++i) mutator_.Mutate(&message, 0, 100);
 
-  std::string tmp_out;
-  EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
-  std::cout << tmp_out << "\n";
-  std::cout << "SIZE: " << tmp_out.size() << "\n";
-}
+//   std::string tmp_out;
+//   EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
+//   std::cout << tmp_out << "\n";
+//   std::cout << "SIZE: " << tmp_out.size() << "\n";
+// }
+
+// TEST_F(ProtobufMutatorTest, Grop) {
+//   // Reset();
+//   // mutator_.Mutate(&message_);
+
+//   Msg3 message;
+
+//   for (int i = 0; i < 1000; ++i) mutator_.Mutate(&message, 0, 100);
+
+//   std::string tmp_out;
+//   EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
+//   std::cout << tmp_out << "\n";
+//   std::cout << "SIZE: " << tmp_out.size() << "\n";
+// }
