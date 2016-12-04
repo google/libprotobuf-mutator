@@ -22,6 +22,7 @@
 
 #include "google/protobuf/message.h"
 #include "google/protobuf/text_format.h"
+#include "weighted_reservoir_sampler.h"
 
 using google::protobuf::Descriptor;
 using google::protobuf::EnumDescriptor;
@@ -38,45 +39,48 @@ const int kMaxInitializeDepth = 32;
 
 enum class Mutation {
   None,
-  Add,
-  Mutate,
-  Delete,
+  Add,     // Adds new field with default value.
+  Mutate,  // Mutates field contents.
+  Delete,  // Deletes field.
+
+  // TODO:
+  Clone,  // Adds new field with value copied from another field.
+  Copy,   // Copy values copied from another field.
+  Swap,   // Swap values of two fields.
 };
 
-class ProtobufMutatorDefaults : public ProtobufMutator::Customization {
- public:
-  explicit ProtobufMutatorDefaults(uint32_t seed) : rng_(seed) {}
+// Flips random bit in the buffer.
+void FlipBit(size_t size, uint8_t* bytes,
+             ProtobufMutator::RandomEngine* random) {
+  size_t bit = std::uniform_int_distribution<size_t>(0, size * 8 - 1)(*random);
+  bytes[bit / 8] ^= (1u << (bit % 8));
+}
 
-  size_t MutateBytes(void* data, size_t size, size_t max_size) override {
-    size_t new_size = std::uniform_int_distribution<size_t>(0, max_size)(rng_);
-    std::uniform_int_distribution<uint8_t> distrib(0, 255);
-    uint8_t* bytes = reinterpret_cast<uint8_t*>(data);
-    // for (int i = 0; i < new_size; ++i) bytes[i] = distrib(rng_);
-    std::generate(bytes, bytes + new_size, std::bind(distrib, rng_));
-    return new_size;
-  }
+// Flips random bit in the value.
+template <class T>
+T FlipBit(T value, ProtobufMutator::RandomEngine* random) {
+  FlipBit(sizeof(value), reinterpret_cast<uint8_t*>(&value), random);
+  return value;
+}
 
- private:
-  std::mt19937_64 rng_;
-};
-
+// Return random integer from [0, count)
 size_t GetRandomIndex(ProtobufMutator::RandomEngine* random, size_t count) {
   assert(count > 0);
   return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
 }
 
+// Helper to mutate fields of proto message.
 class FieldMutator {
  public:
-  FieldMutator(size_t allowed_growth,
-               ProtobufMutator::Customization* customization,
+  FieldMutator(size_t allowed_growth, ProtobufMutator* mutator,
                ProtobufMutator::RandomEngine* random, Message* message,
                const FieldDescriptor& field)
       : allowed_growth_(allowed_growth),
-        customization_(customization),
+        mutator_(mutator),
         message_(message),
         field_(field),
         random_(random) {
-    assert(customization_);
+    assert(mutator_);
     assert(message_);
     assert(random_);
   }
@@ -87,48 +91,16 @@ class FieldMutator {
 
  private:
   void CreateDefaultRepeatedField();
+  void AddDefaultRepeatedField();
   void MutateRepeatedField();
   void DeleteRepeatedField();
 
-  template <class T>
-  T Mutate(T v) {
-    size_t s = customization_->MutateBytes(&v, sizeof(v), sizeof(v));
-    assert(s <= sizeof(v));
-    memset(reinterpret_cast<uint8_t*>(&v) + s, 0, sizeof(v) - s);
-    return v;
-  }
-
-  bool MutateBool(bool v);
-  const EnumValueDescriptor* MutateEnum(const EnumValueDescriptor* v);
-  std::string MutateString(const std::string& v, size_t allowed_growth);
-
   size_t allowed_growth_;
-  ProtobufMutator::Customization* customization_;
+  ProtobufMutator* mutator_;
   Message* message_;
   const FieldDescriptor& field_;
   ProtobufMutator::RandomEngine* random_;
 };
-
-bool FieldMutator::MutateBool(bool v) {
-  return std::uniform_int_distribution<int>(0, 1)(*random_) != 0;
-}
-
-const EnumValueDescriptor* FieldMutator::MutateEnum(
-    const EnumValueDescriptor* v) {
-  const EnumDescriptor* type = v->type();
-  return type->value(GetRandomIndex(random_, type->value_count()));
-}
-
-std::string FieldMutator::MutateString(const std::string& v,
-                                       size_t allowed_growth) {
-  std::string result;
-  size_t max_size = allowed_growth + v.size();
-  if (!max_size) return result;
-  result.resize(max_size);
-  result.resize(
-      customization_->MutateBytes(&result[0], result.size(), max_size));
-  return result;
-}
 
 void FieldMutator::CreateDefaultField() {
   if (field_.is_repeated()) return CreateDefaultRepeatedField();
@@ -171,6 +143,20 @@ void FieldMutator::CreateDefaultField() {
 }
 
 void FieldMutator::CreateDefaultRepeatedField() {
+  assert(field_.is_repeated());
+  const Reflection* reflection = message_->GetReflection();
+  AddDefaultRepeatedField();
+  int field_size = reflection->FieldSize(*message_, &field_);
+  if (field_size == 1) return;
+
+  int index = GetRandomIndex(random_, field_size);
+  // API has only method to add field to the end of the list. So we add field
+  // and move it into the middle.
+  for (int i = field_size - 1; i > index; --i)
+    reflection->SwapElements(message_, &field_, i, i - 1);
+}
+
+void FieldMutator::AddDefaultRepeatedField() {
   assert(field_.is_repeated());
 
   const Reflection* reflection = message_->GetReflection();
@@ -218,35 +204,45 @@ void FieldMutator::MutateField() {
   switch (field_.cpp_type()) {
     case FieldDescriptor::CPPTYPE_INT32:
       return reflection->SetInt32(
-          message_, &field_, Mutate(reflection->GetInt32(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateInt32(reflection->GetInt32(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_INT64:
       return reflection->SetInt64(
-          message_, &field_, Mutate(reflection->GetInt64(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateInt64(reflection->GetInt64(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_UINT32:
       return reflection->SetUInt32(
-          message_, &field_, Mutate(reflection->GetUInt32(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateUInt32(reflection->GetUInt32(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_UINT64:
       return reflection->SetUInt64(
-          message_, &field_, Mutate(reflection->GetUInt64(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateUInt64(reflection->GetUInt64(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_DOUBLE:
       return reflection->SetDouble(
-          message_, &field_, Mutate(reflection->GetDouble(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateDouble(reflection->GetDouble(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_FLOAT:
       return reflection->SetFloat(
-          message_, &field_, Mutate(reflection->GetFloat(*message_, &field_)));
+          message_, &field_,
+          mutator_->MutateFloat(reflection->GetFloat(*message_, &field_)));
     case FieldDescriptor::CPPTYPE_BOOL:
       return reflection->SetBool(
           message_, &field_,
-          MutateBool(reflection->GetBool(*message_, &field_)));
-    case FieldDescriptor::CPPTYPE_ENUM:
-      return reflection->SetEnum(
-          message_, &field_,
-          MutateEnum(reflection->GetEnum(*message_, &field_)));
+          mutator_->MutateBool(reflection->GetBool(*message_, &field_)));
+    case FieldDescriptor::CPPTYPE_ENUM: {
+      const EnumValueDescriptor* value =
+          reflection->GetEnum(*message_, &field_);
+      const EnumDescriptor* type = value->type();
+      return reflection->SetEnum(message_, &field_,
+                                 type->value(mutator_->MutateEnum(
+                                     value->index(), type->value_count())));
+    }
     case FieldDescriptor::CPPTYPE_STRING:
       return reflection->SetString(
           message_, &field_,
-          MutateString(reflection->GetString(*message_, &field_),
-                       allowed_growth_));
+          mutator_->MutateString(reflection->GetString(*message_, &field_),
+                                 allowed_growth_));
     case FieldDescriptor::CPPTYPE_MESSAGE:
       assert(!"Don't mutate messages");
       return;
@@ -265,40 +261,53 @@ void FieldMutator::MutateRepeatedField() {
     case FieldDescriptor::CPPTYPE_INT32:
       return reflection->SetRepeatedInt32(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedInt32(*message_, &field_, index)));
+          mutator_->MutateInt32(
+              reflection->GetRepeatedInt32(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_INT64:
       return reflection->SetRepeatedInt64(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedInt64(*message_, &field_, index)));
+          mutator_->MutateInt64(
+              reflection->GetRepeatedInt64(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_UINT32:
       return reflection->SetRepeatedUInt32(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedUInt32(*message_, &field_, index)));
+          mutator_->MutateUInt32(
+              reflection->GetRepeatedUInt32(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_UINT64:
       return reflection->SetRepeatedUInt64(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedUInt64(*message_, &field_, index)));
+          mutator_->MutateUInt64(
+              reflection->GetRepeatedUInt64(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_DOUBLE:
       return reflection->SetRepeatedDouble(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedDouble(*message_, &field_, index)));
+          mutator_->MutateDouble(
+              reflection->GetRepeatedDouble(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_FLOAT:
       return reflection->SetRepeatedFloat(
           message_, &field_, index,
-          Mutate(reflection->GetRepeatedFloat(*message_, &field_, index)));
+          mutator_->MutateFloat(
+              reflection->GetRepeatedFloat(*message_, &field_, index)));
     case FieldDescriptor::CPPTYPE_BOOL:
       return reflection->SetRepeatedBool(
           message_, &field_, index,
-          MutateBool(reflection->GetRepeatedBool(*message_, &field_, index)));
-    case FieldDescriptor::CPPTYPE_ENUM:
+          mutator_->MutateBool(
+              reflection->GetRepeatedBool(*message_, &field_, index)));
+    case FieldDescriptor::CPPTYPE_ENUM: {
+      const EnumValueDescriptor* value =
+          reflection->GetRepeatedEnum(*message_, &field_, index);
+      const EnumDescriptor* type = value->type();
       return reflection->SetRepeatedEnum(
           message_, &field_, index,
-          MutateEnum(reflection->GetRepeatedEnum(*message_, &field_, index)));
+          type->value(
+              mutator_->MutateEnum(value->index(), type->value_count())));
+    }
     case FieldDescriptor::CPPTYPE_STRING:
       return reflection->SetRepeatedString(
           message_, &field_, index,
-          MutateString(reflection->GetRepeatedString(*message_, &field_, index),
-                       allowed_growth_));
+          mutator_->MutateString(
+              reflection->GetRepeatedString(*message_, &field_, index),
+              allowed_growth_));
     case FieldDescriptor::CPPTYPE_MESSAGE:
       assert(!"Don't mutate messages");
       return;
@@ -314,42 +323,41 @@ void FieldMutator::DeleteField() {
 
 void FieldMutator::DeleteRepeatedField() {
   assert(field_.is_repeated());
-  message_->GetReflection()->RemoveLast(message_, &field_);
+  const Reflection* reflection = message_->GetReflection();
+  int field_size = reflection->FieldSize(*message_, &field_);
+  int index = GetRandomIndex(random_, field_size);
+  // API has only method to delete the last message, so we move method from the
+  // middle to the end.
+  for (int i = index + 1; i < field_size; ++i)
+    reflection->SwapElements(message_, &field_, i, i - 1);
+  reflection->RemoveLast(message_, &field_);
 }
 
-class WeightedReservoirSampler {
- public:
-  explicit WeightedReservoirSampler(ProtobufMutator::RandomEngine* random)
-      : random_(random) {}
-
-  bool Pick(uint64_t weight) {
-    if (weight == 0) return false;
-    total_weight_ += weight;
-    if (weight == total_weight_) return true;
-    return std::uniform_int_distribution<uint64_t>(
-               1, total_weight_)(*random_) <= weight;
-  }
-
-  ProtobufMutator::RandomEngine* random() { return random_; }
-
- private:
-  uint64_t total_weight_ = 0;
-  ProtobufMutator::RandomEngine* random_;
-};
-
+// Selects random field and mutation from the given proto message.
 class MutationSampler {
  public:
   MutationSampler(bool keep_initialized, float current_usage,
                   ProtobufMutator::RandomEngine* random, Message* message)
-      : keep_initialized_(keep_initialized), sampler_(random) {
+      : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
     if (current_usage > 0.5) {
-      // Prefer deleting fields if we getting close to the limit.
+      // Avoid adding new field and prefer deleting fields if we getting close
+      // to the limit.
       add_weight_ *= 1 - current_usage;
       delete_weight_ *= current_usage;
     }
     Sample(message);
   }
 
+  // Returns selected field.
+  const FieldDescriptor* field() const { return sampler_.GetSelected().field; }
+
+  // Returns the message containing selected field.
+  Message* message() const { return sampler_.GetSelected().message; }
+
+  // Returns selected mutation.
+  Mutation mutation() const { return sampler_.GetSelected().mutation; }
+
+ private:
   void Sample(Message* message) {
     const Descriptor* descriptor = message->GetDescriptor();
     const Reflection* reflection = message->GetReflection();
@@ -360,43 +368,37 @@ class MutationSampler {
       if (const OneofDescriptor* oneof = field->containing_oneof()) {
         // Handle entire oneof group on the first field.
         if (field->index_in_oneof() == 0) {
-          if (sampler_.Pick(add_weight_)) {
-            SetAddField(message, oneof->field(GetRandomIndex(
-                                     sampler_.random(), oneof->field_count())));
-          }
+          sampler_.Try(
+              add_weight_,
+
+              {message,
+               oneof->field(GetRandomIndex(random_, oneof->field_count())),
+               Mutation::Add});
 
           if (const FieldDescriptor* field =
                   reflection->GetOneofFieldDescriptor(*message, oneof)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
-                sampler_.Pick(kMutateWeight)) {
-              SetMutateField(message, field);
-            }
-            if (sampler_.Pick(delete_weight_)) SetDeleteField(message, field);
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              sampler_.Try(kMutateWeight, {message, field, Mutation::Mutate});
+            sampler_.Try(delete_weight_, {message, field, Mutation::Delete});
           }
         }
       } else {
         if (field->is_repeated()) {
-          if (sampler_.Pick(add_weight_)) SetAddField(message, field);
+          sampler_.Try(add_weight_, {message, field, Mutation::Add});
 
           if (reflection->FieldSize(*message, field)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
-                sampler_.Pick(kMutateWeight)) {
-              SetMutateField(message, field);
-            }
-            if (sampler_.Pick(delete_weight_)) SetDeleteField(message, field);
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              sampler_.Try(kMutateWeight, {message, field, Mutation::Mutate});
+            sampler_.Try(delete_weight_, {message, field, Mutation::Delete});
           }
         } else {
           if (reflection->HasField(*message, field)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
-                sampler_.Pick(kMutateWeight)) {
-              SetMutateField(message, field);
-            }
-            if ((!field->is_required() || !keep_initialized_) &&
-                sampler_.Pick(delete_weight_)) {
-              SetDeleteField(message, field);
-            }
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              sampler_.Try(kMutateWeight, {message, field, Mutation::Mutate});
+            if ((!field->is_required() || !keep_initialized_))
+              sampler_.Try(delete_weight_, {message, field, Mutation::Delete});
           } else {
-            if (sampler_.Pick(add_weight_)) SetAddField(message, field);
+            sampler_.Try(add_weight_, {message, field, Mutation::Add});
           }
         }
       }
@@ -413,54 +415,28 @@ class MutationSampler {
     }
   }
 
-  Message* message() const { return result_.message; }
-  const FieldDescriptor* field() const { return result_.field; }
-  Mutation mutation() const { return result_.mutation; }
-
- private:
-  void SetAddField(Message* message, const FieldDescriptor* field) {
-    result_.message = message;
-    result_.field = field;
-    result_.mutation = Mutation::Add;
-  }
-
-  void SetMutateField(Message* message, const FieldDescriptor* field) {
-    result_.message = message;
-    result_.field = field;
-    result_.mutation = Mutation::Mutate;
-  }
-
-  void SetDeleteField(Message* message, const FieldDescriptor* field) {
-    result_.message = message;
-    result_.field = field;
-    result_.mutation = Mutation::Delete;
-  }
-
   bool keep_initialized_ = false;
   const uint64_t kMutateWeight = 1000000;
+
+  // Adding and deleting are intrusive and expensive mutations, we'd like to do
+  // them less often that field mutations.
   uint64_t add_weight_ = kMutateWeight / 10;
   uint64_t delete_weight_ = kMutateWeight / 10;
-  WeightedReservoirSampler sampler_;
 
-  struct {
-    Message* message = nullptr;
-    const FieldDescriptor* field = nullptr;
-    Mutation mutation = Mutation::None;
-  } result_;
+  ProtobufMutator::RandomEngine* random_;
+
+  struct Result {
+    Message* message;
+    const FieldDescriptor* field;
+    Mutation mutation;
+  };
+  WeightedReservoirSampler<Result, ProtobufMutator::RandomEngine> sampler_;
 };
 
 }  // namespace
 
-ProtobufMutator::ProtobufMutator(uint32_t seed, bool keep_initialized,
-                                 Customization* customization)
-    : random_(seed),
-      keep_initialized_(keep_initialized),
-      customization_(customization) {
-  if (!customization_) {
-    defaults_.reset(new ProtobufMutatorDefaults(seed));
-    customization_ = defaults_.get();
-  }
-}
+ProtobufMutator::ProtobufMutator(uint32_t seed, bool keep_initialized)
+    : random_(seed), keep_initialized_(keep_initialized) {}
 
 bool ProtobufMutator::Mutate(Message* message, size_t current_size,
                              size_t max_size) {
@@ -474,10 +450,9 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
   assert(mutation.field());
   assert(mutation.message());
 
-  size_t allowed_growth =
-      (std::max(max_size, current_size) - current_size) / 4;
-  FieldMutator field_mutator(allowed_growth, customization_, &random_,
-                             mutation.message(), *mutation.field());
+  size_t allowed_growth = (std::max(max_size, current_size) - current_size) / 4;
+  FieldMutator field_mutator(allowed_growth, this, &random_, mutation.message(),
+                             *mutation.field());
 
   switch (mutation.mutation()) {
     case Mutation::None:
@@ -504,6 +479,7 @@ bool ProtobufMutator::Mutate(Message* message, size_t current_size,
 }
 
 bool ProtobufMutator::CrossOver(const Message& with, Message* message) {
+  // TODO
   return false;
 }
 
@@ -514,7 +490,7 @@ void ProtobufMutator::InitializeMessage(Message* message, int max_depth) {
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
     if (field->is_required() && !reflection->HasField(*message, field)) {
-      FieldMutator field_mutator(0, customization_, &random_, message, *field);
+      FieldMutator field_mutator(0, this, &random_, message, *field);
       field_mutator.CreateDefaultField();
     }
 
@@ -535,4 +511,51 @@ void ProtobufMutator::InitializeMessage(Message* message, int max_depth) {
       }
     }
   }
+}
+
+int32_t ProtobufMutator::MutateInt32(int32_t value) {
+  return FlipBit(value, &random_);
+}
+
+int64_t ProtobufMutator::MutateInt64(int64_t value) {
+  return FlipBit(value, &random_);
+}
+
+uint32_t ProtobufMutator::MutateUInt32(uint32_t value) {
+  return FlipBit(value, &random_);
+}
+
+uint64_t ProtobufMutator::MutateUInt64(uint64_t value) {
+  return FlipBit(value, &random_);
+}
+
+float ProtobufMutator::MutateFloat(float value) {
+  return FlipBit(value, &random_);
+}
+
+double ProtobufMutator::MutateDouble(double value) {
+  return FlipBit(value, &random_);
+}
+
+bool ProtobufMutator::MutateBool(bool value) {
+  return std::uniform_int_distribution<uint8_t>(0, 1)(random_);
+}
+
+size_t ProtobufMutator::MutateEnum(size_t index, size_t item_count) {
+  return (index +
+          std::uniform_int_distribution<uint8_t>(1, item_count - 1)(random_)) %
+         item_count;
+}
+
+std::string ProtobufMutator::MutateString(const std::string& value,
+                                          size_t allowed_growth) {
+  std::string result = value;
+  size_t max_size = result.size() + allowed_growth;
+  int min_diff = result.empty() ? 0 : -1;
+  int max_diff = allowed_growth ? 1 : 0;
+  int diff = std::uniform_int_distribution<int>(min_diff, max_diff)(random_);
+  result.resize(result.size() + diff, 0);
+  if (!result.empty())
+    FlipBit(result.size(), reinterpret_cast<uint8_t*>(&result[0]), &random_);
+  return result;
 }

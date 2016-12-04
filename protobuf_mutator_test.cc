@@ -19,180 +19,372 @@
 #include "protobuf_mutator.pb.h"
 
 using google::protobuf::TextFormat;
-using protobuf_mutator::Msg;
 using protobuf_mutator::Msg2;
 using protobuf_mutator::Msg3;
+using protobuf_mutator::Msg;
+using testing::Test;
+using testing::TestWithParam;
+using testing::ValuesIn;
+using testing::WithParamInterface;
 
-struct RequiredDoubleHelper {
-  std::vector<double> kValues = {-1.1, 2.7, 322};
-};
+const char kMessages[] = R"(
+  required_msg {}
+  optional_msg {}
+  repeated_msg {}
+  repeated_msg {required_sint32: 56}
+  repeated_msg {}
+  repeated_msg {
+    required_msg {}
+    optional_msg {}
+    repeated_msg {}
+    repeated_msg { required_int32: 67 }
+    repeated_msg {}
+  }
+)";
 
-class ProtobufMutatorTest : public testing::Test {
+const char kRequiredFields[] = R"(
+  required_double: 1.26685288449177e-313
+  required_float: 5.9808638e-39
+  required_int32: 67
+  required_int64: 5285068
+  required_uint32: 14486213
+  required_uint64: 520229415
+  required_sint32: 56
+  required_sint64: -6057486163525532641
+  required_fixed32: 8812173
+  required_fixed64: 273731277756
+  required_sfixed32: 43142
+  required_sfixed64: 132
+  required_bool: false
+  required_string: "qwert"
+  required_bytes: "asdf"
+)";
+
+const char kOptionalFields[] = R"(
+  optional_double: 1.93177850152856e-314
+  optional_float: 4.7397519e-41
+  optional_int32: 40020
+  optional_int64: 10
+  optional_uint32: 40
+  optional_uint64: 159
+  optional_sint32: 44015
+  optional_sint64: 17493625000076
+  optional_fixed32: 193
+  optional_fixed64: 8542688694448488723
+  optional_sfixed32: 4926
+  optional_sfixed64: 60
+  optional_bool: false
+  optional_string: "QWERT"
+  optional_bytes: "ASDF"
+  optional_enum: ENUM_5
+)";
+
+const char kRepeatedFields[] = R"(
+  repeated_double: 1.93177850152856e-314
+  repeated_double: 1.26685288449177e-313
+  repeated_float: 4.7397519e-41
+  repeated_float: 5.9808638e-39
+  repeated_int32: 40020
+  repeated_int32: 67
+  repeated_int64: 10
+  repeated_int64: 5285068
+  repeated_uint32: 40
+  repeated_uint32: 14486213
+  repeated_uint64: 159
+  repeated_uint64: 520229415
+  repeated_sint32: 44015
+  repeated_sint32: 56
+  repeated_sint64: 17493625000076
+  repeated_sint64: -6057486163525532641
+  repeated_fixed32: 193
+  repeated_fixed32: 8812173
+  repeated_fixed64: 8542688694448488723
+  repeated_fixed64: 273731277756
+  repeated_sfixed32: 4926
+  repeated_sfixed32: 43142
+  repeated_sfixed64: 60
+  repeated_sfixed64: 132
+  repeated_bool: false
+  repeated_bool: true
+  repeated_string: "QWERT"
+  repeated_string: "qwert"
+  repeated_bytes: "ASDF"
+  repeated_bytes: "asdf"
+  repeated_enum: ENUM_5
+  repeated_enum: ENUM_4
+)";
+
+const char kRequiredNestedFields[] = R"(
+  required_int32: 123
+  optional_msg {
+    required_double: 1.26685288449177e-313
+    required_float: 5.9808638e-39
+    required_int32: 67
+    required_int64: 5285068
+    required_uint32: 14486213
+    required_uint64: 520229415
+    required_sint32: 56
+    required_sint64: -6057486163525532641
+    required_fixed32: 8812173
+    required_fixed64: 273731277756
+    required_sfixed32: 43142
+    required_sfixed64: 132
+    required_bool: false
+    required_string: "qwert"
+    required_bytes: "asdf"
+  }
+)";
+
+const char kOptionalNestedFields[] = R"(
+  required_int32: 123
+  optional_msg {
+    optional_double: 1.93177850152856e-314
+    optional_float: 4.7397519e-41
+    optional_int32: 40020
+    optional_int64: 10
+    optional_uint32: 40
+    optional_uint64: 159
+    optional_sint32: 44015
+    optional_sint64: 17493625000076
+    optional_fixed32: 193
+    optional_fixed64: 8542688694448488723
+    optional_sfixed32: 4926
+    optional_sfixed64: 60
+    optional_bool: false
+    optional_string: "QWERT"
+    optional_bytes: "ASDF"
+    optional_enum: ENUM_5
+  }
+)";
+
+const char kRepeatedNestedFields[] = R"(
+  required_int32: 123
+  optional_msg {
+    repeated_double: 1.93177850152856e-314
+    repeated_double: 1.26685288449177e-313
+    repeated_float: 4.7397519e-41
+    repeated_float: 5.9808638e-39
+    repeated_int32: 40020
+    repeated_int32: 67
+    repeated_int64: 10
+    repeated_int64: 5285068
+    repeated_uint32: 40
+    repeated_uint32: 14486213
+    repeated_uint64: 159
+    repeated_uint64: 520229415
+    repeated_sint32: 44015
+    repeated_sint32: 56
+    repeated_sint64: 17493625000076
+    repeated_sint64: -6057486163525532641
+    repeated_fixed32: 193
+    repeated_fixed32: 8812173
+    repeated_fixed64: 8542688694448488723
+    repeated_fixed64: 273731277756
+    repeated_sfixed32: 4926
+    repeated_sfixed32: 43142
+    repeated_sfixed64: 60
+    repeated_sfixed64: 132
+    repeated_bool: false
+    repeated_bool: true
+    repeated_string: "QWERT"
+    repeated_string: "qwert"
+    repeated_bytes: "ASDF"
+    repeated_bytes: "asdf"
+    repeated_enum: ENUM_5
+    repeated_enum: ENUM_4
+  }
+)";
+
+class TestProtobufMutator : public ProtobufMutator {
  public:
-  void SetUp() override {}
+  explicit TestProtobufMutator(bool keep_initialized)
+      : ProtobufMutator(17, keep_initialized), random_(13) {}
 
-  void TearDown() override {}
-
-  Msg& Reset() {
-    message_.Clear();
-
-    EXPECT_FALSE(message_.IsInitialized());
-
-    message_.set_required_double(1.3);
-    message_.set_required_float(-5.1);
-    message_.set_required_int32(553);
-    message_.set_required_int64(543);
-    message_.set_required_uint32(326);
-    message_.set_required_uint64(635);
-    message_.set_required_sint32(993);
-    message_.set_required_sint64(696);
-    message_.set_required_fixed32(545);
-    message_.set_required_fixed64(775);
-    message_.set_required_sfixed32(112);
-    message_.set_required_sfixed64(444);
-    message_.set_required_bool(true);
-    message_.set_required_string("abc");
-    message_.set_required_bytes("ABC");
-    message_.set_required_enum(Msg::ENUM_4);
-    message_.mutable_required_msg()->set_optional_int64(65);
-
-    message_.set_optional_double(-51.3);
-    message_.set_optional_float(55.1);
-    message_.set_optional_int32(5553);
-    message_.set_optional_int64(-5543);
-    message_.set_optional_uint32(5326);
-    message_.set_optional_uint64(5635);
-    message_.set_optional_sint32(5993);
-    message_.set_optional_sint64(5696);
-    message_.set_optional_fixed32(5545);
-    message_.set_optional_fixed64(5775);
-    message_.set_optional_sfixed32(-5112);
-    message_.set_optional_sfixed64(5444);
-    message_.set_optional_bool(false);
-    message_.set_optional_string("asd");
-    message_.set_optional_bytes("ASD");
-    message_.set_optional_enum(Msg::ENUM_7);
-
-    for (int i = 0; i < 3; ++i) {
-      message_.add_repeated_double(-51.3);
-      message_.add_repeated_float(55.1);
-      message_.add_repeated_int32(5553);
-      message_.add_repeated_int64(-5543);
-      message_.add_repeated_uint32(5326);
-      message_.add_repeated_uint64(5635);
-      message_.add_repeated_sint32(5993);
-      message_.add_repeated_sint64(5696);
-      message_.add_repeated_fixed32(5545);
-      message_.add_repeated_fixed64(5775);
-      message_.add_repeated_sfixed32(-5112);
-      message_.add_repeated_sfixed64(5444);
-      message_.add_repeated_bool(false);
-      message_.add_repeated_string("asd");
-      message_.add_repeated_bytes("ASD");
-      message_.add_repeated_enum(Msg::ENUM_7);
-    }
-
-    // message_.mutable_optional_msg()->MergeFrom(message_);
-
-    // message_.mutable_optional_msg();
-
-    message_.set_oneof_double(-51.3);
-    message_.set_oneof_float(55.1);
-    message_.set_oneof_int32(5553);
-    message_.set_oneof_int64(-5543);
-    message_.set_oneof_uint32(5326);
-    message_.set_oneof_uint64(5635);
-    message_.set_oneof_sint32(5993);
-    message_.set_oneof_sint64(5696);
-    message_.set_oneof_fixed32(5545);
-    message_.set_oneof_fixed64(5775);
-    message_.set_oneof_sfixed32(-5112);
-    message_.set_oneof_sfixed64(5444);
-    message_.set_oneof_bool(false);
-    message_.set_oneof_string("asd");
-    message_.set_oneof_bytes("ASD");
-    message_.set_oneof_enum(Msg::ENUM_7);
-
-    (*message_.mutable_map())["A"] = 3;
-    (*message_.mutable_map())["B"] = 2;
-    (*message_.mutable_map())["C"] = 1;
-
-    message_.mutable_group()->set_required_bool(true);
-
-    EXPECT_TRUE(message_.IsInitialized());
-
-    return message_;
+  float MutateFloat(float value) override {
+    // Hack for tests. It's hard compare reals generated using random mutations.
+    return std::uniform_int_distribution<uint8_t>(-10, 10)(random_);
   }
 
- protected:
-  Msg message_;
-  ProtobufMutator mutator_ = {17, false};
+  double MutateDouble(double value) override { return MutateFloat(value); }
+
+ private:
+  RandomEngine random_;
 };
 
-TEST_F(ProtobufMutatorTest, Empty) {
-  std::string tmp_out;
-  EXPECT_TRUE(TextFormat::PrintToString(message_, &tmp_out));
-  EXPECT_EQ(tmp_out, "");
-
-  Msg tmp;
-  EXPECT_FALSE(TextFormat::ParseFromString(tmp_out, &tmp));
+std::vector<std::string> Split(const std::string& str) {
+  std::istringstream iss(str);
+  std::vector<std::string> result;
+  for (std::string line; std::getline(iss, line, '\n');) result.push_back(line);
+  return result;
 }
 
-TEST_F(ProtobufMutatorTest, Default) {
-  Reset();
-  std::string tmp_out;
-  EXPECT_TRUE(TextFormat::PrintToString(message_, &tmp_out));
-  EXPECT_NE(tmp_out, "");
-
-  Msg tmp;
-  EXPECT_TRUE(TextFormat::ParseFromString(tmp_out, &tmp));
-}
-
-TEST_F(ProtobufMutatorTest, Large) {
-  // Reset();
-  // mutator_.Mutate(&message_);
-
-  std::string tmp_out;
-  for (int i = 0; i < 10000; ++i) {
-    mutator_.Mutate(&message_, tmp_out.size(), 30000);
-    std::string prev = tmp_out;
-    EXPECT_TRUE(TextFormat::PrintToString(message_, &tmp_out));
-    if (tmp_out.size() > 35000) {
-      std::cout << prev << "\n";
-      std::cout << tmp_out << "\n";
-      assert(0);
+std::vector<std::pair<const char*, size_t>> GetFieldTestParams(
+    const std::vector<const char*>& tests) {
+  std::vector<std::pair<const char*, size_t>> results;
+  for (auto t : tests) {
+    auto lines = Split(t);
+    for (size_t i = 0; i != lines.size(); ++i) {
+      if (lines[i].find(':') != std::string::npos) results.push_back({t, i});
     }
-    std::cout << "SIZE: " << tmp_out.size() << "\n";
   }
-
-  std::cout << tmp_out << "\n";
-  std::cout << "SIZE: " << tmp_out.size() << "\n";
+  return results;
 }
 
-// TEST_F(ProtobufMutatorTest, Message) {
-//   // Reset();
-//   // mutator_.Mutate(&message_);
+std::vector<std::pair<const char*, size_t>> GetMessageTestParams(
+    const std::vector<const char*>& tests) {
+  std::vector<std::pair<const char*, size_t>> results;
+  for (auto t : tests) {
+    auto lines = Split(t);
+    for (size_t i = 0; i != lines.size(); ++i) {
+      if (lines[i].find("{}") != std::string::npos) results.push_back({t, i});
+    }
+  }
+  return results;
+}
 
-//   Msg2 message;
+void LoadMessage(const std::string& text_message, Msg* message) {
+  message->Clear();
+  TextFormat::Parser parser;
+  parser.AllowPartialMessage(true);
+  EXPECT_TRUE(parser.ParseFromString(text_message, message));
+}
 
-//   for (int i = 0; i < 1000; ++i) mutator_.Mutate(&message, 0, 100);
+bool LoadWithoutLine(const std::string& text_message, size_t line,
+                     Msg* message) {
+  std::ostringstream oss;
+  auto lines = Split(text_message);
+  for (size_t i = 0; i != lines.size(); ++i) {
+    if (i != line) oss << lines[i] << '\n';
+  }
+  message->Clear();
+  TextFormat::Parser parser;
+  parser.AllowPartialMessage(true);
+  return parser.ParseFromString(oss.str(), message);
+}
 
-//   std::string tmp_out;
-//   EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
-//   std::cout << tmp_out << "\n";
-//   std::cout << "SIZE: " << tmp_out.size() << "\n";
-// }
+bool LoadWithChangedLine(const std::string& text_message, size_t line,
+                         Msg* message, bool non_default) {
+  auto lines = Split(text_message);
+  std::ostringstream oss;
+  for (size_t i = 0; i != lines.size(); ++i) {
+    if (i != line) {
+      oss << lines[i] << '\n';
+    } else {
+      std::string s = lines[i];
+      s.resize(s.find(':') + 2);
 
-// TEST_F(ProtobufMutatorTest, Grop) {
-//   // Reset();
-//   // mutator_.Mutate(&message_);
+      if (lines[i].back() == '\"') {
+        s += non_default ? "\"\\1\"" : "\"\"";
+      } else {
+        s += non_default ? "1" : "0";
+      }
+      oss << s << '\n';
+    }
+  }
+  message->Clear();
+  TextFormat::Parser parser;
+  parser.AllowPartialMessage(true);
+  return parser.ParseFromString(oss.str(), message);
+}
 
-//   Msg3 message;
+bool Mutate(const Msg& from, const Msg& to) {
+  std::string from_str;
+  EXPECT_TRUE(TextFormat::PrintToString(from, &from_str));
 
-//   for (int i = 0; i < 1000; ++i) mutator_.Mutate(&message, 0, 100);
+  std::string to_str;
+  EXPECT_TRUE(TextFormat::PrintToString(to, &to_str));
 
-//   std::string tmp_out;
-//   EXPECT_TRUE(TextFormat::PrintToString(message, &tmp_out));
-//   std::cout << tmp_out << "\n";
-//   std::cout << "SIZE: " << tmp_out.size() << "\n";
-// }
+  EXPECT_NE(from_str, to_str);
+
+  TestProtobufMutator mutator(false);
+
+  for (int j = 0; j < 1000000; ++j) {
+    Msg message;
+    message.CopyFrom(from);
+    mutator.Mutate(&message, from_str.size(), from_str.size() + 100);
+    std::string after;
+    EXPECT_TRUE(TextFormat::PrintToString(message, &after));
+    if (after == to_str) return true;
+  }
+  return false;
+}
+
+class ProtobufMutatorTest {
+ protected:
+  std::string test_message_;
+  size_t field_;
+  Msg from_;
+  Msg to_;
+};
+
+class ProtobufMutatorFieldTest
+    : public ProtobufMutatorTest,
+      public TestWithParam<std::pair<const char*, size_t>> {
+ protected:
+  void SetUp() override {
+    test_message_ = GetParam().first;
+    field_ = GetParam().second;
+  }
+};
+
+INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorFieldTest,
+                        ValuesIn(GetFieldTestParams(
+                            {kRequiredFields, kOptionalFields, kRepeatedFields,
+                             kRequiredNestedFields, kOptionalNestedFields,
+                             kRepeatedNestedFields})));
+
+TEST_P(ProtobufMutatorFieldTest, DeletedField) {
+  LoadMessage(test_message_, &from_);
+  LoadWithoutLine(test_message_, field_, &to_);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorFieldTest, InsertField) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  LoadWithChangedLine(test_message_, field_, &to_, false);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorFieldTest, ChangeFrom0to1) {
+  LoadWithChangedLine(test_message_, field_, &from_, false);
+  LoadWithChangedLine(test_message_, field_, &to_, true);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorFieldTest, ChangeFrom1to0) {
+  LoadWithChangedLine(test_message_, field_, &from_, true);
+  LoadWithChangedLine(test_message_, field_, &to_, false);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorFieldTest, Initialized) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  TestProtobufMutator mutator(true);
+  mutator.Mutate(&from_, test_message_.size(), test_message_.size() + 100);
+  EXPECT_TRUE(from_.IsInitialized());
+}
+
+class ProtobufMutatorMessagesTest
+    : public ProtobufMutatorTest,
+      public TestWithParam<std::pair<const char*, size_t>> {
+ protected:
+  void SetUp() override {
+    test_message_ = GetParam().first;
+    field_ = GetParam().second;
+  }
+};
+
+INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorMessagesTest,
+                        ValuesIn(GetMessageTestParams({kMessages})));
+
+TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
+  LoadMessage(test_message_, &from_);
+  LoadWithoutLine(test_message_, field_, &to_);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  LoadMessage(test_message_, &to_);
+  EXPECT_TRUE(Mutate(from_, to_));
+}

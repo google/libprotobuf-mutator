@@ -25,7 +25,6 @@ include(zlib)
 
 find_package (Threads)
 
-#set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions")
 
@@ -34,10 +33,12 @@ target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../protobuf_mutator.proto)
-#message (--3333- ${PROTO_SRCS})
 
 enable_testing()
-add_executable(protobuf_mutator_test ../protobuf_mutator_test.cc ${PROTO_SRCS} ${PROTO_HDRS})
+add_executable(protobuf_mutator_test
+               ../protobuf_mutator_test.cc
+               ../weighted_reservoir_sampler_test.cc
+               ${PROTO_SRCS} ${PROTO_HDRS})
 target_link_libraries(protobuf_mutator_test
                       protobuf-mutator
                       ${ZLIB_LIBRARIES}
@@ -45,7 +46,6 @@ target_link_libraries(protobuf_mutator_test
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 
-#GTEST_ADD_TESTS(protobuf_mutator_test --gtest_color=yes AUTO)
 add_test(test.protobuf_mutator_test protobuf_mutator_test --gtest_color=yes AUTO)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose
                   DEPENDS protobuf_mutator_test)
