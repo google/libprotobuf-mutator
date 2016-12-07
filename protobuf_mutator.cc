@@ -44,11 +44,10 @@ enum class Mutation {
   Add,     // Adds new field with default value.
   Mutate,  // Mutates field contents.
   Delete,  // Deletes field.
+  Copy,    // Copy values copied from another field.
 
   // TODO(vitalybuka):
   // Clone,  // Adds new field with value copied from another field.
-  // Copy,   // Copy values copied from another field.
-  // Swap,   // Swap values of two fields.
 };
 
 // Flips random bit in the buffer.
@@ -86,6 +85,19 @@ struct DeleteFieldTransformation {
   void Apply(const FieldInstance& field) const {
     field.Delete();
   }
+};
+
+struct CopyFieldTransformation {
+  explicit CopyFieldTransformation(const Field& field) : source(field) {}
+
+  template <class T>
+  void Apply(const Field& field) const {
+    T value;
+    source.Load(&value);
+    field.Store(value);
+  }
+
+  Field source;
 };
 
 // Selects random field and mutation from the given proto message.
@@ -131,6 +143,7 @@ class MutationSampler {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
               sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
             sampler_.Try(delete_weight_, {{message, field}, Mutation::Delete});
+            sampler_.Try(kMutateWeight, {{message, field}, Mutation::Copy});
           }
         }
       } else {
@@ -147,11 +160,14 @@ class MutationSampler {
                            {{message, field, random_index}, Mutation::Mutate});
             sampler_.Try(delete_weight_,
                          {{message, field, random_index}, Mutation::Delete});
+            sampler_.Try(kMutateWeight,
+                         {{message, field, random_index}, Mutation::Copy});
           }
         } else {
           if (reflection->HasField(*message, field)) {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
               sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
+            sampler_.Try(kMutateWeight, {{message, field}, Mutation::Copy});
             if ((!field->is_required() || !keep_initialized_))
               sampler_.Try(delete_weight_,
                            {{message, field}, Mutation::Delete});
@@ -192,6 +208,64 @@ class MutationSampler {
     Mutation mutation = Mutation::None;
   };
   WeightedReservoirSampler<Result, ProtobufMutator::RandomEngine> sampler_;
+};
+
+// Selects random field of compatible type to use for clone mutations.
+class DataSourceSampler {
+ public:
+  DataSourceSampler(const Field& match, ProtobufMutator::RandomEngine* random,
+                    Message* message)
+      : match_(match), random_(random), sampler_(random) {
+    Sample(message);
+  }
+
+  // Returns selected field.
+  const Field& field() const { return sampler_.selected(); }
+
+ private:
+  void Sample(Message* message) {
+    const Descriptor* descriptor = message->GetDescriptor();
+    const Reflection* reflection = message->GetReflection();
+
+    int field_count = descriptor->field_count();
+    for (int i = 0; i < field_count; ++i) {
+      const FieldDescriptor* field = descriptor->field(i);
+      if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+        if (field->is_repeated()) {
+          const int field_size = reflection->FieldSize(*message, field);
+          for (int j = 0; j < field_size; ++j) {
+            Sample(reflection->MutableRepeatedMessage(message, field, j));
+          }
+        } else if (reflection->HasField(*message, field)) {
+          Sample(reflection->MutableMessage(message, field));
+        }
+      }
+
+      if (field->cpp_type() != match_.cpp_type()) continue;
+      if (match_.cpp_type() == FieldDescriptor::CPPTYPE_ENUM) {
+        if (field->enum_type() != match_.enum_type()) continue;
+      } else if (match_.cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+        if (field->message_type() != match_.message_type()) continue;
+      }
+
+      // TODO(vitalybuka) : make sure that values are different
+      if (field->is_repeated()) {
+        if (int field_size = reflection->FieldSize(*message, field)) {
+          sampler_.Try(field_size,
+                       {message, field, GetRandomIndex(random_, field_size)});
+        }
+      } else {
+        if (reflection->HasField(*message, field)) {
+          sampler_.Try(1, {message, field});
+        }
+      }
+    }
+  }
+
+  Field match_;
+  ProtobufMutator::RandomEngine* random_;
+
+  WeightedReservoirSampler<Field, ProtobufMutator::RandomEngine> sampler_;
 };
 
 }  // namespace
@@ -249,6 +323,7 @@ ProtobufMutator::ProtobufMutator(uint32_t seed, bool keep_initialized)
 void ProtobufMutator::Mutate(Message* message, size_t current_size,
                              size_t max_size) {
   assert(max_size);
+
   MutationSampler mutation(
       keep_initialized_, current_size / std::max<float>(current_size, max_size),
       &random_, message);
@@ -267,6 +342,17 @@ void ProtobufMutator::Mutate(Message* message, size_t current_size,
     case Mutation::Delete:
       mutation.field().Apply(DeleteFieldTransformation());
       break;
+    case Mutation::Copy: {
+      DataSourceSampler source(mutation.field(), &random_, message);
+      if (!source.field().IsValid()) {
+        // Fallback to message deletion.
+        mutation.field().Apply(DeleteFieldTransformation());
+        break;
+      }
+      assert(source.field().IsValid());
+      mutation.field().Apply(CopyFieldTransformation(source.field()));
+      break;
+    }
     default:
       assert(!"unexpected mutation");
   }

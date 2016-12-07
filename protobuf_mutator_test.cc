@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "protobuf_mutator.h"
+
+#include <string>
+
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 
@@ -263,7 +266,7 @@ bool LoadWithoutLine(const std::string& text_message, size_t line,
 }
 
 bool LoadWithChangedLine(const std::string& text_message, size_t line,
-                         Msg* message, bool non_default) {
+                         Msg* message, int value) {
   auto lines = Split(text_message);
   std::ostringstream oss;
   for (size_t i = 0; i != lines.size(); ++i) {
@@ -274,9 +277,13 @@ bool LoadWithChangedLine(const std::string& text_message, size_t line,
       s.resize(s.find(':') + 2);
 
       if (lines[i].back() == '\"') {
-        s += non_default ? "\"\\1\"" : "\"\"";
+        // strings
+        s += value ? "\"\\" + std::to_string(value) + "\"" : "\"\"";
+      } else if (lines[i].back() == 'e') {
+        // bools
+        s += value ? "true" : "false";
       } else {
-        s += non_default ? "1" : "0";
+        s += std::to_string(value);
       }
       oss << s << '\n';
     }
@@ -333,7 +340,14 @@ INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorFieldTest,
                              kRequiredNestedFields, kOptionalNestedFields,
                              kRepeatedNestedFields})));
 
-TEST_P(ProtobufMutatorFieldTest, DeletedField) {
+TEST_P(ProtobufMutatorFieldTest, Initialized) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  TestProtobufMutator mutator(true);
+  mutator.Mutate(&from_, test_message_.size(), test_message_.size() + 100);
+  EXPECT_TRUE(from_.IsInitialized());
+}
+
+TEST_P(ProtobufMutatorFieldTest, DeleteField) {
   LoadMessage(test_message_, &from_);
   LoadWithoutLine(test_message_, field_, &to_);
   EXPECT_TRUE(Mutate(from_, to_));
@@ -341,27 +355,35 @@ TEST_P(ProtobufMutatorFieldTest, DeletedField) {
 
 TEST_P(ProtobufMutatorFieldTest, InsertField) {
   LoadWithoutLine(test_message_, field_, &from_);
-  LoadWithChangedLine(test_message_, field_, &to_, false);
+  LoadWithChangedLine(test_message_, field_, &to_, 0);
   EXPECT_TRUE(Mutate(from_, to_));
 }
 
-TEST_P(ProtobufMutatorFieldTest, ChangeFrom0to1) {
-  LoadWithChangedLine(test_message_, field_, &from_, false);
-  LoadWithChangedLine(test_message_, field_, &to_, true);
+TEST_P(ProtobufMutatorFieldTest, ChangeField) {
+  LoadWithChangedLine(test_message_, field_, &from_, 0);
+  LoadWithChangedLine(test_message_, field_, &to_, 1);
   EXPECT_TRUE(Mutate(from_, to_));
+  EXPECT_TRUE(Mutate(to_, from_));
 }
 
-TEST_P(ProtobufMutatorFieldTest, ChangeFrom1to0) {
-  LoadWithChangedLine(test_message_, field_, &from_, true);
-  LoadWithChangedLine(test_message_, field_, &to_, false);
-  EXPECT_TRUE(Mutate(from_, to_));
-}
+TEST_P(ProtobufMutatorFieldTest, CopyField) {
+  Msg msg1;
+  LoadWithChangedLine(test_message_, field_, &msg1, 7);
 
-TEST_P(ProtobufMutatorFieldTest, Initialized) {
-  LoadWithoutLine(test_message_, field_, &from_);
-  TestProtobufMutator mutator(true);
-  mutator.Mutate(&from_, test_message_.size(), test_message_.size() + 100);
-  EXPECT_TRUE(from_.IsInitialized());
+  Msg msg2;
+  LoadWithChangedLine(test_message_, field_, &msg2, 0);
+
+  from_.add_repeated_msg()->CopyFrom(msg1);
+  from_.add_repeated_msg()->CopyFrom(msg2);
+
+  to_.add_repeated_msg()->CopyFrom(msg1);
+  to_.add_repeated_msg()->CopyFrom(msg1);
+  EXPECT_TRUE(Mutate(from_, to_));
+
+  to_.Clear();
+  to_.add_repeated_msg()->CopyFrom(msg2);
+  to_.add_repeated_msg()->CopyFrom(msg2);
+  EXPECT_TRUE(Mutate(from_, to_));
 }
 
 class ProtobufMutatorMessagesTest

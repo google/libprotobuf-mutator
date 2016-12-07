@@ -260,6 +260,14 @@ class FieldInstance {
     return descriptor_->cpp_type();
   }
 
+  const google::protobuf::EnumDescriptor* enum_type() const {
+    return descriptor_->enum_type();
+  }
+
+  const google::protobuf::Descriptor* message_type() const {
+    return descriptor_->message_type();
+  }
+
   template <class Transformation>
   void Apply(const Transformation& transformation) const {
     assert(descriptor_);

@@ -37,10 +37,7 @@ class WeightedReservoirSampler {
     if (Pick(weight)) selected_ = item;
   }
 
-  const T& selected() const {
-    assert(total_weight_);
-    return selected_;
-  }
+  const T& selected() const { return selected_; }
 
  private:
   bool Pick(uint64_t weight) {
