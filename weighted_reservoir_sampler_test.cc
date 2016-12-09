@@ -21,6 +21,8 @@ using testing::ValuesIn;
 using testing::Combine;
 using testing::Range;
 
+namespace protobuf_mutator {
+
 class WeightedReservoirSamplerTest
     : public TestWithParam<std::tuple<int, std::vector<int>>> {};
 
@@ -47,16 +49,16 @@ TEST_P(WeightedReservoirSamplerTest, Test) {
   std::vector<int> weights = std::get<1>(GetParam());
   std::vector<int> counts(weights.size(), 0);
 
-  using RandomEngine = std::default_random_engine;
+  using RandomEngine = std::mt19937;
   RandomEngine rand(std::get<0>(GetParam()));
   for (int i = 0; i < kRuns; ++i) {
     WeightedReservoirSampler<int, RandomEngine> sampler(&rand);
-    for (int j = 0; j < weights.size(); ++j) sampler.Try(weights[j], j);
-    ++counts[sampler.GetSelected()];
+    for (size_t j = 0; j < weights.size(); ++j) sampler.Try(weights[j], j);
+    ++counts[sampler.selected()];
   }
 
   int sum = std::accumulate(weights.begin(), weights.end(), 0);
-  for (int j = 0; j < weights.size(); ++j) {
+  for (size_t j = 0; j < weights.size(); ++j) {
     float expected = weights[j];
     expected /= sum;
 
@@ -66,3 +68,5 @@ TEST_P(WeightedReservoirSamplerTest, Test) {
     EXPECT_NEAR(expected, actual, 0.01);
   }
 }
+
+}  // namespace protobuf_mutator

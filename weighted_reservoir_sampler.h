@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LIBPROTOBUG_MUTATOR_WEIGHTED_RESERVOIR_SAMPLER_H
-#define LIBPROTOBUG_MUTATOR_WEIGHTED_RESERVOIR_SAMPLER_H
+#ifndef WEIGHTED_RESERVOIR_SAMPLER_H_
+#define WEIGHTED_RESERVOIR_SAMPLER_H_
 
 #include <cassert>
 #include <random>
 
+namespace protobuf_mutator {
+
 // Algorithm pick one item from the sequence of weighted items.
+// https://en.wikipedia.org/wiki/Reservoir_sampling#Algorithm_A-Chao
+//
 // Example:
 //   WeightedReservoirSampler<int> sampler;
 //   for(int i = 0; i < size; ++i)
-//     if (sampler.Pick(weight[i], i)) selected = i;
+//     sampler.Pick(weight[i], i);
 //   return sampler.GetSelected();
 template <class T, class RandomEngine = std::default_random_engine>
 class WeightedReservoirSampler {
@@ -30,12 +34,12 @@ class WeightedReservoirSampler {
   explicit WeightedReservoirSampler(RandomEngine* random) : random_(random) {}
 
   void Try(uint64_t weight, const T& item) {
-    if (Pick(weight)) result_ = item;
+    if (Pick(weight)) selected_ = item;
   }
 
-  const T& GetSelected() const {
+  const T& selected() const {
     assert(total_weight_);
-    return result_;
+    return selected_;
   }
 
  private:
@@ -47,9 +51,11 @@ class WeightedReservoirSampler {
                1, total_weight_)(*random_) <= weight;
   }
 
-  T result_ = {};
+  T selected_ = {};
   uint64_t total_weight_ = 0;
   RandomEngine* random_;
 };
 
-#endif  // LIBPROTOBUG_MUTATOR_WEIGHTED_RESERVOIR_SAMPLER_H
+}  // namespace protobuf_mutator
+
+#endif  // WEIGHTED_RESERVOIR_SAMPLER_H_

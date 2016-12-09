@@ -26,7 +26,9 @@ include(zlib)
 find_package (Threads)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions")
+set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
 add_library(protobuf-mutator ../protobuf_mutator.cc)
 target_link_libraries(protobuf-mutator

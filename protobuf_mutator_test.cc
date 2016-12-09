@@ -19,13 +19,13 @@
 #include "protobuf_mutator.pb.h"
 
 using google::protobuf::TextFormat;
-using protobuf_mutator::Msg2;
-using protobuf_mutator::Msg3;
 using protobuf_mutator::Msg;
 using testing::Test;
 using testing::TestWithParam;
 using testing::ValuesIn;
 using testing::WithParamInterface;
+
+namespace protobuf_mutator {
 
 const char kMessages[] = R"(
   required_msg {}
@@ -388,3 +388,7 @@ TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
   LoadMessage(test_message_, &to_);
   EXPECT_TRUE(Mutate(from_, to_));
 }
+
+// TODO(vitalybuka): Special tests for oneof.
+
+}  // namespace protobuf_mutator

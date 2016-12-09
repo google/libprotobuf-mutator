@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
-#define LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
+#ifndef PROTOBUF_MUTATOR_H_
+#define PROTOBUF_MUTATOR_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -27,6 +27,8 @@ class Message;
 }
 }
 
+namespace protobuf_mutator {
+
 // Randomly makes incremental change in the given protobuf.
 // Usage example:
 //    ProtobufMutator mutator(1);
@@ -34,12 +36,14 @@ class Message;
 //    message.ParseFromString(encoded_message);
 //    mutator.Mutate(&message, encoded_message.size(), 10000);
 //
-// Class implements very basic mutations on simple type, so for better results
-// users should override ProtobufMutator::Mutate* methods with more useful
-// logic.
+// Class implements very basic mutations of fields. E.g. it just flips bits for
+// integers, floats and strings. Also it increases, decreases size of
+// strings only by one. For better results users should override
+// ProtobufMutator::Mutate* methods with more useful logic, e.g. using library
+// like libFuzzer.
 class ProtobufMutator {
  public:
-  using RandomEngine = std::minstd_rand0;
+  using RandomEngine = std::mt19937;
 
   // seed: value to initialize random number generator.
   // keep_initialized: if true code will make sure that produced protobuf is in
@@ -54,15 +58,16 @@ class ProtobufMutator {
   // Method does not guarantee that results is smaller than max_size, it will
   // just reduce probabilities of mutations which can cause increase the size
   // over the limit. E.g. if we close to the limit, it will avoid adding
-  // creating new fields. Called could repeat mutation if result was larger than
+  // creating new fields. Caller could repeat mutation if result was larger than
   // requested.
-  bool Mutate(google::protobuf::Message* message, size_t current_size,
+  void Mutate(google::protobuf::Message* message, size_t current_size,
               size_t max_size);
 
-  // TODO: implement
+  // TODO(vitalybuka): implement
   bool CrossOver(const google::protobuf::Message& with,
                  google::protobuf::Message* message);
 
+ protected:
   virtual int32_t MutateInt32(int32_t value);
   virtual int64_t MutateInt64(int64_t value);
   virtual uint32_t MutateUInt32(uint32_t value);
@@ -74,15 +79,18 @@ class ProtobufMutator {
   virtual std::string MutateString(const std::string& value,
                                    size_t allowed_growth);
 
-  // TODO: Allow user to control proto level mutations:
+  // TODO(vitalybuka): Allow user to control proto level mutations:
   //   * Callbacks to recursive traversal.
   //   * Callbacks for particular proto level mutations.
 
  private:
+  class FieldMutator;
   void InitializeMessage(google::protobuf::Message* message, int max_depth);
 
   bool keep_initialized_ = false;
   RandomEngine random_;
 };
 
-#endif  // LIBPROTOBUG_MUTATOR_PROTOBUG_MUTATOR_H
+}  // namespace protobuf_mutator
+
+#endif  // PROTOBUF_MUTATOR_H_
