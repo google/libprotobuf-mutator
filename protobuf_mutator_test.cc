@@ -389,6 +389,18 @@ TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
   EXPECT_TRUE(Mutate(from_, to_));
 }
 
+TEST(ProtobufMutatorMessagesTest, SmallBenchmark) {
+  TestProtobufMutator mutator(false);
+  for (int i = 0; i < 100000; ++i) {
+    Msg message;
+    for (int j = 0; j < 20; ++j) {
+      mutator.Mutate(&message, 500, 1000);
+    }
+  }
+}
+
+// TODO(vitalybuka): Better benchmark.
+
 // TODO(vitalybuka): Special tests for oneof.
 
 }  // namespace protobuf_mutator
