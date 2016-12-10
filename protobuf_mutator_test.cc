@@ -403,4 +403,6 @@ TEST(ProtobufMutatorMessagesTest, SmallBenchmark) {
 
 // TODO(vitalybuka): Special tests for oneof.
 
+// TODO(vitalybuka): trivial test which can be used as usage example.
+
 }  // namespace protobuf_mutator

@@ -48,6 +48,7 @@ class ProtobufMutator {
   // seed: value to initialize random number generator.
   // keep_initialized: if true code will make sure that produced protobuf is in
   // initialized state.
+  // TODO(vitalybuka): hide keep_initialized
   explicit ProtobufMutator(uint32_t seed, bool keep_initialized = true);
 
   // message: message to mutate.
@@ -60,6 +61,7 @@ class ProtobufMutator {
   // over the limit. E.g. if we close to the limit, it will avoid adding
   // creating new fields. Caller could repeat mutation if result was larger than
   // requested.
+  // TODO(vitalybuka): drop one of size arguments.
   void Mutate(google::protobuf::Message* message, size_t current_size,
               size_t max_size);
 
