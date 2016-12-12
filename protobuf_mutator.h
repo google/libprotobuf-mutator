@@ -86,7 +86,7 @@ class ProtobufMutator {
   //   * Callbacks for particular proto level mutations.
 
  private:
-  class FieldMutator;
+  friend class MutateTransformation;
   void InitializeMessage(google::protobuf::Message* message, int max_depth);
 
   bool keep_initialized_ = false;
