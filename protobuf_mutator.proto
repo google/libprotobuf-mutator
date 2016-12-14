@@ -101,3 +101,15 @@ message Msg {
     repeated bool repeated_bool = 3;
   }
 }
+
+message SmallMessage {
+  enum Enum {
+    ENUM_0 = 0;
+    ENUM_1 = 1;
+    ENUM_2 = 2;
+    ENUM_3 = 3;
+  }
+
+  optional bool opt_bool = 1;
+  optional Enum opt_enum = 2;
+}

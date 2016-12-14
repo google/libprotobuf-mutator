@@ -425,6 +425,21 @@ TEST(ProtobufMutatorMessagesTest, SmallBenchmark) {
 
 // TODO(vitalybuka): Special tests for oneof.
 
-// TODO(vitalybuka): trivial test which can be used as usage example.
+TEST(ProtobufMutatorMessagesTest, UsageExample) {
+  SmallMessage message;
+  TestProtobufMutator mutator(false);
+
+  // Test that we can generate all variation of the message.
+  std::set<std::string> mutations;
+  for (int j = 0; j < 1000; ++j) {
+    mutator.Mutate(&message, 100, 200);
+    std::string str;
+    EXPECT_TRUE(TextFormat::PrintToString(message, &str));
+    mutations.insert(str);
+  }
+
+  // 3 states for boolean and 5 for enum, including missing fields.
+  EXPECT_EQ(3 * 5, mutations.size());
+}
 
 }  // namespace protobuf_mutator
