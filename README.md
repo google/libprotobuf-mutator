@@ -23,12 +23,6 @@ cmake ../cmake/ -GNinja -DCMAKE_BUILD_TYPE=Debug
 ninja check
 ```
 
-Compile only the library:
-
-```
-ninja libprotobuf-mutator.a
-```
-
 ## Usage
 
 To use libprotobuf-mutator simply include 
