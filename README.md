@@ -40,9 +40,8 @@ To apply one mutation to a protobuf object do the following:
 ```
 class MyProtobufMutator : public ProtobufMutator {
  public:
-  MyProtobufMutator(uint32_t seed) : ProtobufMutator(seed) {...}
-  // optionally redefine the Mutate* methods
-  // to perform more sophisticated mutations.
+  MyProtobufMutator(uint32_t seed) : ProtobufMutator(seed) {}
+  // Optionally redefine the Mutate* methods to perform more sophisticated mutations.
 }
 void Mutate(MyMessage* message) {
   MyProtobufMutator mutator(my_random_seed);
