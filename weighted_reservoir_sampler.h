@@ -39,6 +39,8 @@ class WeightedReservoirSampler {
 
   const T& selected() const { return selected_; }
 
+  bool IsEmpty() const { return total_weight_ == 0; }
+
  private:
   bool Pick(uint64_t weight) {
     if (weight == 0) return false;

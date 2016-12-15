@@ -310,7 +310,7 @@ bool Mutate(const Msg& from, const Msg& to) {
   for (int j = 0; j < 1000000; ++j) {
     Msg message;
     message.CopyFrom(from);
-    mutator.Mutate(&message, from_str.size(), from_str.size() + 100);
+    mutator.Mutate(&message, 1000);
     std::string after;
     EXPECT_TRUE(TextFormat::PrintToString(message, &after));
     if (after == to_str) return true;
@@ -345,7 +345,7 @@ INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorFieldTest,
 TEST_P(ProtobufMutatorFieldTest, Initialized) {
   LoadWithoutLine(test_message_, field_, &from_);
   TestProtobufMutator mutator(true);
-  mutator.Mutate(&from_, test_message_.size(), test_message_.size() + 100);
+  mutator.Mutate(&from_, 1000);
   EXPECT_TRUE(from_.IsInitialized());
 }
 
@@ -418,12 +418,43 @@ TEST(ProtobufMutatorMessagesTest, SmallBenchmark) {
   for (int i = 0; i < 100000; ++i) {
     Msg message;
     for (int j = 0; j < 20; ++j) {
-      mutator.Mutate(&message, 500, 1000);
+      mutator.Mutate(&message, 1000);
     }
   }
 }
 
 // TODO(vitalybuka): Better benchmark.
+
+TEST(ProtobufMutatorMessagesTest, SizeControl) {
+  const size_t kIterations = 10000;
+
+  auto loop = [&](bool control) {
+    Msg message;
+    std::string str;
+    TestProtobufMutator mutator(false);
+    const size_t kTargetSize = 1000;
+    size_t overflows = 0;
+    for (size_t j = 0; j < kIterations; ++j) {
+      Msg message2;
+      message2.CopyFrom(message);
+      mutator.Mutate(&message2,
+                     control ? kTargetSize - std::min(str.size(), kTargetSize)
+                             : kTargetSize);
+      std::string str2;
+      EXPECT_TRUE(TextFormat::PrintToString(message2, &str2));
+      if (str2.size() > kTargetSize) {
+        ++overflows;
+      } else if (str2.size() > kTargetSize - 150 || str2.size() > str.size()) {
+        message.CopyFrom(message2);
+        str = str2;
+      }
+    }
+    return overflows;
+  };
+
+  EXPECT_GT(loop(false), kIterations * 0.2);
+  EXPECT_LE(loop(true), kIterations * 0.05);
+}
 
 // TODO(vitalybuka): Special tests for oneof.
 
@@ -434,7 +465,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   // Test that we can generate all variation of the message.
   std::set<std::string> mutations;
   for (int j = 0; j < 1000; ++j) {
-    mutator.Mutate(&message, 100, 200);
+    mutator.Mutate(&message, 1000);
     std::string str;
     EXPECT_TRUE(TextFormat::PrintToString(message, &str));
     mutations.insert(str);

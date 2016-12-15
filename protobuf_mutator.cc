@@ -37,7 +37,9 @@ namespace protobuf_mutator {
 
 namespace {
 
-const int kMaxInitializeDepth = 32;
+const size_t kMaxInitializeDepth = 32;
+const size_t kDeletionThreshold = 128;
+const uint64_t kMutateWeight = 1000000;
 
 enum class Mutation {
   None,
@@ -88,29 +90,31 @@ struct DeleteFieldTransformation {
 };
 
 struct CopyFieldTransformation {
-  explicit CopyFieldTransformation(const Field& field) : source(field) {}
+  explicit CopyFieldTransformation(const FieldInstance& field)
+      : source(field) {}
 
   template <class T>
-  void Apply(const Field& field) const {
+  void Apply(const FieldInstance& field) const {
     T value;
     source.Load(&value);
     field.Store(value);
   }
 
-  Field source;
+  FieldInstance source;
 };
 
 // Selects random field and mutation from the given proto message.
 class MutationSampler {
  public:
-  MutationSampler(bool keep_initialized, float current_usage,
+  MutationSampler(bool keep_initialized, size_t size_increase_hint,
                   ProtobufMutator::RandomEngine* random, Message* message)
       : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
-    if (current_usage > kDeletionThreshold) {
+    if (size_increase_hint < kDeletionThreshold) {
       // Avoid adding new field and prefer deleting fields if we getting close
       // to the limit.
-      add_weight_ *= 1 - current_usage;
-      delete_weight_ *= current_usage;
+      float adjustment = 0.5 * size_increase_hint / kDeletionThreshold;
+      add_weight_ *= adjustment;
+      delete_weight_ *= 1 - adjustment;
     }
     Sample(message);
     assert(mutation() != Mutation::None);
@@ -143,7 +147,8 @@ class MutationSampler {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
               sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
             sampler_.Try(delete_weight_, {{message, field}, Mutation::Delete});
-            sampler_.Try(kMutateWeight, {{message, field}, Mutation::Copy});
+            sampler_.Try(GetCopyWeight(field),
+                         {{message, field}, Mutation::Copy});
           }
         }
       } else {
@@ -160,17 +165,18 @@ class MutationSampler {
                            {{message, field, random_index}, Mutation::Mutate});
             sampler_.Try(delete_weight_,
                          {{message, field, random_index}, Mutation::Delete});
-            sampler_.Try(kMutateWeight,
+            sampler_.Try(GetCopyWeight(field),
                          {{message, field, random_index}, Mutation::Copy});
           }
         } else {
           if (reflection->HasField(*message, field)) {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
               sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
-            sampler_.Try(kMutateWeight, {{message, field}, Mutation::Copy});
             if ((!field->is_required() || !keep_initialized_))
               sampler_.Try(delete_weight_,
                            {{message, field}, Mutation::Delete});
+            sampler_.Try(GetCopyWeight(field),
+                         {{message, field}, Mutation::Copy});
           } else {
             sampler_.Try(add_weight_, {{message, field}, Mutation::Add});
           }
@@ -189,9 +195,14 @@ class MutationSampler {
     }
   }
 
+  uint64_t GetCopyWeight(const FieldDescriptor* field) const {
+    // Coping sub-messages can increase size significantly.
+    return field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE
+               ? add_weight_
+               : kMutateWeight;
+  }
+
   bool keep_initialized_ = false;
-  const uint64_t kMutateWeight = 1000000;
-  const float kDeletionThreshold = 0.5;
 
   // Adding and deleting are intrusive and expensive mutations, we'd like to do
   // them less often than field mutations.
@@ -213,14 +224,19 @@ class MutationSampler {
 // Selects random field of compatible type to use for clone mutations.
 class DataSourceSampler {
  public:
-  DataSourceSampler(const Field& match, ProtobufMutator::RandomEngine* random,
-                    Message* message)
+  DataSourceSampler(const FieldInstance& match,
+                    ProtobufMutator::RandomEngine* random, Message* message)
       : match_(match), random_(random), sampler_(random) {
     Sample(message);
   }
 
   // Returns selected field.
-  const Field& field() const { return sampler_.selected(); }
+  const FieldInstance& field() const {
+    assert(!IsEmpty());
+    return sampler_.selected();
+  }
+
+  bool IsEmpty() const { return sampler_.IsEmpty(); }
 
  private:
   void Sample(Message* message) {
@@ -262,10 +278,11 @@ class DataSourceSampler {
     }
   }
 
-  Field match_;
+  FieldInstance match_;
   ProtobufMutator::RandomEngine* random_;
 
-  WeightedReservoirSampler<Field, ProtobufMutator::RandomEngine> sampler_;
+  WeightedReservoirSampler<FieldInstance, ProtobufMutator::RandomEngine>
+      sampler_;
 };
 
 }  // namespace
@@ -319,16 +336,9 @@ class MutateTransformation {
 
 ProtobufMutator::ProtobufMutator(uint32_t seed) : random_(seed) {}
 
-void ProtobufMutator::Mutate(Message* message, size_t current_size,
-                             size_t max_size) {
-  assert(max_size);
-
-  MutationSampler mutation(
-      keep_initialized_, current_size / std::max<float>(current_size, max_size),
-      &random_, message);
-
-  size_t allowed_growth = (std::max(max_size, current_size) - current_size) / 4;
-
+void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
+  MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
+                           message);
   switch (mutation.mutation()) {
     case Mutation::None:
       break;
@@ -336,19 +346,19 @@ void ProtobufMutator::Mutate(Message* message, size_t current_size,
       mutation.field().Apply(CreateDefaultFieldTransformation());
       break;
     case Mutation::Mutate:
-      mutation.field().Apply(MutateTransformation(allowed_growth, this));
+      mutation.field().Apply(
+          MutateTransformation(size_increase_hint / 4, this));
       break;
     case Mutation::Delete:
       mutation.field().Apply(DeleteFieldTransformation());
       break;
     case Mutation::Copy: {
       DataSourceSampler source(mutation.field(), &random_, message);
-      if (!source.field().IsValid()) {
+      if (source.IsEmpty()) {
         // Fallback to message deletion.
         mutation.field().Apply(DeleteFieldTransformation());
         break;
       }
-      assert(source.field().IsValid());
       mutation.field().Apply(CopyFieldTransformation(source.field()));
       break;
     }
@@ -362,7 +372,7 @@ void ProtobufMutator::Mutate(Message* message, size_t current_size,
   }
 }
 
-void ProtobufMutator::InitializeMessage(Message* message, int max_depth) {
+void ProtobufMutator::InitializeMessage(Message* message, size_t max_depth) {
   assert(keep_initialized_);
   // It's pointless but possible to have infinite recursion of required
   // messages.

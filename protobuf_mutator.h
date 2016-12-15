@@ -49,18 +49,12 @@ class ProtobufMutator {
   explicit ProtobufMutator(uint32_t seed);
 
   // message: message to mutate.
-  // current_size: size of the protobuf in serialized state.
-  // max_size: maximum size of the protobuf in serialized state.
-  // current_size and max_size can be calculated for any serialization format,
-  // the only requirement that both calculated from the same format.
-  // Method does not guarantee that results is smaller than max_size, it will
-  // just reduce probabilities of mutations which can cause increase the size
-  // over the limit. E.g. if we close to the limit, it will avoid adding
-  // creating new fields. Caller could repeat mutation if result was larger than
+  // size_increase_hint: approximate number of bytes which can be added to the
+  // message. Method does not guarantee that real result size increase will be
+  // less than the value. It only changes probabilities of mutations which can
+  // cause size increase. Caller could repeat mutation if result was larger than
   // requested.
-  // TODO(vitalybuka): drop one of size arguments.
-  void Mutate(google::protobuf::Message* message, size_t current_size,
-              size_t max_size);
+  void Mutate(google::protobuf::Message* message, size_t size_increase_hint);
 
   // TODO(vitalybuka): implement
   bool CrossOver(const google::protobuf::Message& with,
@@ -85,7 +79,7 @@ class ProtobufMutator {
  private:
   friend class MutateTransformation;
   friend class TestProtobufMutator;
-  void InitializeMessage(google::protobuf::Message* message, int max_depth);
+  void InitializeMessage(google::protobuf::Message* message, size_t max_depth);
 
   bool keep_initialized_ = true;
   RandomEngine random_;
