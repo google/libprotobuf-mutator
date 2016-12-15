@@ -317,8 +317,7 @@ class MutateTransformation {
   ProtobufMutator* mutator_;
 };
 
-ProtobufMutator::ProtobufMutator(uint32_t seed, bool keep_initialized)
-    : keep_initialized_(keep_initialized), random_(seed) {}
+ProtobufMutator::ProtobufMutator(uint32_t seed) : random_(seed) {}
 
 void ProtobufMutator::Mutate(Message* message, size_t current_size,
                              size_t max_size) {

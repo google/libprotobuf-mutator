@@ -46,10 +46,7 @@ class ProtobufMutator {
   using RandomEngine = std::mt19937;
 
   // seed: value to initialize random number generator.
-  // keep_initialized: if true code will make sure that produced protobuf is in
-  // initialized state.
-  // TODO(vitalybuka): hide keep_initialized
-  explicit ProtobufMutator(uint32_t seed, bool keep_initialized = true);
+  explicit ProtobufMutator(uint32_t seed);
 
   // message: message to mutate.
   // current_size: size of the protobuf in serialized state.
@@ -87,9 +84,10 @@ class ProtobufMutator {
 
  private:
   friend class MutateTransformation;
+  friend class TestProtobufMutator;
   void InitializeMessage(google::protobuf::Message* message, int max_depth);
 
-  bool keep_initialized_ = false;
+  bool keep_initialized_ = true;
   RandomEngine random_;
 };
 

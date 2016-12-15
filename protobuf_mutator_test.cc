@@ -201,7 +201,9 @@ const char kRepeatedNestedFields[] = R"(
 class TestProtobufMutator : public ProtobufMutator {
  public:
   explicit TestProtobufMutator(bool keep_initialized)
-      : ProtobufMutator(17, keep_initialized), random_(13) {}
+      : ProtobufMutator(17), random_(13) {
+    keep_initialized_ = keep_initialized;
+  }
 
   float MutateFloat(float value) override {
     // Hack for tests. It's hard compare reals generated using random mutations.
