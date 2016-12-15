@@ -1,22 +1,20 @@
 # libprotobuf-mutator
 
 ## Overview
-libprotobuf-mutator is the library to randomly mutate protobuffers. The library
-can be used for testing, e.g. with fuzzers.
+libprotobuf-mutator is the library to randomly mutate protobuffers. 
+The main purpose of this library is to use is together with guided
+fuzzing engines, such as [libFuzzer](http://libfuzzer.info).
 
 ## Quick start on Debian/Ubuntu
 
-### Install prerequisites
+Install prerequisites:
 
 ```
 sudo apt-get update
-sudo apt-get install \
-  binutils \
-  cmake \
-  ninja-build
+sudo apt-get install binutils cmake ninja-build
 ```
 
-### Compile and test everything
+Compile and test everything:
 
 ```
 mkdir build
@@ -25,7 +23,7 @@ cmake ../cmake/ -GNinja -DCMAKE_BUILD_TYPE=Debug
 ninja check
 ```
 
-### Compile only library
+Compile only the library:
 
 ```
 ninja libprotobuf-mutator.a
