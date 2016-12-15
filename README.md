@@ -2,7 +2,7 @@
 
 ## Overview
 libprotobuf-mutator is the library to randomly mutate protobuffers. 
-The main purpose of this library is to use is together with guided
+The main purpose of this library is to use it together with guided
 fuzzing engines, such as [libFuzzer](http://libfuzzer.info).
 
 ## Quick start on Debian/Ubuntu
