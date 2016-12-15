@@ -29,32 +29,31 @@ Compile only the library:
 ninja libprotobuf-mutator.a
 ```
 
-## Integration with another project
+## Usage
 
-### Linking
+To use libprotobuf-mutator simply include `protobuf_mutator.h` and
+`protobuf_mutator.cc` into your build files.
 
-You can either link libprotobuf-mutator.a or just include sources into your own
-build files.
 
-### Redefining ProtobufMutator methods
+The `ProtobufMutator` class implements very basic mutations of fields.
+For better results you should override the `ProtobufMutator::Mutate*`
+methods with more sophisticated logic, e.g.
+using library like [libFuzzer](http://libfuzzer.info).
 
-Class implements very basic mutations of fields. E.g. it just flips bits for
-integers, floats and strings. Also it increases, decreases size of strings only
-by one. For better results users should override ProtobufMutator::Mutate*
-methods with more useful logic, e.g. using library like libFuzzer.
-
-### Mutating protobuffers
-
-Assuming that class which redefines ProtobufMutator methods is MyProtobufMutator
-come may looks like following:
-
+To apply one mutation to a protobuf object do the following:
 ```
+class MyProtobufMutator : public ProtobufMutator {
+ public:
+  MyProtobufMutator(uint32_t seed) : ProtobufMutator(seed) {...}
+  // optionally redefine the Mutate* methods
+  // to perform more sophisticated mutations.
+}
 void Mutate(MyMessage* message) {
   MyProtobufMutator mutator(my_random_seed);
   mutator.Mutate(message, 100, 200);
 }
 ```
 
-Another example is ProtobufMutatorMessagesTest.UsageExample test from
+See also the `ProtobufMutatorMessagesTest.UsageExample` test from
 [protobuf_mutator_test.cc](/protobuf_mutator_test.cc).
 
