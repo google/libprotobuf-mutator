@@ -26,13 +26,13 @@ ninja check
 
 ## Usage
 
-To use libprotobuf-mutator simply include 
+To use libprotobuf-mutator simply include
 [protobuf_mutator.h](protobuf_mutator.h) and
 [protobuf_mutator.cc](protobuf_mutator.cc) into your build files.
 
 The `ProtobufMutator` class implements mutations of the protobuf
 tree structure and mutations of individual fields.
-The field mutation logic is very basic -- 
+The field mutation logic is very basic --
 for better results you should override the `ProtobufMutator::Mutate*`
 methods with more sophisticated logic, e.g.
 using [libFuzzer](http://libfuzzer.info)'s mutators.
