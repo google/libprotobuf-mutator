@@ -46,7 +46,7 @@ class MyProtobufMutator : public ProtobufMutator {
 }
 void Mutate(MyMessage* message) {
   MyProtobufMutator mutator(my_random_seed);
-  mutator.Mutate(message, 100, 200);
+  mutator.Mutate(message, 200);
 }
 ```
 

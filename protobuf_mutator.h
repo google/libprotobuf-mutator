@@ -34,7 +34,7 @@ namespace protobuf_mutator {
 //    ProtobufMutator mutator(1);
 //    MyMessage message;
 //    message.ParseFromString(encoded_message);
-//    mutator.Mutate(&message, encoded_message.size(), 10000);
+//    mutator.Mutate(&message, 10000);
 //
 // Class implements very basic mutations of fields. E.g. it just flips bits for
 // integers, floats and strings. Also it increases, decreases size of
