@@ -53,5 +53,5 @@ void Mutate(MyMessage* message) {
 See also the `ProtobufMutatorMessagesTest.UsageExample` test from
 [protobuf_mutator_test.cc](/protobuf_mutator_test.cc).
 
-## Integarting with libFuzzer
+## Integrating with libFuzzer
 TODO
