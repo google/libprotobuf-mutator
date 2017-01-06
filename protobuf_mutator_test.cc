@@ -17,11 +17,13 @@
 #include <string>
 
 #include "google/protobuf/text_format.h"
+#include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 
 #include "protobuf_mutator.pb.h"
 
 using google::protobuf::TextFormat;
+using google::protobuf::util::MessageDifferencer;
 using protobuf_mutator::Msg;
 using testing::Test;
 using testing::TestWithParam;
@@ -297,13 +299,7 @@ bool LoadWithChangedLine(const std::string& text_message, size_t line,
 }
 
 bool Mutate(const Msg& from, const Msg& to) {
-  std::string from_str;
-  EXPECT_TRUE(TextFormat::PrintToString(from, &from_str));
-
-  std::string to_str;
-  EXPECT_TRUE(TextFormat::PrintToString(to, &to_str));
-
-  EXPECT_NE(from_str, to_str);
+  EXPECT_FALSE(MessageDifferencer::Equals(from, to));
 
   TestProtobufMutator mutator(false);
 
@@ -311,9 +307,7 @@ bool Mutate(const Msg& from, const Msg& to) {
     Msg message;
     message.CopyFrom(from);
     mutator.Mutate(&message, 1000);
-    std::string after;
-    EXPECT_TRUE(TextFormat::PrintToString(message, &after));
-    if (after == to_str) return true;
+    if (MessageDifferencer::Equals(message, to)) return true;
   }
   return false;
 }
