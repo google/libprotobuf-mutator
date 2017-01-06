@@ -22,6 +22,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 include(googletest)
 include(protobuf)
 include(zlib)
+include(ProcessorCount)
 
 find_package (Threads)
 
@@ -48,6 +49,18 @@ target_link_libraries(protobuf_mutator_test
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 
-add_test(test.protobuf_mutator_test protobuf_mutator_test --gtest_color=yes AUTO)
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-                  DEPENDS protobuf_mutator_test)
+ProcessorCount(CPU_COUNT)
+math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
+math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
+foreach(SHARD RANGE ${TEST_SHARDS_MAX})
+  add_test(test.protobuf_mutator_test_${SHARD} protobuf_mutator_test --gtest_color=yes AUTO)
+  set_property(
+      TEST test.protobuf_mutator_test_${SHARD}
+      APPEND PROPERTY ENVIRONMENT
+      GTEST_SHARD_INDEX=${SHARD}
+      GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
+endforeach(SHARD)
+
+add_custom_target(check
+ COMMAND ${CMAKE_CTEST_COMMAND} -j${CPU_COUNT} --output-on-failure
+ DEPENDS protobuf_mutator_test)
