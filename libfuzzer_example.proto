@@ -1,0 +1,26 @@
+syntax = "proto2";
+package libfuzzer_example;
+
+message Msg {
+  enum Enum {
+    ENUM_0 = 0;
+    ENUM_1 = 1;
+    ENUM_2 = 2;
+    ENUM_3 = 3;
+    ENUM_4 = 4;
+    ENUM_5 = 5;
+    ENUM_6 = 6;
+    ENUM_7 = 7;
+    ENUM_8 = 8;
+    ENUM_9 = 9;
+  }
+
+  optional float optional_float = 19;
+  optional int32 optional_int32 = 20;
+  optional uint64 optional_uint64 = 23;
+  optional sint32 optional_sint32 = 24;
+  optional fixed64 optional_fixed64 = 27;
+  optional sfixed32 optional_sfixed32 = 28;
+  optional bool optional_bool = 30;
+  optional Enum optional_enum = 33;
+}

@@ -14,17 +14,16 @@
 
 #include "protobuf_mutator.h"
 
+#include <gtest/gtest.h>
 #include <string>
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "gtest/gtest.h"
 
 #include "protobuf_mutator.pb.h"
 
 using google::protobuf::TextFormat;
 using google::protobuf::util::MessageDifferencer;
-using protobuf_mutator::Msg;
 using testing::Test;
 using testing::TestWithParam;
 using testing::ValuesIn;

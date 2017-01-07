@@ -54,4 +54,5 @@ See also the `ProtobufMutatorMessagesTest.UsageExample` test from
 [protobuf_mutator_test.cc](/protobuf_mutator_test.cc).
 
 ## Integrating with libFuzzer
-TODO
+LibFuzzerProtobufMutator can help to integrate with libFuzzer.
+Please see [libfuzzer_example.cc](/libfuzzer_example.cc) as an example.
