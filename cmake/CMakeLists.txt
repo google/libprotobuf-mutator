@@ -28,6 +28,11 @@ find_package (Threads)
 
 set(CMAKE_CXX_STANDARD 11)
 set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+option(LIB_PROTO_MUTATOR_ASAN "Enable address sanitizer" ON)
+if (LIB_PROTO_MUTATOR_ASAN)
+  set (EXTRA_FLAGS "${EXTRA_FLAGS} -O1 -fsanitize=address,undefined,leak -fsanitize-address-use-after-scope")
+endif()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
