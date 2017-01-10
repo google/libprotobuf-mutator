@@ -63,6 +63,7 @@ target_link_libraries(libfuzzer_example
 enable_testing()
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../protobuf_mutator.proto)
 add_executable(protobuf_mutator_test
+               ../libfuzzer_example_test.cc
                ../protobuf_mutator_test.cc
                ../weighted_reservoir_sampler_test.cc
                ${PROTO_SRCS})
@@ -72,6 +73,7 @@ target_link_libraries(protobuf_mutator_test
                       ${PROTOBUF_LIBRARY}
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
+add_dependencies(protobuf_mutator_test libfuzzer_example)
 
 ProcessorCount(CPU_COUNT)
 math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
