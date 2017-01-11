@@ -22,16 +22,41 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 include(googletest)
 include(protobuf)
 include(zlib)
-include(libfuzzer)
 include(ProcessorCount)
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 
 find_package (Threads)
 
 set(CMAKE_CXX_STANDARD 11)
+
+option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
+
+set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
+check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
+check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
+                        LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
+unset(CMAKE_REQUIRED_FLAGS)
+check_cxx_compiler_flag(-fsanitize=undefined LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
+check_cxx_compiler_flag(-fsanitize=leak LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
+set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
+check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
+unset(CMAKE_REQUIRED_FLAGS)
+
 set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
-option(LIB_PROTO_MUTATOR_ASAN "Enable address sanitizer" ON)
-if (LIB_PROTO_MUTATOR_ASAN)
-  set (EXTRA_FLAGS "${EXTRA_FLAGS} -O1 -fsanitize=address,undefined,leak -fsanitize-address-use-after-scope")
+if (LIB_PROTO_MUTATOR_WITH_ASAN)
+  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
+    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=address")
+    if (LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
+      set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-address-use-after-scope")
+    endif()
+  endif()
+  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
+    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=undefined")
+  endif()
+  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
+    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=leak")
+  endif()
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
@@ -46,26 +71,12 @@ add_library(libfuzzer-protobuf-mutator ../libfuzzer_protobuf_mutator.cc)
 target_link_libraries(libfuzzer-protobuf-mutator
                       protobuf-mutator)
 
-# Examples
-protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS ../libfuzzer_example.proto)
-add_executable(libfuzzer_example
-               ../libfuzzer_example.cc
-               ${LIB_FUZZER_PROTO_SRCS})
-set_property(TARGET libfuzzer_example
-             PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
-set_property(TARGET libfuzzer_example
-             PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
-target_link_libraries(libfuzzer_example
-                      libfuzzer-protobuf-mutator
-                      ${LIBFUZZER_LIBRARIES})
-
 # Tests
 enable_testing()
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../protobuf_mutator.proto)
 add_executable(protobuf_mutator_test
-               ../libfuzzer_example_test.cc
-               ../protobuf_mutator_test.cc
-               ../weighted_reservoir_sampler_test.cc
+              ../protobuf_mutator_test.cc
+              ../weighted_reservoir_sampler_test.cc
                ${PROTO_SRCS})
 target_link_libraries(protobuf_mutator_test
                       protobuf-mutator
@@ -73,7 +84,6 @@ target_link_libraries(protobuf_mutator_test
                       ${PROTOBUF_LIBRARY}
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
-add_dependencies(protobuf_mutator_test libfuzzer_example)
 
 ProcessorCount(CPU_COUNT)
 math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
@@ -88,6 +98,26 @@ foreach(SHARD RANGE ${TEST_SHARDS_MAX})
 endforeach(SHARD)
 
 add_custom_target(check
- COMMAND ${CMAKE_CTEST_COMMAND} -j${CPU_COUNT} --output-on-failure
- DEPENDS protobuf_mutator_test)
+                  COMMAND ${CMAKE_CTEST_COMMAND} -j${CPU_COUNT} --output-on-failure
+                  DEPENDS protobuf_mutator_test)
+
+# Examples
+if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
+  include(libfuzzer)
+  protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS ../libfuzzer_example.proto)
+  add_executable(libfuzzer_example
+                 ../libfuzzer_example.cc
+                 ${LIB_FUZZER_PROTO_SRCS})
+  set_property(TARGET libfuzzer_example
+               PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
+  set_property(TARGET libfuzzer_example
+               PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
+  target_link_libraries(libfuzzer_example
+                        libfuzzer-protobuf-mutator
+                        ${LIBFUZZER_LIBRARIES})
+
+  target_sources(protobuf_mutator_test PRIVATE ../libfuzzer_example_test.cc)
+  add_dependencies(protobuf_mutator_test libfuzzer_example)
+endif()
+
 
