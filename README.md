@@ -20,9 +20,11 @@ Compile and test everything:
 ```
 mkdir build
 cd build
-cmake ../cmake/ -GNinja -DCMAKE_BUILD_TYPE=Debug
+cmake ../cmake/ -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug
 ninja check
 ```
+
+Clang is only needed for libFuzzer integration.
 
 ## Usage
 
