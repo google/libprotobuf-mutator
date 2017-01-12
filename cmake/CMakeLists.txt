@@ -63,20 +63,20 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
 # Libraries
-add_library(protobuf-mutator ../protobuf_mutator.cc)
+add_library(protobuf-mutator ../src/protobuf_mutator.cc)
 target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
 
-add_library(libfuzzer-protobuf-mutator ../libfuzzer_protobuf_mutator.cc)
+add_library(libfuzzer-protobuf-mutator ../src/libfuzzer_protobuf_mutator.cc)
 target_link_libraries(libfuzzer-protobuf-mutator
                       protobuf-mutator)
 
 # Tests
 enable_testing()
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../protobuf_mutator.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ../src/protobuf_mutator.proto)
 add_executable(protobuf_mutator_test
-              ../protobuf_mutator_test.cc
-              ../weighted_reservoir_sampler_test.cc
+              ../src/protobuf_mutator_test.cc
+              ../src/weighted_reservoir_sampler_test.cc
                ${PROTO_SRCS})
 target_link_libraries(protobuf_mutator_test
                       protobuf-mutator
@@ -104,9 +104,9 @@ add_custom_target(check
 # Examples
 if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
   include(libfuzzer)
-  protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS ../libfuzzer_example.proto)
+  protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS ../src/libfuzzer_example.proto)
   add_executable(libfuzzer_example
-                 ../libfuzzer_example.cc
+                 ../src/libfuzzer_example.cc
                  ${LIB_FUZZER_PROTO_SRCS})
   set_property(TARGET libfuzzer_example
                PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
@@ -116,7 +116,7 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
                         libfuzzer-protobuf-mutator
                         ${LIBFUZZER_LIBRARIES})
 
-  target_sources(protobuf_mutator_test PRIVATE ../libfuzzer_example_test.cc)
+  target_sources(protobuf_mutator_test PRIVATE ../src/libfuzzer_example_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 endif()
 

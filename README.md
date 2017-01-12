@@ -29,8 +29,8 @@ Clang is only needed for libFuzzer integration.
 ## Usage
 
 To use libprotobuf-mutator simply include
-[protobuf_mutator.h](protobuf_mutator.h) and
-[protobuf_mutator.cc](protobuf_mutator.cc) into your build files.
+[protobuf_mutator.h](/src/protobuf_mutator.h) and
+[protobuf_mutator.cc](/src/protobuf_mutator.cc) into your build files.
 
 The `ProtobufMutator` class implements mutations of the protobuf
 tree structure and mutations of individual fields.
@@ -53,8 +53,8 @@ void Mutate(MyMessage* message) {
 ```
 
 See also the `ProtobufMutatorMessagesTest.UsageExample` test from
-[protobuf_mutator_test.cc](/protobuf_mutator_test.cc).
+[protobuf_mutator_test.cc](/src/protobuf_mutator_test.cc).
 
 ## Integrating with libFuzzer
 LibFuzzerProtobufMutator can help to integrate with libFuzzer.
-Please see [libfuzzer_example.cc](/libfuzzer_example.cc) as an example.
+Please see [libfuzzer_example.cc](/src/libfuzzer_example.cc) as an example.
