@@ -15,47 +15,21 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "google/protobuf/text_format.h"
-#include "libfuzzer_example.pb.h"  // NOLINT(build/include_subdir)
+#include "libfuzzer.pb.h"  // NOLINT(build/include_subdir)
 #include "src/libfuzzer_protobuf_mutator.h"
 
-using google::protobuf::Message;
-using google::protobuf::TextFormat;
-using protobuf_mutator::LibFuzzerProtobufMutator;
 using libfuzzer_example::Msg;
-
-namespace {
-
-void Parse(const uint8_t* data, size_t size, Message* output) {
-  TextFormat::Parser parser;
-  parser.AllowPartialMessage(true);
-  parser.ParseFromString({data, data + size}, output);
-}
-}
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t max_size, unsigned int seed) {
-  LibFuzzerProtobufMutator mutator(seed);
-  assert(size <= max_size);
-
-  for (int i = 0; i < 100; ++i) {
-    Msg message;
-    Parse(data, size, &message);
-    mutator.Mutate(&message, max_size - size);
-    std::string result;
-    if (TextFormat::PrintToString(message, &result) &&
-        result.size() <= max_size) {
-      memcpy(data, result.data(), result.size());
-      return result.size();
-    }
-  }
-
-  return 0;
+  libfuzzer_example::Msg message;
+  return protobuf_mutator::MutateTextMessage(data, size, max_size, seed,
+                                             &message);
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  Msg message;
-  Parse(data, size, &message);
+  libfuzzer_example::Msg message;
+  protobuf_mutator::ParseTextMessage(data, size, &message);
 
   // Emulate a bug.
   if (message.optional_uint64() > 100 &&
