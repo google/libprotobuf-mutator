@@ -65,13 +65,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
 # Libraries
-add_library(protobuf-mutator src/protobuf_mutator.cc)
+add_library(protobuf-mutator
+            src/libfuzzer_protobuf_mutator.cc
+            src/protobuf_mutator.cc)
 target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
-
-add_library(libfuzzer-protobuf-mutator ../src/libfuzzer_protobuf_mutator.cc)
-target_link_libraries(libfuzzer-protobuf-mutator
-                      protobuf-mutator)
 
 # Tests
 enable_testing()
@@ -115,7 +113,7 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
   set_property(TARGET libfuzzer_example
                PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
   target_link_libraries(libfuzzer_example
-                        libfuzzer-protobuf-mutator
+                        protobuf-mutator
                         ${LIBFUZZER_LIBRARIES})
 
   target_sources(protobuf_mutator_test PRIVATE src/libfuzzer_example_test.cc)

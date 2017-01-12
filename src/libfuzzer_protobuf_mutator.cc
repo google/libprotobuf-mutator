@@ -18,6 +18,12 @@
 #include <cassert>
 #include <string>
 
+#include "google/protobuf/text_format.h"
+#include "src/protobuf_mutator.h"
+
+using google::protobuf::Message;
+using google::protobuf::TextFormat;
+
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
 
 namespace protobuf_mutator {
@@ -65,6 +71,31 @@ std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
   result.resize(LLVMFuzzerMutate(reinterpret_cast<uint8_t*>(&result[0]),
                                  value.size(), result.size()));
   return result;
+}
+
+void ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
+  output->Clear();
+  TextFormat::Parser parser;
+  parser.AllowPartialMessage(true);
+  parser.ParseFromString({data, data + size}, output);
+}
+
+size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
+                         unsigned int seed, Message* prototype) {
+  assert(size <= max_size);
+  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  for (int i = 0; i < 100; ++i) {
+    ParseTextMessage(data, size, prototype);
+    mutator.Mutate(prototype, max_size - size);
+    std::string result;
+    if (TextFormat::PrintToString(*prototype, &result) &&
+        result.size() <= max_size) {
+      memcpy(data, result.data(), result.size());
+      return result.size();
+    }
+  }
+
+  return 0;
 }
 
 }  // namespace protobuf_mutator
