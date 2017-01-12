@@ -52,3 +52,7 @@ ExternalProject_Add(${PROTOBUF_TARGET}
         -Dprotobuf_BUILD_TESTS=OFF
     BUILD_BYPRODUCTS ${PROTOFUB_BUILD_BYPRODUCTS}
 )
+
+# cmake 3.7 uses Protobuf_ when 3.5 PROTOBUF_ prefixes.
+set(Protobuf_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIR})
+set(Protobuf_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
