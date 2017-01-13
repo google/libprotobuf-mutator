@@ -465,7 +465,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   }
 
   // 3 states for boolean and 5 for enum, including missing fields.
-  EXPECT_EQ(3 * 5, mutations.size());
+  EXPECT_EQ(3u * 5u, mutations.size());
 }
 
 }  // namespace protobuf_mutator
