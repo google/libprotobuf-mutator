@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "protobuf_mutator.h"
+#include "src/protobuf_mutator.h"
 
 #include <algorithm>
 #include <set>
@@ -23,8 +23,7 @@
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-
-#include "protobuf_mutator.pb.h"
+#include "protobuf_mutator.pb.h"  // NOLINT(build/include_subdir)
 
 using google::protobuf::TextFormat;
 using google::protobuf::util::MessageDifferencer;

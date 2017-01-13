@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "weighted_reservoir_sampler.h"
+#include "src/weighted_reservoir_sampler.h"
 
 #include <tuple>
 #include <vector>

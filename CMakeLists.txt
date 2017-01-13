@@ -32,6 +32,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
 
+include_directories(${PROJECT_SOURCE_DIR})
+
 set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
 check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"

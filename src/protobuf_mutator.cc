@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "protobuf_mutator.h"
+#include "src/protobuf_mutator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -20,9 +20,9 @@
 #include <random>
 #include <string>
 
-#include "field_instance.h"
 #include "google/protobuf/message.h"
-#include "weighted_reservoir_sampler.h"
+#include "src/field_instance.h"
+#include "src/weighted_reservoir_sampler.h"
 
 using google::protobuf::Descriptor;
 using google::protobuf::EnumDescriptor;

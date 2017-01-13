@@ -16,8 +16,8 @@
 #include <cstdint>
 
 #include "google/protobuf/text_format.h"
-#include "libfuzzer_example.pb.h"
-#include "libfuzzer_protobuf_mutator.h"
+#include "libfuzzer_example.pb.h"  // NOLINT(build/include_subdir)
+#include "src/libfuzzer_protobuf_mutator.h"
 
 using google::protobuf::Message;
 using google::protobuf::TextFormat;

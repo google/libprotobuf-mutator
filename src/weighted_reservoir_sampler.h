@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef WEIGHTED_RESERVOIR_SAMPLER_H_
-#define WEIGHTED_RESERVOIR_SAMPLER_H_
+#ifndef SRC_WEIGHTED_RESERVOIR_SAMPLER_H_
+#define SRC_WEIGHTED_RESERVOIR_SAMPLER_H_
 
 #include <cassert>
 #include <random>
@@ -57,4 +57,4 @@ class WeightedReservoirSampler {
 
 }  // namespace protobuf_mutator
 
-#endif  // WEIGHTED_RESERVOIR_SAMPLER_H_
+#endif  // SRC_WEIGHTED_RESERVOIR_SAMPLER_H_
