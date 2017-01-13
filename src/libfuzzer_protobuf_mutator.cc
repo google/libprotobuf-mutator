@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include <cassert>
+#include <string>
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
 

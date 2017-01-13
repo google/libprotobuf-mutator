@@ -14,11 +14,15 @@
 
 #include "protobuf_mutator.h"
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 
 #include "protobuf_mutator.pb.h"
 

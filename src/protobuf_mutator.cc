@@ -20,9 +20,8 @@
 #include <random>
 #include <string>
 
-#include "google/protobuf/message.h"
-
 #include "field_instance.h"
+#include "google/protobuf/message.h"
 #include "weighted_reservoir_sampler.h"
 
 using google::protobuf::Descriptor;
