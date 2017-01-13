@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <random>
+#include <string>
 
 namespace google {
 namespace protobuf {

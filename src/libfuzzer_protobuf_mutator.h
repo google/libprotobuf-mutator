@@ -15,6 +15,8 @@
 #ifndef LIBFUZZER_PROTOBUF_MUTATOR_H_
 #define LIBFUZZER_PROTOBUF_MUTATOR_H_
 
+#include <string>
+
 #include "protobuf_mutator.h"
 
 namespace protobuf_mutator {

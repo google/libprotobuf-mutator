@@ -14,7 +14,10 @@
 
 #include "weighted_reservoir_sampler.h"
 
-#include <gtest/gtest.h>
+#include <tuple>
+#include <vector>
+
+#include "gtest/gtest.h"
 
 using testing::TestWithParam;
 using testing::ValuesIn;
