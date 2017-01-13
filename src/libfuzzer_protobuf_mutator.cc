@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "libfuzzer_protobuf_mutator.h"
+#include "src/libfuzzer_protobuf_mutator.h"
 
 #include <string.h>
 #include <cassert>

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LIBFUZZER_PROTOBUF_MUTATOR_H_
-#define LIBFUZZER_PROTOBUF_MUTATOR_H_
+#ifndef SRC_LIBFUZZER_PROTOBUF_MUTATOR_H_
+#define SRC_LIBFUZZER_PROTOBUF_MUTATOR_H_
 
 #include <string>
 
-#include "protobuf_mutator.h"
+#include "src/protobuf_mutator.h"
 
 namespace protobuf_mutator {
 
@@ -43,4 +43,4 @@ class LibFuzzerProtobufMutator : public ProtobufMutator {
 
 }  // namespace protobuf_mutator
 
-#endif  // LIBFUZZER_PROTOBUF_MUTATOR_H_
+#endif  // SRC_LIBFUZZER_PROTOBUF_MUTATOR_H_

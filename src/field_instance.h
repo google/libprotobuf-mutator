@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef FIELD_INSTANCE_H_
-#define FIELD_INSTANCE_H_
+#ifndef SRC_FIELD_INSTANCE_H_
+#define SRC_FIELD_INSTANCE_H_
 
 #include <memory>
 #include <string>
@@ -382,4 +382,4 @@ class FieldInstance {
 
 }  // namespace protobuf_mutator
 
-#endif  // FIELD_INSTANCE_H_
+#endif  // SRC_FIELD_INSTANCE_H_

@@ -30,7 +30,7 @@ install:
   - cd -
 
 before_script:
-  - travis_retry wget --quiet -O - https://raw.githubusercontent.com/cpplint/cpplint/master/cpplint.py | python - --root=src --recursive --filter=-build/include_subdir src examples
+  - travis_retry wget --quiet -O - https://raw.githubusercontent.com/cpplint/cpplint/master/cpplint.py | python - --recursive src examples
   - mkdir -p build && cd build
   - cmake .. -GNinja -DCMAKE_C_COMPILER=${CC_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
