@@ -1,8 +1,7 @@
 language: cpp
 sudo: false
 
-os:
-- linux
+os: linux
 
 addons:
   apt:
