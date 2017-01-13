@@ -303,12 +303,12 @@ class FieldInstance {
   template <class T>
   void InsertRepeated(const T& value) const {
     PushBackRepeated(value);
-    int field_size = reflection().FieldSize(*message_, descriptor_);
+    size_t field_size = reflection().FieldSize(*message_, descriptor_);
     if (field_size == 1) return;
     // API has only method to add field to the end of the list. So we add
     // descriptor_
     // and move it into the middle.
-    for (int i = field_size - 1; i > index_; --i)
+    for (size_t i = field_size - 1; i > index_; --i)
       reflection().SwapElements(message_, descriptor_, i, i - 1);
   }
 
