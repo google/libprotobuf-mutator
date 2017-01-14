@@ -115,9 +115,12 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
                         ${LIBFUZZER_LIBRARIES})
-
   target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
+
+  include(libxml2)
+  # Unused dependency, just to make sure it compiles.
+  target_link_libraries(libfuzzer_example ${LIBXML2_LIBRARIES})
 endif()
 
 
