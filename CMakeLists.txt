@@ -29,6 +29,7 @@ include(CheckCXXCompilerFlag)
 find_package (Threads)
 
 set(CMAKE_CXX_STANDARD 11)
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold")
 
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
 

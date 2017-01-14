@@ -36,6 +36,7 @@ ExternalProject_Add(${LIBXML2_TARGET}
     # TODO(vitalybuka): Switch to upstream after https://github.com/GNOME/libxml2/pull/5
     GIT_REPOSITORY https://github.com/vitalybuka/libxml2.git
     GIT_TAG master
+    UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${LIBXML2_SRC_DIR}/autogen.sh && ${LIBXML2_SRC_DIR}/configure --without-python --prefix=${LIBXML2_INSTALL_DIR}
     BUILD_COMMAND make -j ${CPU_COUNT} all
     INSTALL_COMMAND make install

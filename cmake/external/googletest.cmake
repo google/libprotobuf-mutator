@@ -36,6 +36,7 @@ ExternalProject_Add(${GTEST_TARGET}
     PREFIX ${GTEST_TARGET}
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG master
+    UPDATE_COMMAND ""
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
     BUILD_BYPRODUCTS ${GTEST_BUILD_BYPRODUCTS}
 )

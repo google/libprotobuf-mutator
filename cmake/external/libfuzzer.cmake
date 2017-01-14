@@ -31,6 +31,7 @@ ExternalProject_Add(${LIBFUZZER_TARGET}
     PREFIX ${LIBFUZZER_TARGET}
     GIT_REPOSITORY https://chromium.googlesource.com/chromium/llvm-project/llvm/lib/Fuzzer
     GIT_TAG master
+    UPDATE_COMMAND ""
     CMAKE_CACHE_ARGS "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
                      "-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}"
     CMAKE_ARGS -DLLVM_USE_SANITIZE_COVERAGE=YES
