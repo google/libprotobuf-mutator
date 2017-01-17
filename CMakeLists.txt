@@ -19,9 +19,6 @@ project(LibProtobufMutator CXX)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/external)
 
 # External dependencies
-include(googletest)
-include(protobuf)
-include(zlib)
 include(ProcessorCount)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -29,7 +26,6 @@ include(CheckCXXCompilerFlag)
 find_package (Threads)
 
 set(CMAKE_CXX_STANDARD 11)
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold")
 
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
 
@@ -46,24 +42,40 @@ set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
 check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+set(EXTRA_FLAGS "-fno-exceptions")
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
-    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=address")
+    set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=address")
     if (LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
-      set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-address-use-after-scope")
+      set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-address-use-after-scope")
     endif()
   endif()
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
-    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=undefined")
+    set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=undefined")
   endif()
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
-    set (EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=leak")
+    set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=leak")
   endif()
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
+if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
+  set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-coverage=trace-pc-guard")
+endif()
+
+set(EXTERNAL_PROJECT_CMAKE_COMPILERS "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
+                                     "-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}")
+set(EXTERNAL_PROJECT_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${EXTRA_FLAGS}"
+                                "-DCMAKE_C_FLAGS=${EXTRA_FLAGS}")
+
+set(LIB_PROTO_MUTATOR_EXTRA_FLAGS "${EXTRA_FLAGS} -Werror -Wall")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${LIB_PROTO_MUTATOR_EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIB_PROTO_MUTATOR_EXTRA_FLAGS}")
+
+# Include after we set EXTERNAL_PROJECT_CMAKE_
+include(googletest)
+include(protobuf)
+include(zlib)
 
 # Libraries
 add_library(protobuf-mutator
@@ -104,18 +116,15 @@ add_custom_target(check
 
 # Examples
 if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
+  # libFuzzer expects code with -fsanitize-coverage=trace-pc-guard
   include(libfuzzer)
   protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS examples/libfuzzer.proto)
   add_executable(libfuzzer_example
                  examples/libfuzzer.cc
                  ${LIB_FUZZER_PROTO_SRCS})
-  set_property(TARGET libfuzzer_example
-               PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
-  set_property(TARGET libfuzzer_example
-               PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
-                        ${LIBFUZZER_LIBRARIES})
+                        ${LIBFUZZER_LIBRARIES} ${LIBXML2_LIBRARIES})
   target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 

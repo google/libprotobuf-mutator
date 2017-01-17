@@ -32,8 +32,8 @@ ExternalProject_Add(${LIBFUZZER_TARGET}
     GIT_REPOSITORY https://chromium.googlesource.com/chromium/llvm-project/llvm/lib/Fuzzer
     GIT_TAG master
     UPDATE_COMMAND ""
-    CMAKE_CACHE_ARGS "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
-                     "-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}"
+    CMAKE_CACHE_ARGS ${EXTERNAL_PROJECT_CMAKE_COMPILERS}
+    # libFuzzer needs very specific set of flags, so we don't forward EXTERNAL_PROJECT_CMAKE_ARGS
     CMAKE_ARGS -DLLVM_USE_SANITIZE_COVERAGE=YES
                -DLLVM_USE_SANITIZER=Address
                -DCMAKE_CXX_FLAGS=-std=c++11
