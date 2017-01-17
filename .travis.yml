@@ -1,26 +1,27 @@
-language: cpp
+os: linux
+dist: trusty
 sudo: false
 
-os: linux
+language: cpp
 
 addons:
   apt:
     packages:
-      - clang-4.0
+      - clang-5.0
       - g++-4.9
       - gcc-4.9
       - ninja-build
     sources:
-      - sourceline: 'deb http://apt.llvm.org/precise/ llvm-toolchain-precise main'
+      - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main'
         key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
       - ubuntu-toolchain-r-test
 
 env: 
   matrix:
-    - BUILD_TYPE=Release CC_COMPILER=clang-4.0 CXX_COMPILER=clang++-4.0
-    - BUILD_TYPE=Debug CC_COMPILER=clang-4.0 CXX_COMPILER=clang++-4.0
-    - BUILD_TYPE=Release CC_COMPILER=gcc-6 CXX_COMPILER=g++-4.9
-    - BUILD_TYPE=Debug CC_COMPILER=gcc-6 CXX_COMPILER=g++-4.9
+    - BUILD_TYPE=Release CC_COMPILER=clang-5.0 CXX_COMPILER=clang++-5.0
+    - BUILD_TYPE=Debug CC_COMPILER=clang-5.0 CXX_COMPILER=clang++-5.0
+    - BUILD_TYPE=Release CC_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
+    - BUILD_TYPE=Debug CC_COMPILER=gcc-4.9 CXX_COMPILER=g++-4.9
 
 install:
   - mkdir -p deps && cd deps
@@ -31,6 +32,7 @@ install:
 before_script:
   - travis_retry wget --quiet -O - https://raw.githubusercontent.com/cpplint/cpplint/master/cpplint.py | python - --recursive src examples
   - mkdir -p build && cd build
+  - rm -rf *
   - cmake .. -GNinja -DCMAKE_C_COMPILER=${CC_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
 script:
