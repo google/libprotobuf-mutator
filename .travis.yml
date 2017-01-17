@@ -10,7 +10,6 @@ addons:
       - g++-4.9
       - gcc-4.9
       - ninja-build
-      - protobuf-compiler
     sources:
       - sourceline: 'deb http://apt.llvm.org/precise/ llvm-toolchain-precise main'
         key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
