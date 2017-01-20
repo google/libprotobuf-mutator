@@ -30,6 +30,8 @@ foreach(lib IN LISTS LIBXML2_LIBRARIES)
   add_dependencies(${lib} ${LIBXML2_TARGET})
 endforeach(lib)
 
+set(LIBXML2_FLAGS "${EXTRA_FLAGS} -w")
+
 include (ExternalProject)
 ExternalProject_Add(${LIBXML2_TARGET}
     PREFIX ${LIBXML2_TARGET}
@@ -40,8 +42,8 @@ ExternalProject_Add(${LIBXML2_TARGET}
                                                     --prefix=${LIBXML2_INSTALL_DIR}
                                                     CC=${CMAKE_C_COMPILER}
                                                     CXX=${CMAKE_CXX_COMPILER}
-                                                    CFLAGS=${EXTRA_FLAGS}
-                                                    CXXFLAGS=${EXTRA_FLAGS}
+                                                    CFLAGS=${LIBXML2_FLAGS}
+                                                    CXXFLAGS=${LIBXML2_FLAGS}
     BUILD_COMMAND make -j ${CPU_COUNT} all VERBOSE=1
     INSTALL_COMMAND make install
     BUILD_BYPRODUCTS ${LIBXML2_BUILD_BYPRODUCTS}
