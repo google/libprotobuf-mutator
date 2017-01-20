@@ -131,19 +131,49 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
                  ${LIB_FUZZER_EXAMPLE_PROTO_SRCS})
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
-                        ${LIBXML2_LIBRARIES}
                         ${LIBFUZZER_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT})
   set_property(TARGET libfuzzer_example
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
-  target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)
+  set_property(TARGET libfuzzer_example
+               PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+  target_sources(protobuf_mutator_test
+                 PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 
   set(LIBXML2_FLAGS "${EXTRA_FLAGS} ${FUZZING_FLAGS} -w")
   include(libxml2)
 
-  # Unused dependency, just to make sure it compiles.
-  target_link_libraries(libfuzzer_example ${LIBXML2_LIBRARIES})
+  protobuf_generate_cpp(LIBXML2_EXAMPLE_PROTO_SRCS
+                        LIBXML2_EXAMPLE_PROTO_HDRS
+                        examples/libxml2/xml.proto)
+  add_library(libxml2_example_proto
+              examples/libxml2/xml_writer.cc
+              ${LIBXML2_EXAMPLE_PROTO_SRCS})
+  target_link_libraries(libxml2_example_proto
+                        protobuf-mutator)
+
+  add_executable(libxml2_example
+                 examples/libxml2/libxml2_example.cc)
+  target_link_libraries(libxml2_example
+                        protobuf-mutator
+                        libxml2_example_proto
+                        ${LIBFUZZER_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT}
+                        ${LIBXML2_LIBRARIES}
+                        ${ZLIB_LIBRARIES}
+                        ${LIBLZMA_LIBRARIES})
+  set_property(TARGET libxml2_example
+               PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+
+
+  add_executable(proto_to_xml
+                 examples/libxml2/proto_to_xml.cc
+                 ${LIBXML2_EXAMPLE_PROTO_SRCS})
+  target_link_libraries(proto_to_xml
+                        libxml2_example_proto)
+
+  target_sources(protobuf_mutator_test
+                 PRIVATE examples/libxml2/libxml2_example_test.cc)
+  add_dependencies(protobuf_mutator_test libxml2_example)
 endif()
-
-
