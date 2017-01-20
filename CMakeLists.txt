@@ -118,14 +118,16 @@ add_custom_target(check
 if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
   # libFuzzer expects code with -fsanitize-coverage=trace-pc-guard
   include(libfuzzer)
-  protobuf_generate_cpp(LIB_FUZZER_PROTO_SRCS LIB_FUZZER_PROTO_HDRS examples/libfuzzer.proto)
+  protobuf_generate_cpp(LIB_FUZZER_EXAMPLE_PROTO_SRCS
+                        LIB_FUZZER_EXAMPLE_PROTO_HDRS
+                        examples/libfuzzer/libfuzzer_example.proto)
   add_executable(libfuzzer_example
-                 examples/libfuzzer.cc
-                 ${LIB_FUZZER_PROTO_SRCS})
+                 examples/libfuzzer/libfuzzer_example.cc
+                 ${LIB_FUZZER_EXAMPLE_PROTO_SRCS})
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
                         ${LIBFUZZER_LIBRARIES} ${LIBXML2_LIBRARIES})
-  target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer_test.cc)
+  target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 
   include(libxml2)

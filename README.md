@@ -78,4 +78,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 }
 ```
 
-Please see [libfuzzer.cc](/examples/libfuzzer.cc) as an example.
+Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as an example.
