@@ -15,7 +15,7 @@
 set(LIBFUZZER_TARGET external.libfuzzer)
 set(LIBFUZZER_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/${LIBFUZZER_TARGET})
 
-list(APPEND LIBFUZZER_LIBRARIES LLVMFuzzer)
+list(APPEND LIBFUZZER_LIBRARIES Fuzzer)
 
 foreach(lib IN LISTS LIBFUZZER_LIBRARIES)
   set(CUR_LIB ${LIBFUZZER_INSTALL_DIR}/src/${LIBFUZZER_TARGET}-build/lib${lib}.a)
@@ -32,12 +32,8 @@ ExternalProject_Add(${LIBFUZZER_TARGET}
     GIT_REPOSITORY https://chromium.googlesource.com/chromium/llvm-project/llvm/lib/Fuzzer
     GIT_TAG master
     UPDATE_COMMAND ""
-    CMAKE_CACHE_ARGS ${EXTERNAL_PROJECT_CMAKE_COMPILERS}
-    # libFuzzer needs very specific set of flags, so we don't forward EXTERNAL_PROJECT_CMAKE_ARGS
-    CMAKE_ARGS -DLLVM_USE_SANITIZE_COVERAGE=YES
-               -DLLVM_USE_SANITIZER=Address
-               -DCMAKE_CXX_FLAGS=-std=c++11
-               -Wno-dev
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND CXX=${CMAKE_CXX_COMPILER} ${LIBFUZZER_INSTALL_DIR}/src/${LIBFUZZER_TARGET}/build.sh
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS ${LIBFUZZER_BUILD_BYPRODUCTS}
 )
