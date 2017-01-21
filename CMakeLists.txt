@@ -58,10 +58,6 @@ if (LIB_PROTO_MUTATOR_WITH_ASAN)
   endif()
 endif()
 
-if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
-  set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-coverage=trace-pc-guard")
-endif()
-
 set(EXTERNAL_PROJECT_CMAKE_COMPILERS "-DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}"
                                      "-DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}")
 set(EXTERNAL_PROJECT_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${EXTRA_FLAGS}"
@@ -127,6 +123,10 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
                         ${LIBFUZZER_LIBRARIES} ${LIBXML2_LIBRARIES})
+  set_property(TARGET libfuzzer_example
+               PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
+  set_property(TARGET libfuzzer_example
+               PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
   target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 
