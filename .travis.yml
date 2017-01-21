@@ -1,5 +1,4 @@
 os: linux
-dist: trusty
 sudo: false
 
 language: cpp
@@ -12,7 +11,7 @@ addons:
       - gcc-4.9
       - ninja-build
     sources:
-      - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main'
+      - sourceline: 'deb http://apt.llvm.org/precise/ llvm-toolchain-precise main'
         key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
       - ubuntu-toolchain-r-test
 
