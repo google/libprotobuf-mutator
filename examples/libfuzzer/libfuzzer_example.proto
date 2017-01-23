@@ -23,4 +23,5 @@ message Msg {
   optional sfixed32 optional_sfixed32 = 28;
   optional bool optional_bool = 30;
   optional Enum optional_enum = 33;
+  optional string optional_string = 36;
 }
