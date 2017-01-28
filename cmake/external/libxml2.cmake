@@ -30,8 +30,6 @@ foreach(lib IN LISTS LIBXML2_LIBRARIES)
   add_dependencies(${lib} ${LIBXML2_TARGET})
 endforeach(lib)
 
-set(LIBXML2_FLAGS "${EXTRA_FLAGS} -w")
-
 include (ExternalProject)
 ExternalProject_Add(${LIBXML2_TARGET}
     PREFIX ${LIBXML2_TARGET}
