@@ -38,9 +38,29 @@ check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
 unset(CMAKE_REQUIRED_FLAGS)
 check_cxx_compiler_flag(-fsanitize=undefined LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
 check_cxx_compiler_flag(-fsanitize=leak LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
+
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
-check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
+check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_TRACE_PC)
 unset(CMAKE_REQUIRED_FLAGS)
+
+set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-cmp")
+check_cxx_compiler_flag(-fsanitize-coverage=trace-cmp LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
+unset(CMAKE_REQUIRED_FLAGS)
+
+if (LIB_PROTO_MUTATOR_HAS_TRACE_PC)
+  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-pc-guard)
+endif()
+if (LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
+  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-cmp)
+endif()
+
+if (SANITIZE_COVERAGE_OPTIONS)
+  foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
+    set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
+  endforeach()
+  string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
+  set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
+endif()
 
 set(EXTRA_FLAGS "-fno-exceptions")
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
@@ -67,6 +87,7 @@ set(LIB_PROTO_MUTATOR_EXTRA_FLAGS "${EXTRA_FLAGS} -Werror -Wall")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${LIB_PROTO_MUTATOR_EXTRA_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIB_PROTO_MUTATOR_EXTRA_FLAGS}")
+set(LINK_FLAGS "${LINK_FLAGS} ${LIB_PROTO_MUTATOR_EXTRA_FLAGS}")
 
 # Include after we set EXTERNAL_PROJECT_CMAKE_
 include(googletest)
@@ -111,8 +132,7 @@ add_custom_target(check
                   DEPENDS protobuf_mutator_test)
 
 # Examples
-if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
-  # libFuzzer expects code with -fsanitize-coverage=trace-pc-guard
+if (NOT ${FUZZING_FLAGS} STREQUAL "")
   include(libfuzzer)
   protobuf_generate_cpp(LIB_FUZZER_EXAMPLE_PROTO_SRCS
                         LIB_FUZZER_EXAMPLE_PROTO_HDRS
@@ -124,13 +144,13 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_COVERAGE)
                         protobuf-mutator
                         ${LIBFUZZER_LIBRARIES} ${LIBXML2_LIBRARIES})
   set_property(TARGET libfuzzer_example
-               PROPERTY COMPILE_FLAGS "-fsanitize-coverage=trace-pc-guard")
-  set_property(TARGET libfuzzer_example
-               PROPERTY LINK_FLAGS "-fsanitize-coverage=trace-pc-guard")
+               PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)
   add_dependencies(protobuf_mutator_test libfuzzer_example)
 
+  set(LIBXML2_FLAGS "${EXTRA_FLAGS} ${FUZZING_FLAGS} -w")
   include(libxml2)
+
   # Unused dependency, just to make sure it compiles.
   target_link_libraries(libfuzzer_example ${LIBXML2_LIBRARIES})
 endif()
