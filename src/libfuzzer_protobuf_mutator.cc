@@ -24,7 +24,8 @@
 using google::protobuf::Message;
 using google::protobuf::TextFormat;
 
-extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
+extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
+    __attribute__((weak));
 
 namespace protobuf_mutator {
 
