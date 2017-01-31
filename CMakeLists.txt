@@ -42,7 +42,6 @@ check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRES
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
 unset(CMAKE_REQUIRED_FLAGS)
-check_cxx_compiler_flag(-fsanitize=leak LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
 
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
 check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_TRACE_PC)
@@ -74,9 +73,6 @@ if (LIB_PROTO_MUTATOR_WITH_ASAN)
     if (LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
       set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-address-use-after-scope")
     endif()
-  endif()
-  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
-    set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=leak")
   endif()
 endif()
 
