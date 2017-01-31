@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "examples/libxml2/xml_writer.h"
+#include "src/xml/xml_writer.h"
 
 #include <algorithm>
 #include <sstream>
 
 #include "xml.pb.h"  // NOLINT
 
-namespace examples {
-namespace libxml2 {
+namespace protobuf_mutator {
+namespace xml {
 
 namespace {
 
@@ -124,5 +124,5 @@ std::string MessageToXml(const Document& doc) {
   return writer.ToXml(doc);
 }
 
-}  // namespace libxml2
-}  // namespace examples
+}  // namespace xml
+}  // namespace protobuf_mutator
