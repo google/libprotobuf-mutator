@@ -89,6 +89,22 @@ add_library(protobuf-mutator
 target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
 
+protobuf_generate_cpp(XML_PROTO_SRCS
+                      XML_PROTO_HDRS
+                      src/xml/xml.proto)
+add_library(xml_proto
+            src/xml/xml_writer.cc
+            src/xml/libfuzzer_xml_mutator.cc
+            ${XML_PROTO_SRCS})
+target_link_libraries(xml_proto
+                      protobuf-mutator)
+
+# Binaries
+add_executable(proto_to_xml
+               src/xml/proto_to_xml.cc)
+target_link_libraries(proto_to_xml
+                      xml_proto)
+
 # Tests
 enable_testing()
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS src/protobuf_mutator.proto)
@@ -143,21 +159,11 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
 
   set(LIBXML2_FLAGS "${EXTRA_FLAGS} ${FUZZING_FLAGS} -w")
   include(libxml2)
-
-  protobuf_generate_cpp(LIBXML2_EXAMPLE_PROTO_SRCS
-                        LIBXML2_EXAMPLE_PROTO_HDRS
-                        examples/libxml2/xml.proto)
-  add_library(libxml2_example_proto
-              examples/libxml2/xml_writer.cc
-              ${LIBXML2_EXAMPLE_PROTO_SRCS})
-  target_link_libraries(libxml2_example_proto
-                        protobuf-mutator)
-
   add_executable(libxml2_example
                  examples/libxml2/libxml2_example.cc)
   target_link_libraries(libxml2_example
                         protobuf-mutator
-                        libxml2_example_proto
+                        xml_proto
                         ${LIBFUZZER_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT}
                         ${LIBXML2_LIBRARIES}
@@ -165,13 +171,6 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
                         ${LIBLZMA_LIBRARIES})
   set_property(TARGET libxml2_example
                PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
-
-
-  add_executable(proto_to_xml
-                 examples/libxml2/proto_to_xml.cc
-                 ${LIBXML2_EXAMPLE_PROTO_SRCS})
-  target_link_libraries(proto_to_xml
-                        libxml2_example_proto)
 
   target_sources(protobuf_mutator_test
                  PRIVATE examples/libxml2/libxml2_example_test.cc)

@@ -1,5 +1,5 @@
 syntax = "proto2";
-package examples.libxml2;
+package protobuf_mutator.xml;
 
 // Simplified definition of XML formant according https://www.w3.org/TR/xml/
 // Not all features are implemented and some rules are flattened.
@@ -81,9 +81,12 @@ message Attribute {
   optional string value = 2;
 }
 
-message Xml {
+message Input {
   optional Document document = 1;
 
   // Option will be sent into libxml2 parser.
+  // TODO(vitalybuka): Use proto extension. Options is libxml2 specific,
+  // other libs may need different data. At the moment mutator does not support
+  // extensions.
   optional uint32 options = 2;
 }

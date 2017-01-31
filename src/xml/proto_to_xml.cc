@@ -17,11 +17,11 @@
 #include <fstream>
 #include <iostream>
 
-#include "examples/libxml2/xml_writer.h"
 #include "src/libfuzzer_protobuf_mutator.h"
+#include "src/xml/xml_writer.h"
 #include "xml.pb.h"  // NOLINT
 
-using examples::libxml2::Xml;
+using protobuf_mutator::xml::Input;
 
 namespace {
 google::protobuf::LogSilencer log_silincer;
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     input += std::string(buff.data(), size);
   }
   std::string output;
-  Xml message;
+  Input message;
   bool is_proto = protobuf_mutator::ParseTextMessage(
       reinterpret_cast<const uint8_t*>(input.data()), input.size(), &message);
   if (is_proto) {
