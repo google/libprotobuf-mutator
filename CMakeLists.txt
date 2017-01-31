@@ -61,7 +61,7 @@ if (SANITIZE_COVERAGE_OPTIONS)
   set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
 endif()
 
-set(EXTRA_FLAGS "-fno-exceptions")
+set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
     set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=address")
