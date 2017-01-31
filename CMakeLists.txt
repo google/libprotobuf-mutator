@@ -36,7 +36,6 @@ check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRES
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
 unset(CMAKE_REQUIRED_FLAGS)
-check_cxx_compiler_flag(-fsanitize=undefined LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
 check_cxx_compiler_flag(-fsanitize=leak LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
 
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
@@ -70,9 +69,6 @@ if (LIB_PROTO_MUTATOR_WITH_ASAN)
       set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize-address-use-after-scope")
     endif()
   endif()
-  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_UNDEFINED)
-    set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=undefined")
-  endif()
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_LEAK)
     set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=leak")
   endif()
@@ -81,7 +77,6 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
-# Include after we set EXTERNAL_PROJECT_CMAKE_
 include(googletest)
 include(protobuf)
 include(zlib)
@@ -126,6 +121,7 @@ add_custom_target(check
 # Examples
 if (NOT ${FUZZING_FLAGS} STREQUAL "")
   include(libfuzzer)
+
   protobuf_generate_cpp(LIB_FUZZER_EXAMPLE_PROTO_SRCS
                         LIB_FUZZER_EXAMPLE_PROTO_HDRS
                         examples/libfuzzer/libfuzzer_example.proto)
