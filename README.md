@@ -12,7 +12,7 @@ Install prerequisites:
 
 ```
 sudo apt-get update
-sudo apt-get install binutils cmake ninja-build
+sudo apt-get install binutils cmake ninja-build liblzma-dev libz-dev
 ```
 
 Compile and test everything:
