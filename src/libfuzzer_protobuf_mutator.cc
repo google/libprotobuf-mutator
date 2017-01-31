@@ -73,11 +73,22 @@ std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
   return result;
 }
 
-void ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
+bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
   output->Clear();
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
-  parser.ParseFromString({data, data + size}, output);
+  return parser.ParseFromString({data, data + size}, output);
+}
+
+size_t SaveMessageAsText(const Message& message, uint8_t* data,
+                         size_t max_size) {
+  std::string result;
+  if (TextFormat::PrintToString(message, &result) &&
+      result.size() <= max_size) {
+    memcpy(data, result.data(), result.size());
+    return result.size();
+  }
+  return 0;
 }
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
@@ -87,11 +98,9 @@ size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
   for (int i = 0; i < 100; ++i) {
     ParseTextMessage(data, size, prototype);
     mutator.Mutate(prototype, max_size - size);
-    std::string result;
-    if (TextFormat::PrintToString(*prototype, &result) &&
-        result.size() <= max_size) {
-      memcpy(data, result.data(), result.size());
-      return result.size();
+    if (size_t new_size = SaveMessageAsText(*prototype, data, max_size)) {
+      assert(new_size <= max_size);
+      return new_size;
     }
   }
 
