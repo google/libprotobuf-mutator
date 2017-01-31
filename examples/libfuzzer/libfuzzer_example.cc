@@ -32,8 +32,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   protobuf_mutator::ParseTextMessage(data, size, &message);
 
   // Emulate a bug.
-  if (message.optional_bool() &&
-      message.optional_string() == "FooBar") {
+  if (message.optional_bool() && message.optional_string() == "FooBar") {
     abort();
   }
 
