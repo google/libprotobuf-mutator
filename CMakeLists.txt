@@ -23,7 +23,13 @@ include(ProcessorCount)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
-find_package (Threads)
+find_package(Threads REQUIRED)
+
+find_package(LibLZMA REQUIRED)
+include_directories(${LIBLZMA_INCLUDE_DIRS})
+
+find_package(ZLIB REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIRS})
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -79,7 +85,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
 include(googletest)
 include(protobuf)
-include(zlib)
 
 # Libraries
 add_library(protobuf-mutator
@@ -130,7 +135,9 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
                  ${LIB_FUZZER_EXAMPLE_PROTO_SRCS})
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
-                        ${LIBFUZZER_LIBRARIES} ${LIBXML2_LIBRARIES})
+                        ${LIBXML2_LIBRARIES}
+                        ${LIBFUZZER_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT})
   set_property(TARGET libfuzzer_example
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   target_sources(protobuf_mutator_test PRIVATE examples/libfuzzer/libfuzzer_example_test.cc)

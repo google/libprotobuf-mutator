@@ -26,8 +26,6 @@ foreach(lib IN LISTS LIBFUZZER_LIBRARIES)
   add_dependencies(${lib} ${LIBFUZZER_TARGET})
 endforeach(lib)
 
-list(APPEND LIBFUZZER_LIBRARIES pthread)
-
 include (ExternalProject)
 ExternalProject_Add(${LIBFUZZER_TARGET}
     PREFIX ${LIBFUZZER_TARGET}

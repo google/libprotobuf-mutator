@@ -11,6 +11,8 @@ addons:
       - g++-4.8
       - gcc-4.8
       - ninja-build
+      - liblzma-dev
+      - libz-dev
     sources:
       - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main'
         key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
