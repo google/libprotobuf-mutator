@@ -26,24 +26,35 @@ using protobuf_mutator::xml::Input;
 namespace {
 google::protobuf::LogSilencer log_silincer;
 
-struct option const kLongOptions[] = {{"verbose", no_argument, NULL, 'v'},
+struct option const kLongOptions[] = {{"reverse", no_argument, NULL, 'r'},
+                                      {"verbose", no_argument, NULL, 'v'},
                                       {"help", no_argument, NULL, 'h'},
                                       {NULL, 0, NULL, 0}};
 
 void PrintUsage() {
-  std::cerr << "Usage: proto_to_xml [OPTION]... [INFILE [OUTFILE]]\n"
-            << "Converts protobuf used by fuzzer to XML.\n\n"
+  std::cerr << "Usage: xml_converter [OPTION]... [INFILE [OUTFILE]]\n"
+            << "Converts between proto used by fuzzer and XML.\n\n"
             << "\t-h, --help\tPrint this help\n"
+            << "\t-r, --reverse\tConverts from XML to proto\n"
             << "\t-v, --verbose\tPrint input\n";
 }
 
-bool ParseOptions(int argc, char** argv, bool* verbose, std::string* in_file,
-                  std::string* out_file) {
+struct Options {
+  bool reverse = false;
+  bool verbose = false;
+  std::string in_file;
+  std::string out_file;
+};
+
+bool ParseOptions(int argc, char** argv, Options* options) {
   int c = 0;
-  while ((c = getopt_long(argc, argv, "hv", kLongOptions, nullptr)) != -1) {
+  while ((c = getopt_long(argc, argv, "hrv", kLongOptions, nullptr)) != -1) {
     switch (c) {
       case 'v':
-        *verbose = true;
+        options->verbose = true;
+        break;
+      case 'r':
+        options->reverse = true;
         break;
       case 'h':
       default:
@@ -52,8 +63,8 @@ bool ParseOptions(int argc, char** argv, bool* verbose, std::string* in_file,
   }
 
   int i = optind;
-  if (i < argc) *in_file = argv[i++];
-  if (i < argc) *out_file = argv[i++];
+  if (i < argc) options->in_file = argv[i++];
+  if (i < argc) options->out_file = argv[i++];
   if (i != argc) return false;
 
   return true;
@@ -62,10 +73,8 @@ bool ParseOptions(int argc, char** argv, bool* verbose, std::string* in_file,
 }  // namespace
 
 int main(int argc, char** argv) {
-  bool verbose = false;
-  std::string in_file;
-  std::string out_file;
-  if (!ParseOptions(argc, argv, &verbose, &in_file, &out_file)) {
+  Options options;
+  if (!ParseOptions(argc, argv, &options)) {
     PrintUsage();
     return 1;
   }
@@ -74,14 +83,14 @@ int main(int argc, char** argv) {
   std::ostream* cout = &std::cout;
 
   std::ifstream in_file_stream;
-  if (!in_file.empty()) {
-    in_file_stream.open(in_file);
+  if (!options.in_file.empty()) {
+    in_file_stream.open(options.in_file);
     cin = &in_file_stream;
   }
 
   std::ofstream out_file_stream;
-  if (!out_file.empty()) {
-    out_file_stream.open(out_file);
+  if (!options.out_file.empty()) {
+    out_file_stream.open(options.out_file);
     cout = &out_file_stream;
   }
 
@@ -91,22 +100,29 @@ int main(int argc, char** argv) {
     input += std::string(buff.data(), size);
   }
   std::string output;
-  Input message;
-  bool is_proto = protobuf_mutator::ParseTextMessage(
-      reinterpret_cast<const uint8_t*>(input.data()), input.size(), &message);
-  if (is_proto) {
-    output = MessageToXml(message.document());
-    if (verbose) std::cerr << "Input is protobuf:\n";
+
+  int ret = 0;
+
+  if (options.reverse) {
+    Input message;
+    message.mutable_document()->mutable_element()->add_content()->set_char_data(
+        input);
+    output = protobuf_mutator::SaveMessageAsText(message);
   } else {
-    if (verbose) std::cerr << "Input is not protobuf, assume xml:\n";
-    output = input;
+    Input message;
+    bool is_proto = protobuf_mutator::ParseTextMessage(input.data(), &message);
+    output = MessageToXml(message.document());
+    if (!is_proto) {
+      ret = 2;
+      if (options.verbose) std::cerr << "Input is not proto\n";
+    }
   }
 
-  if (verbose) {
+  if (options.verbose) {
     std::cerr << input << "\n\n";
     std::cerr.flush();
   }
   *cout << output;
 
-  return is_proto ? 0 : 2;
+  return ret;
 }

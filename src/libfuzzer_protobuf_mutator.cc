@@ -75,21 +75,31 @@ std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
 }
 
 bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
+  return ParseTextMessage({data, data + size}, output);
+}
+
+bool ParseTextMessage(const std::string& data,
+                      google::protobuf::Message* output) {
   output->Clear();
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
-  return parser.ParseFromString({data, data + size}, output);
+  return parser.ParseFromString(data, output);
 }
 
 size_t SaveMessageAsText(const Message& message, uint8_t* data,
                          size_t max_size) {
-  std::string result;
-  if (TextFormat::PrintToString(message, &result) &&
-      result.size() <= max_size) {
+  std::string result = SaveMessageAsText(message);
+  if (result.size() <= max_size) {
     memcpy(data, result.data(), result.size());
     return result.size();
   }
   return 0;
+}
+
+std::string SaveMessageAsText(const google::protobuf::Message& message) {
+  std::string result;
+  if (!TextFormat::PrintToString(message, &result)) result.clear();
+  return result;
 }
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
@@ -104,7 +114,6 @@ size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
       return new_size;
     }
   }
-
   return 0;
 }
 

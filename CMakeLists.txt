@@ -100,9 +100,9 @@ target_link_libraries(xml_proto
                       protobuf-mutator)
 
 # Binaries
-add_executable(proto_to_xml
-               src/xml/proto_to_xml.cc)
-target_link_libraries(proto_to_xml
+add_executable(xml_converter
+               src/xml/xml_converter.cc)
+target_link_libraries(xml_converter
                       xml_proto)
 
 # Tests
