@@ -26,7 +26,7 @@ void ignore(void* ctx, const char* msg, ...) {}
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t max_size, unsigned int seed) {
 // Experimental
-#ifndef LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
+#ifdef LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
   if (seed % 33 == 0) {
     ++seed;
   }
