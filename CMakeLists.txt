@@ -15,6 +15,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(LibProtobufMutator CXX)
 
+option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
+set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
+
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/external)
 
@@ -33,14 +36,16 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 
 set(CMAKE_CXX_STANDARD 11)
 
-option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
-
 include_directories(${PROJECT_SOURCE_DIR})
 
 set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
 check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
+unset(CMAKE_REQUIRED_FLAGS)
+
+set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=")
+check_cxx_compiler_flag(-fsanitize-coverage= LIB_PROTO_MUTATOR_HAS_COVERAGE)
 unset(CMAKE_REQUIRED_FLAGS)
 
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
@@ -50,21 +55,6 @@ unset(CMAKE_REQUIRED_FLAGS)
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-cmp")
 check_cxx_compiler_flag(-fsanitize-coverage=trace-cmp LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
 unset(CMAKE_REQUIRED_FLAGS)
-
-if (LIB_PROTO_MUTATOR_HAS_TRACE_PC)
-  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-pc-guard)
-endif()
-if (LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
-  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-cmp)
-endif()
-
-if (SANITIZE_COVERAGE_OPTIONS)
-  foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
-    set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
-  endforeach()
-  string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
-  set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
-endif()
 
 set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
@@ -83,27 +73,29 @@ include(googletest)
 include(protobuf)
 
 # Libraries
-add_library(protobuf-mutator
-            src/libfuzzer_protobuf_mutator.cc
-            src/protobuf_mutator.cc)
-target_link_libraries(protobuf-mutator
-                      ${PROTOBUF_LIBRARY})
-
 protobuf_generate_cpp(XML_PROTO_SRCS
                       XML_PROTO_HDRS
                       src/xml/xml.proto)
-add_library(xml_proto
-            src/xml/xml_writer.cc
+
+add_library(protobuf-mutator
+            src/libfuzzer_protobuf_mutator.cc
+            src/protobuf_mutator.cc
             src/xml/libfuzzer_xml_mutator.cc
+            src/xml/xml_writer.cc
             ${XML_PROTO_SRCS})
-target_link_libraries(xml_proto
-                      protobuf-mutator)
+target_link_libraries(protobuf-mutator
+                      ${PROTOBUF_LIBRARY})
+if (LIB_PROTO_MUTATOR_HAS_COVERAGE)
+  # Disable coverage instrumentation for the mutator itself.
+  set_property(TARGET protobuf-mutator
+               PROPERTY COMPILE_FLAGS -fsanitize-coverage=)
+endif()
 
 # Binaries
 add_executable(xml_converter
                src/xml/xml_converter.cc)
 target_link_libraries(xml_converter
-                      xml_proto)
+                      protobuf-mutator)
 
 # Tests
 enable_testing()
@@ -115,7 +107,6 @@ add_executable(protobuf_mutator_test
 target_link_libraries(protobuf_mutator_test
                       protobuf-mutator
                       ${ZLIB_LIBRARIES}
-                      ${PROTOBUF_LIBRARY}
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 
@@ -136,9 +127,28 @@ add_custom_target(check
                   DEPENDS protobuf_mutator_test)
 
 # Examples
-if (NOT ${FUZZING_FLAGS} STREQUAL "")
-  include(libfuzzer)
+if ("${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
+  if (LIB_PROTO_MUTATOR_HAS_TRACE_PC)
+    list(APPEND SANITIZE_COVERAGE_OPTIONS trace-pc-guard)
+  endif()
+  if (LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
+    list(APPEND SANITIZE_COVERAGE_OPTIONS trace-cmp)
+  endif()
 
+  if (SANITIZE_COVERAGE_OPTIONS)
+    foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
+      set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
+    endforeach()
+    string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
+    set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
+  endif()
+
+  if (NOT "${FUZZING_FLAGS}" STREQUAL "")
+    include(libfuzzer)
+  endif()
+endif()
+
+if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
   protobuf_generate_cpp(LIB_FUZZER_EXAMPLE_PROTO_SRCS
                         LIB_FUZZER_EXAMPLE_PROTO_HDRS
                         examples/libfuzzer/libfuzzer_example.proto)
@@ -147,7 +157,7 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
                  ${LIB_FUZZER_EXAMPLE_PROTO_SRCS})
   target_link_libraries(libfuzzer_example
                         protobuf-mutator
-                        ${LIBFUZZER_LIBRARIES}
+                        ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT})
   set_property(TARGET libfuzzer_example
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
@@ -163,12 +173,13 @@ if (NOT ${FUZZING_FLAGS} STREQUAL "")
                  examples/libxml2/libxml2_example.cc)
   target_link_libraries(libxml2_example
                         protobuf-mutator
-                        xml_proto
-                        ${LIBFUZZER_LIBRARIES}
+                        ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT}
                         ${LIBXML2_LIBRARIES}
                         ${ZLIB_LIBRARIES}
                         ${LIBLZMA_LIBRARIES})
+  set_property(TARGET libxml2_example
+               PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   set_property(TARGET libxml2_example
                PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
 
