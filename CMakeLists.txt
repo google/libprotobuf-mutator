@@ -23,12 +23,12 @@ include(ProcessorCount)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
-find_package(Threads REQUIRED)
+find_package(Threads)
 
-find_package(LibLZMA REQUIRED)
+find_package(LibLZMA)
 include_directories(${LIBLZMA_INCLUDE_DIRS})
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB)
 include_directories(${ZLIB_INCLUDE_DIRS})
 
 set(CMAKE_CXX_STANDARD 11)
