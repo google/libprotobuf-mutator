@@ -26,30 +26,22 @@ namespace xml {
 bool ParseTextMessage(const uint8_t* data, size_t size, std::string* xml,
                       int* options) {
   Input message;
-  auto is_proto = protobuf_mutator::ParseTextMessage(data, size, &message);
-  *xml = is_proto ? MessageToXml(message.document())
-                  : std::string{reinterpret_cast<const char*>(data), size};
+  if (!protobuf_mutator::ParseTextMessage(data, size, &message)) return false;
+  *xml = MessageToXml(message.document());
   *options = message.options();
-  return is_proto;
+  return true;
 }
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed) {
   Input message;
-  // Fuzzer can be provided with corpus of raw XML. In this case it will fail
-  // to parse it as proto.
-  bool is_proto = protobuf_mutator::ParseTextMessage(data, size, &message);
-  // If the data is a raw XML we can store it as a content field of the proto.
-  // Also we can do the same as a special kind of mutation. If the data is a
-  // proto we can convert it to XML and store as a content field. This mutation
-  // allows to grow coverage faster.
-  if (!is_proto || seed % 33 == 0) {
-    std::string xml =
-        is_proto ? MessageToXml(message.document())
-                 : std::string{reinterpret_cast<const char*>(data), size};
+  // If the data is a proto we can convert it to XML and store as a content
+  // field. This mutation allows to grow coverage faster.
+  if (seed % 33 == 0) {
+    protobuf_mutator::ParseTextMessage(data, size, &message);
     message.mutable_document()->Clear();
     message.mutable_document()->mutable_element()->add_content()->set_char_data(
-        xml);
+        MessageToXml(message.document()));
     if (size_t new_size =
             protobuf_mutator::SaveMessageAsText(message, data, max_size)) {
       size = new_size;

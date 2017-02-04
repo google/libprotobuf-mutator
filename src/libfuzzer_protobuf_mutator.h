@@ -45,8 +45,11 @@ class LibFuzzerProtobufMutator : public ProtobufMutator {
 // serialization format.
 bool ParseTextMessage(const uint8_t* data, size_t size,
                       google::protobuf::Message* output);
+bool ParseTextMessage(const std::string& data,
+                      google::protobuf::Message* output);
 size_t SaveMessageAsText(const google::protobuf::Message& message,
                          uint8_t* data, size_t max_size);
+std::string SaveMessageAsText(const google::protobuf::Message& message);
 
 // Mutates proto serialized as test.
 // |prototype| is message of user-defined type which will be used as a
