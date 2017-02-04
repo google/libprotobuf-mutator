@@ -25,8 +25,16 @@ void ignore(void* ctx, const char* msg, ...) {}
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t max_size, unsigned int seed) {
+// Experimental
+#ifndef LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
+  if (seed % 33 == 0) {
+    ++seed;
+  }
+#endif  // LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
+
   return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
 }
+
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   int options = 0;
