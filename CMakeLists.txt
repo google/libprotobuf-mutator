@@ -190,4 +190,25 @@ if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
   target_sources(protobuf_mutator_test
                  PRIVATE examples/libxml2/libxml2_example_test.cc)
   add_dependencies(protobuf_mutator_test libxml2_example)
+
+  set(EXPAT_CFLAGS "${CMAKE_C_FLAGS} ${FUZZING_FLAGS} -w")
+  set(EXPAT_CXXFLAGS "${CMAKE_CXX_FLAGS} ${FUZZING_FLAGS} -w")
+  include(expat)
+  add_executable(expat_example
+                 examples/expat/expat_example.cc)
+  target_link_libraries(expat_example
+                        protobuf-mutator
+                        ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT}
+                        ${EXPAT_LIBRARIES}
+                        ${ZLIB_LIBRARIES}
+                        ${LIBLZMA_LIBRARIES})
+  set_property(TARGET expat_example
+               PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
+  set_property(TARGET expat_example
+               PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+
+  target_sources(protobuf_mutator_test
+                 PRIVATE examples/expat/expat_example_test.cc)
+  add_dependencies(protobuf_mutator_test expat_example)
 endif()

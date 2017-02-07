@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "libxml/parser.h"
+#include "expat.h"  // NOLINT
 
 #include "google/protobuf/stubs/logging.h"
-
 #include "src/xml/libfuzzer_xml_mutator.h"
 
 namespace {
 google::protobuf::LogSilencer log_silincer;
-void ignore(void* ctx, const char* msg, ...) {}
+std::vector<const char*> kEncodings = {{"UTF-16", "UTF-8", "ISO-8859-1",
+                                        "US-ASCII", "UTF-16BE", "UTF-16LE",
+                                        "INVALIDENCODING"}};
 }
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
@@ -35,21 +36,18 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
   return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
 }
 
+// Entry point for LibFuzzer.
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   int options = 0;
   std::string xml;
   protobuf_mutator::xml::ParseTextMessage(data, size, &xml, &options);
 
-  // Network requests are too slow.
-  options |= XML_PARSE_NONET;
-  // There is a known hang with this option enabled.
-  // options &= ~XML_PARSE_NOENT;
-
-  xmlSetGenericErrorFunc(nullptr, &ignore);
-  if (auto doc = xmlReadMemory(xml.c_str(), static_cast<int>(xml.size()), "",
-                               nullptr, options)) {
-    xmlFreeDoc(doc);
-  }
-
+  int use_ns = options % 2;
+  options /= 2;
+  auto enc = kEncodings[options % kEncodings.size()];
+  XML_Parser parser =
+      use_ns ? XML_ParserCreateNS(enc, '\n') : XML_ParserCreate(enc);
+  XML_Parse(parser, xml.data(), xml.size(), true);
+  XML_ParserFree(parser);
   return 0;
 }
