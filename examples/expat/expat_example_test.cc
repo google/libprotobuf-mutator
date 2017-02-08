@@ -33,7 +33,7 @@ size_t CountFilesInDir(const std::string& path) {
 
 }  // namespace
 
-TEST(ExpatExampleTest, Crash) {
+TEST(ExpatExampleTest, Fuzz) {
   char dir_template[] = "/tmp/libxml2_example_test_XXXXXX";
   auto dir = mkdtemp(dir_template);
   ASSERT_TRUE(dir);
@@ -45,7 +45,7 @@ TEST(ExpatExampleTest, Crash) {
       std::string(dir) + "/ " + dir + "/";
   EXPECT_EQ(0, std::system(cmd.c_str()));
 
-  EXPECT_GT(CountFilesInDir(dir), 100);
+  EXPECT_GT(CountFilesInDir(dir), 50);
 
   // Cleanup.
   EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
