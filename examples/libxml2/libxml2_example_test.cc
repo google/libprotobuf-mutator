@@ -33,7 +33,7 @@ size_t CountFilesInDir(const std::string& path) {
 
 }  // namespace
 
-TEST(LibXml2ExampleTest, Crash) {
+TEST(LibXml2ExampleTest, Fuzz) {
   char dir_template[] = "/tmp/libxml2_example_test_XXXXXX";
   auto dir = mkdtemp(dir_template);
   ASSERT_TRUE(dir);
