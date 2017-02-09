@@ -42,8 +42,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   // Network requests are too slow.
   options |= XML_PARSE_NONET;
-  // There is a known hang with this option enabled.
-  // options &= ~XML_PARSE_NOENT;
+  // These flags can cause network or file access and hangs.
+  options &= ~(XML_PARSE_NOENT | XML_PARSE_HUGE | XML_PARSE_DTDVALID |
+               XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR);
 
   xmlSetGenericErrorFunc(nullptr, &ignore);
   if (auto doc = xmlReadMemory(xml.c_str(), static_cast<int>(xml.size()), "",
