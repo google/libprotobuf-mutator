@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "xml.pb.h"  // NOLINT
+#include "src/xml/xml.pb.h"
 
 namespace protobuf_mutator {
 namespace xml {

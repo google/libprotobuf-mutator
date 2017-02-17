@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "libfuzzer_example.pb.h"  // NOLINT
+#include "examples/libfuzzer/libfuzzer_example.pb.h"
 #include "src/libfuzzer_protobuf_mutator.h"
 
 using libfuzzer_example::Msg;

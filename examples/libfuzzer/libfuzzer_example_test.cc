@@ -24,7 +24,7 @@ TEST(LibFuzzerExampleTest, Crash) {
   auto dir = mkdtemp(dir_template);
   ASSERT_TRUE(dir);
 
-  std::string cmd = "./libfuzzer_example -max_len=70 -artifact_prefix=" +
+  std::string cmd = "./libfuzzer_example -max_len=150 -artifact_prefix=" +
                     std::string(dir) + "/ " + dir + "/";
   int retvalue = std::system(cmd.c_str());
   EXPECT_EQ(kDefaultLibFuzzerError, WSTOPSIG(retvalue));
