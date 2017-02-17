@@ -23,7 +23,7 @@
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-#include "protobuf_mutator.pb.h"  // NOLINT
+#include "src/protobuf_mutator.pb.h"
 
 using google::protobuf::TextFormat;
 using google::protobuf::util::MessageDifferencer;

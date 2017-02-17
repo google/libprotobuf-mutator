@@ -19,7 +19,7 @@
 
 #include "src/libfuzzer_protobuf_mutator.h"
 #include "src/xml/xml_writer.h"
-#include "xml.pb.h"  // NOLINT
+#include "src/xml/xml.pb.h"
 
 using protobuf_mutator::xml::Input;
 
