@@ -43,7 +43,7 @@ include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
     PREFIX ${PROTOBUF_TARGET}
     GIT_REPOSITORY https://github.com/google/protobuf.git
-    GIT_TAG master
+    GIT_TAG 32886f1f
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOFUB_INSTALL_DIR}/src/${PROTOBUF_TARGET}/cmake
         -G${CMAKE_GENERATOR}
