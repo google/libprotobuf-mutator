@@ -20,17 +20,16 @@
 #include <random>
 #include <string>
 
-#include "google/protobuf/message.h"
 #include "src/field_instance.h"
 #include "src/weighted_reservoir_sampler.h"
 
-using google::protobuf::Descriptor;
-using google::protobuf::EnumDescriptor;
-using google::protobuf::EnumValueDescriptor;
-using google::protobuf::FieldDescriptor;
-using google::protobuf::Message;
-using google::protobuf::OneofDescriptor;
-using google::protobuf::Reflection;
+using protobuf::Descriptor;
+using protobuf::EnumDescriptor;
+using protobuf::EnumValueDescriptor;
+using protobuf::FieldDescriptor;
+using protobuf::Message;
+using protobuf::OneofDescriptor;
+using protobuf::Reflection;
 
 namespace protobuf_mutator {
 
@@ -327,7 +326,9 @@ class MutateTransformation {
     *value = mutator_->MutateString(*value, allowed_growth_);
   }
 
-  void Mutate(std::unique_ptr<Message>*) const { assert(!"Unexpected"); }
+  void Mutate(std::unique_ptr<Message>*) const {
+    assert(false && "Unexpected");
+  }
 
   size_t allowed_growth_;
   ProtobufMutator* mutator_;
@@ -362,7 +363,7 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
       break;
     }
     default:
-      assert(!"unexpected mutation");
+      assert(false && "unexpected mutation");
   }
 
   if (keep_initialized_ && !message->IsInitialized()) {

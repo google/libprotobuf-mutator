@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <vector>
+
 #include "expat.h"  // NOLINT
 
-#include "google/protobuf/stubs/logging.h"
+#include "src/port/protobuf.h"
 #include "src/xml/libfuzzer_xml_mutator.h"
 
 namespace {
-google::protobuf::LogSilencer log_silincer;
+protobuf::LogSilencer log_silincer;
 std::vector<const char*> kEncodings = {{"UTF-16", "UTF-8", "ISO-8859-1",
                                         "US-ASCII", "UTF-16BE", "UTF-16LE",
                                         "INVALIDENCODING"}};

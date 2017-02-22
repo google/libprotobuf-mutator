@@ -17,8 +17,6 @@
 
 #include <string>
 
-#include "src/protobuf_mutator.h"
-
 namespace protobuf_mutator {
 namespace xml {
 
