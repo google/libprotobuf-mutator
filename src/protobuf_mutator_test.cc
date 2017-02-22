@@ -20,14 +20,11 @@
 #include <utility>
 #include <vector>
 
-#include "google/protobuf/text_format.h"
-#include "google/protobuf/util/message_differencer.h"
-#include "gtest/gtest.h"
+#include "src/port/gtest.h"
 #include "src/protobuf_mutator.pb.h"
 
-using google::protobuf::TextFormat;
-using google::protobuf::util::MessageDifferencer;
-using testing::Test;
+using protobuf::TextFormat;
+using protobuf::util::MessageDifferencer;
 using testing::TestWithParam;
 using testing::ValuesIn;
 using testing::WithParamInterface;
@@ -436,7 +433,7 @@ TEST(ProtobufMutatorMessagesTest, SizeControl) {
       mutator.Mutate(&message2,
                      control ? kTargetSize - std::min(str.size(), kTargetSize)
                              : kTargetSize);
-      std::string str2;
+      protobuf::string str2;
       EXPECT_TRUE(TextFormat::PrintToString(message2, &str2));
       if (str2.size() > kTargetSize) {
         ++overflows;
@@ -462,7 +459,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   std::set<std::string> mutations;
   for (int j = 0; j < 1000; ++j) {
     mutator.Mutate(&message, 1000);
-    std::string str;
+    protobuf::string str;
     EXPECT_TRUE(TextFormat::PrintToString(message, &str));
     mutations.insert(str);
   }

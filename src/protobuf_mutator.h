@@ -22,11 +22,7 @@
 #include <random>
 #include <string>
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+#include "src/port/protobuf.h"
 
 namespace protobuf_mutator {
 
@@ -48,6 +44,7 @@ class ProtobufMutator {
 
   // seed: value to initialize random number generator.
   explicit ProtobufMutator(uint32_t seed);
+  virtual ~ProtobufMutator() = default;
 
   // message: message to mutate.
   // size_increase_hint: approximate number of bytes which can be added to the
@@ -55,11 +52,10 @@ class ProtobufMutator {
   // less than the value. It only changes probabilities of mutations which can
   // cause size increase. Caller could repeat mutation if result was larger than
   // requested.
-  void Mutate(google::protobuf::Message* message, size_t size_increase_hint);
+  void Mutate(protobuf::Message* message, size_t size_increase_hint);
 
   // TODO(vitalybuka): implement
-  bool CrossOver(const google::protobuf::Message& with,
-                 google::protobuf::Message* message);
+  bool CrossOver(const protobuf::Message& with, protobuf::Message* message);
 
  protected:
   // TODO(vitalybuka): Consider to replace with single mutate (uint8_t*, size).
@@ -81,7 +77,7 @@ class ProtobufMutator {
  private:
   friend class MutateTransformation;
   friend class TestProtobufMutator;
-  void InitializeMessage(google::protobuf::Message* message, size_t max_depth);
+  void InitializeMessage(protobuf::Message* message, size_t max_depth);
 
   bool keep_initialized_ = true;
   RandomEngine random_;

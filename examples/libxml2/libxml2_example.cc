@@ -14,12 +14,11 @@
 
 #include "libxml/parser.h"
 
-#include "google/protobuf/stubs/logging.h"
-
+#include "src/port/protobuf.h"
 #include "src/xml/libfuzzer_xml_mutator.h"
 
 namespace {
-google::protobuf::LogSilencer log_silincer;
+protobuf::LogSilencer log_silincer;
 void ignore(void* ctx, const char* msg, ...) {}
 }
 

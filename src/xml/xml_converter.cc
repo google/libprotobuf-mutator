@@ -18,13 +18,13 @@
 #include <iostream>
 
 #include "src/libfuzzer_protobuf_mutator.h"
-#include "src/xml/xml_writer.h"
+#include "src/port/protobuf.h"
 #include "src/xml/xml.pb.h"
+#include "src/xml/xml_writer.h"
 
 using protobuf_mutator::xml::Input;
 
 namespace {
-google::protobuf::LogSilencer log_silincer;
 
 struct option const kLongOptions[] = {{"reverse", no_argument, NULL, 'r'},
                                       {"verbose", no_argument, NULL, 'v'},

@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include "google/protobuf/message.h"
+#include "src/port/protobuf.h"
 
 namespace protobuf_mutator {
 
@@ -35,8 +35,8 @@ class FieldInstance {
   FieldInstance()
       : message_(nullptr), descriptor_(nullptr), index_(kInvalidIndex) {}
 
-  FieldInstance(google::protobuf::Message* message,
-                const google::protobuf::FieldDescriptor* field, size_t index)
+  FieldInstance(protobuf::Message* message,
+                const protobuf::FieldDescriptor* field, size_t index)
       : message_(message), descriptor_(field), index_(index) {
     assert(message_);
     assert(descriptor_);
@@ -44,8 +44,7 @@ class FieldInstance {
     assert(descriptor_->is_repeated());
   }
 
-  FieldInstance(google::protobuf::Message* msg,
-                const google::protobuf::FieldDescriptor* f)
+  FieldInstance(protobuf::Message* msg, const protobuf::FieldDescriptor* f)
       : message_(msg), descriptor_(f), index_(kInvalidIndex) {
     assert(message_);
     assert(descriptor_);
@@ -90,9 +89,9 @@ class FieldInstance {
   void GetDefault(bool* out) const { *out = descriptor_->default_value_bool(); }
 
   void GetDefault(Enum* out) const {
-    const google::protobuf::EnumValueDescriptor* value =
+    const protobuf::EnumValueDescriptor* value =
         descriptor_->default_value_enum();
-    const google::protobuf::EnumDescriptor* type = value->type();
+    const protobuf::EnumDescriptor* type = value->type();
     *out = {static_cast<size_t>(value->index()),
             static_cast<size_t>(type->value_count())};
   }
@@ -101,7 +100,7 @@ class FieldInstance {
     *out = descriptor_->default_value_string();
   }
 
-  void GetDefault(std::unique_ptr<google::protobuf::Message>* out) const {
+  void GetDefault(std::unique_ptr<protobuf::Message>* out) const {
     out->reset();
   }
 
@@ -157,7 +156,7 @@ class FieldInstance {
   }
 
   void Load(Enum* value) const {
-    const google::protobuf::EnumValueDescriptor* value_descriptor =
+    const protobuf::EnumValueDescriptor* value_descriptor =
         is_repeated()
             ? reflection().GetRepeatedEnum(*message_, descriptor_, index_)
             : reflection().GetEnum(*message_, descriptor_);
@@ -172,8 +171,8 @@ class FieldInstance {
             : reflection().GetString(*message_, descriptor_);
   }
 
-  void Load(std::unique_ptr<google::protobuf::Message>* value) const {
-    const google::protobuf::Message& source =
+  void Load(std::unique_ptr<protobuf::Message>* value) const {
+    const protobuf::Message& source =
         is_repeated()
             ? reflection().GetRepeatedMessage(*message_, descriptor_, index_)
             : reflection().GetMessage(*message_, descriptor_);
@@ -232,7 +231,7 @@ class FieldInstance {
 
   void Store(const Enum& value) const {
     assert(value.index < value.count);
-    const google::protobuf::EnumValueDescriptor* enum_value =
+    const protobuf::EnumValueDescriptor* enum_value =
         descriptor_->enum_type()->value(value.index);
     if (is_repeated())
       reflection().SetRepeatedEnum(message_, descriptor_, index_, enum_value);
@@ -247,8 +246,8 @@ class FieldInstance {
       reflection().SetString(message_, descriptor_, value);
   }
 
-  void Store(const std::unique_ptr<google::protobuf::Message>& value) const {
-    google::protobuf::Message* mutable_message =
+  void Store(const std::unique_ptr<protobuf::Message>& value) const {
+    protobuf::Message* mutable_message =
         is_repeated()
             ? reflection().MutableRepeatedMessage(message_, descriptor_, index_)
             : reflection().MutableMessage(message_, descriptor_);
@@ -256,22 +255,22 @@ class FieldInstance {
     if (value) mutable_message->CopyFrom(*value);
   }
 
-  google::protobuf::FieldDescriptor::CppType cpp_type() const {
+  protobuf::FieldDescriptor::CppType cpp_type() const {
     return descriptor_->cpp_type();
   }
 
-  const google::protobuf::EnumDescriptor* enum_type() const {
+  const protobuf::EnumDescriptor* enum_type() const {
     return descriptor_->enum_type();
   }
 
-  const google::protobuf::Descriptor* message_type() const {
+  const protobuf::Descriptor* message_type() const {
     return descriptor_->message_type();
   }
 
   template <class Transformation>
   void Apply(const Transformation& transformation) const {
     assert(descriptor_);
-    using google::protobuf::FieldDescriptor;
+    using protobuf::FieldDescriptor;
     switch (cpp_type()) {
       case FieldDescriptor::CPPTYPE_INT32:
         return transformation.template Apply<int32_t>(*this);
@@ -293,7 +292,7 @@ class FieldInstance {
         return transformation.template Apply<std::string>(*this);
       case FieldDescriptor::CPPTYPE_MESSAGE:
         return transformation
-            .template Apply<std::unique_ptr<google::protobuf::Message>>(*this);
+            .template Apply<std::unique_ptr<protobuf::Message>>(*this);
       default:
         assert(!"Unknown type");
     }
@@ -351,7 +350,7 @@ class FieldInstance {
 
   void PushBackRepeated(const Enum& value) const {
     assert(value.index < value.count);
-    const google::protobuf::EnumValueDescriptor* enum_value =
+    const protobuf::EnumValueDescriptor* enum_value =
         descriptor_->enum_type()->value(value.index);
     assert(is_repeated());
     reflection().AddEnum(message_, descriptor_, enum_value);
@@ -362,21 +361,20 @@ class FieldInstance {
     reflection().AddString(message_, descriptor_, value);
   }
 
-  void PushBackRepeated(
-      const std::unique_ptr<google::protobuf::Message>& value) const {
+  void PushBackRepeated(const std::unique_ptr<protobuf::Message>& value) const {
     assert(is_repeated());
-    google::protobuf::Message* mutable_message =
+    protobuf::Message* mutable_message =
         reflection().AddMessage(message_, descriptor_);
     mutable_message->Clear();
     if (value) mutable_message->CopyFrom(*value);
   }
 
-  const google::protobuf::Reflection& reflection() const {
+  const protobuf::Reflection& reflection() const {
     return *message_->GetReflection();
   }
 
-  google::protobuf::Message* message_;
-  const google::protobuf::FieldDescriptor* descriptor_;
+  protobuf::Message* message_;
+  const protobuf::FieldDescriptor* descriptor_;
   size_t index_;
 };
 

@@ -18,11 +18,11 @@
 #include <cassert>
 #include <string>
 
-#include "google/protobuf/text_format.h"
+#include "src/port/protobuf.h"
 #include "src/protobuf_mutator.h"
 
-using google::protobuf::Message;
-using google::protobuf::TextFormat;
+using protobuf::Message;
+using protobuf::TextFormat;
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
     __attribute__((weak));
@@ -78,8 +78,7 @@ bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
   return ParseTextMessage({data, data + size}, output);
 }
 
-bool ParseTextMessage(const std::string& data,
-                      google::protobuf::Message* output) {
+bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
   output->Clear();
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
@@ -96,8 +95,8 @@ size_t SaveMessageAsText(const Message& message, uint8_t* data,
   return 0;
 }
 
-std::string SaveMessageAsText(const google::protobuf::Message& message) {
-  std::string result;
+std::string SaveMessageAsText(const protobuf::Message& message) {
+  protobuf::string result;
   if (!TextFormat::PrintToString(message, &result)) result.clear();
   return result;
 }
