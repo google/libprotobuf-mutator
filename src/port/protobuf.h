@@ -15,6 +15,8 @@
 #ifndef SRC_PORT_PROTOBUF_H_
 #define SRC_PORT_PROTOBUF_H_
 
+#include <string>
+
 #include "google/protobuf/message.h"
 #include "google/protobuf/stubs/common.h"
 #include "google/protobuf/stubs/logging.h"
@@ -22,5 +24,11 @@
 #include "google/protobuf/util/message_differencer.h"
 
 namespace protobuf = google::protobuf;
+
+inline std::string PrintMessageToString(const protobuf::Message& message) {
+  std::string tmp;
+  if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
+  return tmp;
+}
 
 #endif  // SRC_PORT_PROTOBUF_H_

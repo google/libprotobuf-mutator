@@ -433,8 +433,7 @@ TEST(ProtobufMutatorMessagesTest, SizeControl) {
       mutator.Mutate(&message2,
                      control ? kTargetSize - std::min(str.size(), kTargetSize)
                              : kTargetSize);
-      protobuf::string str2;
-      EXPECT_TRUE(TextFormat::PrintToString(message2, &str2));
+      std::string str2 = PrintMessageToString(message2);
       if (str2.size() > kTargetSize) {
         ++overflows;
       } else if (str2.size() > kTargetSize - 150 || str2.size() > str.size()) {
@@ -459,8 +458,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   std::set<std::string> mutations;
   for (int j = 0; j < 1000; ++j) {
     mutator.Mutate(&message, 1000);
-    protobuf::string str;
-    EXPECT_TRUE(TextFormat::PrintToString(message, &str));
+    std::string str = PrintMessageToString(message);
     mutations.insert(str);
   }
 
