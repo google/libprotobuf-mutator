@@ -74,6 +74,8 @@ class ProtobufMutator {
   //   * Callbacks to recursive traversal.
   //   * Callbacks for particular proto level mutations.
 
+  RandomEngine* random() { return &random_; }
+
  private:
   friend class MutateTransformation;
   friend class TestProtobufMutator;
