@@ -66,6 +66,8 @@ double LibFuzzerProtobufMutator::MutateDouble(double value) {
 
 std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
                                                    size_t allowed_growth) {
+  // Randomly return empty strings as LLVMFuzzerMutate does not produce them.
+  if (!std::uniform_int_distribution<uint8_t>(0, 20)(*random())) return {};
   std::string result = value;
   result.resize(value.size() + allowed_growth);
   if (result.empty()) return result;
