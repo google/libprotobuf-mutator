@@ -96,9 +96,7 @@ size_t SaveMessageAsText(const Message& message, uint8_t* data,
 }
 
 std::string SaveMessageAsText(const protobuf::Message& message) {
-  protobuf::string result;
-  if (!TextFormat::PrintToString(message, &result)) result.clear();
-  return result;
+  return PrintMessageToString(message);
 }
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
