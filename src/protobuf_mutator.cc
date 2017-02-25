@@ -374,14 +374,14 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
     case Mutation::Add:
       if (std::uniform_int_distribution<uint8_t>(0, 1)(random_)) {
         mutation.field().Apply(
-            CreateFieldTransformation(size_increase_hint, this));
+            CreateFieldTransformation(size_increase_hint / 2, this));
       } else {
         mutation.field().Apply(CreateDefaultFieldTransformation());
       }
       break;
     case Mutation::Mutate:
       mutation.field().Apply(
-          MutateTransformation(size_increase_hint, this));
+          MutateTransformation(size_increase_hint / 2, this));
       break;
     case Mutation::Delete:
       mutation.field().Apply(DeleteFieldTransformation());

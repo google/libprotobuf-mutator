@@ -16,7 +16,7 @@
 
 #include "expat.h"  // NOLINT
 
-#include "src/port/protobuf.h"
+#include "port/protobuf.h"
 #include "src/xml/libfuzzer_xml_mutator.h"
 
 namespace {

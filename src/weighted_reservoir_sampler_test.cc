@@ -17,7 +17,7 @@
 #include <tuple>
 #include <vector>
 
-#include "src/port/gtest.h"
+#include "port/gtest.h"
 
 using testing::TestWithParam;
 using testing::ValuesIn;

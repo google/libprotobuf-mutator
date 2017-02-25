@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "src/port/gtest.h"
+#include "port/gtest.h"
 #include "src/protobuf_mutator.pb.h"
 
 using protobuf::TextFormat;

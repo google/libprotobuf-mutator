@@ -14,7 +14,7 @@
 
 #include <dirent.h>
 #include <memory>
-#include "src/port/gtest.h"
+#include "port/gtest.h"
 
 namespace {
 
