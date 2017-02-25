@@ -12,9 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_PORT_GTEST_H_
-#define SRC_PORT_GTEST_H_
+#ifndef PORT_PROTOBUF_H_
+#define PORT_PROTOBUF_H_
 
-#include "gtest/gtest.h"
+#include <string>
 
-#endif  // SRC_PORT_GTEST_H_
+#include "google/protobuf/message.h"
+#include "google/protobuf/stubs/common.h"
+#include "google/protobuf/stubs/logging.h"
+#include "google/protobuf/text_format.h"
+#include "google/protobuf/util/message_differencer.h"
+
+namespace protobuf = google::protobuf;
+
+inline std::string PrintMessageToString(const protobuf::Message& message) {
+  std::string tmp;
+  if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
+  return tmp;
+}
+
+#endif  // PORT_PROTOBUF_H_

@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 
-#include "src/port/gtest.h"
+#include "port/gtest.h"
 
 const int kDefaultLibFuzzerError = 77;
 

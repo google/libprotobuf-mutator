@@ -17,8 +17,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "port/protobuf.h"
 #include "src/libfuzzer_protobuf_mutator.h"
-#include "src/port/protobuf.h"
 #include "src/xml/xml.pb.h"
 #include "src/xml/xml_writer.h"
 

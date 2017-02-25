@@ -18,7 +18,7 @@
 #include <cassert>
 #include <string>
 
-#include "src/port/protobuf.h"
+#include "port/protobuf.h"
 #include "src/protobuf_mutator.h"
 
 using protobuf::Message;
