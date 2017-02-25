@@ -36,7 +36,7 @@ class LibFuzzerProtobufMutator : public ProtobufMutator {
   float MutateFloat(float value) override;
   double MutateDouble(double value) override;
   std::string MutateString(const std::string& value,
-                           size_t allowed_growth) override;
+                           size_t size_increase_hint) override;
 };
 
 // Parses proto from text same way as |MutateTextMessage|.
