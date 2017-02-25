@@ -68,7 +68,7 @@ class ProtobufMutator {
   virtual bool MutateBool(bool value);
   virtual size_t MutateEnum(size_t index, size_t item_count);
   virtual std::string MutateString(const std::string& value,
-                                   size_t allowed_growth);
+                                   size_t size_increase_hint);
 
   // TODO(vitalybuka): Allow user to control proto level mutations:
   //   * Callbacks to recursive traversal.
@@ -77,7 +77,7 @@ class ProtobufMutator {
   RandomEngine* random() { return &random_; }
 
  private:
-  friend class MutateTransformation;
+  friend class FieldMutator;
   friend class TestProtobufMutator;
   void InitializeMessage(protobuf::Message* message, size_t max_depth);
 

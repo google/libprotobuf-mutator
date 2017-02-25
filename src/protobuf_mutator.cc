@@ -285,20 +285,11 @@ class DataSourceSampler {
 
 }  // namespace
 
-class MutateTransformation {
+class FieldMutator {
  public:
-  MutateTransformation(size_t allowed_growth, ProtobufMutator* mutator)
-      : allowed_growth_(allowed_growth), mutator_(mutator) {}
+  FieldMutator(size_t size_increase_hint, ProtobufMutator* mutator)
+      : size_increase_hint_(size_increase_hint), mutator_(mutator) {}
 
-  template <class T>
-  void Apply(const FieldInstance& field) const {
-    T value;
-    field.Load(&value);
-    Mutate(&value);
-    field.Store(value);
-  }
-
- private:
   void Mutate(int32_t* value) const { *value = mutator_->MutateInt32(*value); }
 
   void Mutate(int64_t* value) const { *value = mutator_->MutateInt64(*value); }
@@ -323,16 +314,54 @@ class MutateTransformation {
   }
 
   void Mutate(std::string* value) const {
-    *value = mutator_->MutateString(*value, allowed_growth_);
+    *value = mutator_->MutateString(*value, size_increase_hint_);
   }
 
   void Mutate(std::unique_ptr<Message>*) const {
-    assert(false && "Unexpected");
   }
 
-  size_t allowed_growth_;
+ private:
+  size_t size_increase_hint_;
   ProtobufMutator* mutator_;
 };
+
+namespace {
+
+class MutateTransformation {
+ public:
+  MutateTransformation(size_t size_increase_hint, ProtobufMutator* mutator)
+      : mutator_(size_increase_hint, mutator) {}
+
+  template <class T>
+  void Apply(const FieldInstance& field) const {
+    T value;
+    field.Load(&value);
+    mutator_.Mutate(&value);
+    field.Store(value);
+  }
+
+ private:
+  FieldMutator mutator_;
+};
+
+class CreateFieldTransformation {
+ public:
+  CreateFieldTransformation(size_t size_increase_hint, ProtobufMutator* mutator)
+      : mutator_(size_increase_hint, mutator) {}
+
+  template <class T>
+  void Apply(const FieldInstance& field) const {
+    T value;
+    field.GetDefault(&value);
+    mutator_.Mutate(&value);
+    field.Create(value);
+  }
+
+ private:
+  FieldMutator mutator_;
+};
+
+}  // namespace
 
 ProtobufMutator::ProtobufMutator(uint32_t seed) : random_(seed) {}
 
@@ -343,11 +372,16 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
     case Mutation::None:
       break;
     case Mutation::Add:
-      mutation.field().Apply(CreateDefaultFieldTransformation());
+      if (std::uniform_int_distribution<uint8_t>(0, 1)(random_)) {
+        mutation.field().Apply(
+            CreateFieldTransformation(size_increase_hint, this));
+      } else {
+        mutation.field().Apply(CreateDefaultFieldTransformation());
+      }
       break;
     case Mutation::Mutate:
       mutation.field().Apply(
-          MutateTransformation(size_increase_hint / 4, this));
+          MutateTransformation(size_increase_hint, this));
       break;
     case Mutation::Delete:
       mutation.field().Apply(DeleteFieldTransformation());
@@ -438,21 +472,17 @@ size_t ProtobufMutator::MutateEnum(size_t index, size_t item_count) {
 }
 
 std::string ProtobufMutator::MutateString(const std::string& value,
-                                          size_t allowed_growth) {
+                                          size_t size_increase_hint) {
+  std::uniform_int_distribution<uint8_t> distrib(0, 1);
   std::string result = value;
-  int min_diff = result.empty() ? 0 : -1;
-  int max_diff = allowed_growth ? 1 : 0;
-  int diff = std::uniform_int_distribution<int>(min_diff, max_diff)(random_);
-  if (diff == -1) {
+
+  while (!result.empty() && distrib(*random())) {
     result.erase(GetRandomIndex(&random_, result.size()), 1);
-    return result;
   }
 
-  if (diff == 1) {
+  while (result.size() < size_increase_hint && distrib(*random())) {
     size_t index = GetRandomIndex(&random_, result.size() + 1);
-    result.insert(result.begin() + index, '\0');
-    FlipBit(1, reinterpret_cast<uint8_t*>(&result[index]), &random_);
-    return result;
+    result.insert(result.begin() + index, GetRandomIndex(&random_, 1 << 8));
   }
 
   if (!result.empty())
