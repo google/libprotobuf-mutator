@@ -30,7 +30,7 @@ namespace xml {
 bool ParseTextMessage(const uint8_t* data, size_t size, std::string* xml,
                       int* options);
 
-// Mutates proto with XML serialized as test.
+// Mutates proto with XML serialized as text.
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed);
 
