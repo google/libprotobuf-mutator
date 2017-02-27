@@ -116,4 +116,22 @@ size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
   return 0;
 }
 
+size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
+                             const uint8_t* data2, size_t size2, uint8_t* out,
+                             size_t max_out_size, unsigned int seed,
+                             protobuf::Message* prototype) {
+  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  std::unique_ptr<protobuf::Message> message2(prototype->New());
+  ParseTextMessage(data2, size2, message2.get());
+  for (int i = 0; i < 100; ++i) {
+    ParseTextMessage(data1, size1, prototype);
+    mutator.CrossOver(*message2, prototype);
+    if (size_t new_size = SaveMessageAsText(*prototype, out, max_out_size)) {
+      assert(new_size <= max_out_size);
+      return new_size;
+    }
+  }
+  return 0;
+}
+
 }  // namespace protobuf_mutator

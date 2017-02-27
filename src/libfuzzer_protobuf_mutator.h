@@ -56,6 +56,14 @@ std::string SaveMessageAsText(const protobuf::Message& message);
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed, protobuf::Message* prototype);
 
+// Crossover two protos serialized as text.
+// |prototype| is message of user-defined type which will be used as a
+// temporary storage.
+size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
+                             const uint8_t* data2, size_t size2, uint8_t* out,
+                             size_t max_out_size, unsigned int seed,
+                             protobuf::Message* prototype);
+
 }  // namespace protobuf_mutator
 
 #endif  // SRC_LIBFUZZER_PROTOBUF_MUTATOR_H_
