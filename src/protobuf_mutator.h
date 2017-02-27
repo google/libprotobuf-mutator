@@ -54,8 +54,8 @@ class ProtobufMutator {
   // requested.
   void Mutate(protobuf::Message* message, size_t size_increase_hint);
 
-  // TODO(vitalybuka): implement
-  bool CrossOver(const protobuf::Message& with, protobuf::Message* message);
+  void CrossOver(const protobuf::Message& message1,
+                 protobuf::Message* message2);
 
  protected:
   // TODO(vitalybuka): Consider to replace with single mutate (uint8_t*, size).
@@ -80,6 +80,8 @@ class ProtobufMutator {
   friend class FieldMutator;
   friend class TestProtobufMutator;
   void InitializeMessage(protobuf::Message* message, size_t max_depth);
+  void CrossOverImpl(const protobuf::Message& message1,
+                     protobuf::Message* message2);
 
   bool keep_initialized_ = true;
   RandomEngine random_;

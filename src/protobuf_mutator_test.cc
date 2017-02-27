@@ -381,15 +381,91 @@ TEST_P(ProtobufMutatorFieldTest, CopyField) {
   EXPECT_TRUE(Mutate(from_, to_));
 }
 
-class ProtobufMutatorMessagesTest
-    : public ProtobufMutatorTest,
-      public TestWithParam<std::pair<const char*, size_t>> {
- protected:
-  void SetUp() override {
-    test_message_ = GetParam().first;
-    field_ = GetParam().second;
+class ProtobufMutatorSingleFieldTest : public ProtobufMutatorFieldTest {};
+
+INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorSingleFieldTest,
+                        ValuesIn(GetFieldTestParams({
+                            kRequiredFields, kOptionalFields,
+                            kRequiredNestedFields, kOptionalNestedFields,
+                        })));
+
+TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  LoadMessage(test_message_, &to_);
+
+  EXPECT_FALSE(MessageDifferencer::Equals(from_, to_));
+  TestProtobufMutator mutator(false);
+
+  int match_from_ = 0;
+  int match_to_ = 0;
+  int iterations = 1000;
+  for (int j = 0; j < iterations; ++j) {
+    Msg message;
+    message.CopyFrom(from_);
+    mutator.CrossOver(to_, &message);
+    if (MessageDifferencer::Equals(message, to_)) ++match_to_;
+    if (MessageDifferencer::Equals(message, from_)) ++match_from_;
   }
-};
+
+  EXPECT_LT(iterations * .4, match_from_);
+  EXPECT_GE(iterations * .6, match_from_);
+  EXPECT_LT(iterations * .4, match_to_);
+  EXPECT_GE(iterations * .6, match_to_);
+}
+
+TEST(ProtobufMutatorTest, CrossOverRepeated) {
+  Msg m1;
+  m1.add_repeated_int32(1);
+  m1.add_repeated_int32(2);
+  m1.add_repeated_int32(3);
+
+  Msg m2;
+  m2.add_repeated_int32(4);
+  m2.add_repeated_int32(5);
+  m2.add_repeated_int32(6);
+
+  int iterations = 10000;
+  std::set<std::set<int>> sets;
+  TestProtobufMutator mutator(false);
+  for (int j = 0; j < iterations; ++j) {
+    Msg message;
+    message.CopyFrom(m1);
+    mutator.CrossOver(m2, &message);
+    sets.insert(
+        {message.repeated_int32().begin(), message.repeated_int32().end()});
+  }
+
+  EXPECT_EQ(1 << 6, sets.size());
+}
+
+TEST(ProtobufMutatorTest, CrossOverRepeatedMessages) {
+  Msg m1;
+  auto* rm1 = m1.add_repeated_msg();
+  rm1->add_repeated_int32(1);
+  rm1->add_repeated_int32(2);
+
+  Msg m2;
+  auto* rm2 = m2.add_repeated_msg();
+  rm2->add_repeated_int32(3);
+  rm2->add_repeated_int32(4);
+  rm2->add_repeated_int32(5);
+  rm2->add_repeated_int32(6);
+
+  int iterations = 10000;
+  std::set<std::set<int>> sets;
+  TestProtobufMutator mutator(false);
+  for (int j = 0; j < iterations; ++j) {
+    Msg message;
+    message.CopyFrom(m1);
+    mutator.CrossOver(m2, &message);
+    for (const auto& msg : message.repeated_msg())
+      sets.insert({msg.repeated_int32().begin(), msg.repeated_int32().end()});
+  }
+
+  EXPECT_EQ(1 << 6, sets.size());
+}
+
+class ProtobufMutatorMessagesTest : public ProtobufMutatorFieldTest {};
 
 INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorMessagesTest,
                         ValuesIn(GetMessageTestParams({kMessages})));

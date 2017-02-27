@@ -101,6 +101,20 @@ struct CopyFieldTransformation {
   ConstFieldInstance source;
 };
 
+struct AppendFieldTransformation {
+  explicit AppendFieldTransformation(const ConstFieldInstance& field)
+      : source(field) {}
+
+  template <class T>
+  void Apply(const FieldInstance& field) const {
+    T value;
+    source.Load(&value);
+    field.Create(value);
+  }
+
+  ConstFieldInstance source;
+};
+
 // Selects random field and mutation from the given proto message.
 class MutationSampler {
  public:
@@ -403,6 +417,89 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
   if (keep_initialized_ && !message->IsInitialized()) {
     InitializeMessage(message, kMaxInitializeDepth);
     assert(message->IsInitialized());
+  }
+}
+
+void ProtobufMutator::CrossOver(const protobuf::Message& message1,
+                                protobuf::Message* message2) {
+  CrossOverImpl(message1, message2);
+
+  if (keep_initialized_ && !message2->IsInitialized()) {
+    InitializeMessage(message2, kMaxInitializeDepth);
+    assert(message2->IsInitialized());
+  }
+}
+
+void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
+                                    protobuf::Message* message2) {
+  const Descriptor* descriptor = message2->GetDescriptor();
+  const Reflection* reflection = message2->GetReflection();
+  assert(message1.GetDescriptor() == descriptor);
+  assert(message1.GetReflection() == reflection);
+
+  for (int i = 0; i < descriptor->field_count(); ++i) {
+    const FieldDescriptor* field = descriptor->field(i);
+
+    if (field->is_repeated()) {
+      const int field_size1 = reflection->FieldSize(message1, field);
+      int field_size2 = reflection->FieldSize(*message2, field);
+      for (int j = 0; j < field_size1; ++j) {
+        ConstFieldInstance source(&message1, field, j);
+        FieldInstance destination(message2, field, field_size2++);
+        destination.Apply(AppendFieldTransformation(source));
+      }
+
+      assert(field_size2 == reflection->FieldSize(*message2, field));
+
+      // Shuffle
+      for (int j = 0; j < field_size2; ++j) {
+        if (int k = GetRandomIndex(&random_, field_size2 - j)) {
+          reflection->SwapElements(message2, field, j, j + k);
+        }
+      }
+
+      int keep = GetRandomIndex(&random_, field_size2 + 1);
+
+      if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+        int remove = field_size2 - keep;
+        // Cross some message to keep with messages to remove.
+        int cross = GetRandomIndex(&random_, std::min(keep, remove) + 1);
+        for (int j = 0; j < cross; ++j) {
+          int k = GetRandomIndex(&random_, keep);
+          int r = keep + GetRandomIndex(&random_, remove);
+          assert(k != r);
+          CrossOverImpl(reflection->GetRepeatedMessage(*message2, field, r),
+                        reflection->MutableRepeatedMessage(message2, field, k));
+        }
+      }
+
+      for (int j = keep; j < field_size2; ++j)
+        reflection->RemoveLast(message2, field);
+      assert(keep == reflection->FieldSize(*message2, field));
+
+    } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+      if (!reflection->HasField(message1, field)) {
+        if (GetRandomIndex(&random_, 2))
+          FieldInstance(message2, field).Apply(DeleteFieldTransformation());
+      } else if (!reflection->HasField(*message2, field)) {
+        if (GetRandomIndex(&random_, 2)) {
+          ConstFieldInstance source(&message1, field);
+          FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
+        }
+      } else {
+        CrossOverImpl(reflection->GetMessage(message1, field),
+                      reflection->MutableMessage(message2, field));
+      }
+    } else {
+      if (GetRandomIndex(&random_, 2)) {
+        if (reflection->HasField(message1, field)) {
+          ConstFieldInstance source(&message1, field);
+          FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
+        } else {
+          FieldInstance(message2, field).Apply(DeleteFieldTransformation());
+        }
+      }
+    }
   }
 }
 
