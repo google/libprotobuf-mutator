@@ -88,7 +88,7 @@ struct DeleteFieldTransformation {
 };
 
 struct CopyFieldTransformation {
-  explicit CopyFieldTransformation(const FieldInstance& field)
+  explicit CopyFieldTransformation(const ConstFieldInstance& field)
       : source(field) {}
 
   template <class T>
@@ -98,7 +98,7 @@ struct CopyFieldTransformation {
     field.Store(value);
   }
 
-  FieldInstance source;
+  ConstFieldInstance source;
 };
 
 // Selects random field and mutation from the given proto message.
@@ -222,14 +222,14 @@ class MutationSampler {
 // Selects random field of compatible type to use for clone mutations.
 class DataSourceSampler {
  public:
-  DataSourceSampler(const FieldInstance& match,
+  DataSourceSampler(const ConstFieldInstance& match,
                     ProtobufMutator::RandomEngine* random, Message* message)
       : match_(match), random_(random), sampler_(random) {
     Sample(message);
   }
 
   // Returns selected field.
-  const FieldInstance& field() const {
+  const ConstFieldInstance& field() const {
     assert(!IsEmpty());
     return sampler_.selected();
   }
@@ -276,10 +276,10 @@ class DataSourceSampler {
     }
   }
 
-  FieldInstance match_;
+  ConstFieldInstance match_;
   ProtobufMutator::RandomEngine* random_;
 
-  WeightedReservoirSampler<FieldInstance, ProtobufMutator::RandomEngine>
+  WeightedReservoirSampler<ConstFieldInstance, ProtobufMutator::RandomEngine>
       sampler_;
 };
 
