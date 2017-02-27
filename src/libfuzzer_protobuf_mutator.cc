@@ -39,7 +39,89 @@ T MutateValue(T v) {
   memset(reinterpret_cast<uint8_t*>(&v) + size, 0, sizeof(v) - size);
   return v;
 }
+
+class InputReader {
+ public:
+  InputReader(const uint8_t* data, size_t size) : data_(data), size_(size) {}
+  virtual ~InputReader() = default;
+
+  virtual bool Read(protobuf::Message* message) const = 0;
+
+  const uint8_t* data() const { return data_; }
+  size_t size() const { return size_; }
+
+ private:
+  const uint8_t* data_;
+  size_t size_;
+};
+
+class OutputWriter {
+ public:
+  OutputWriter(uint8_t* data, size_t size) : data_(data), size_(size) {}
+  virtual ~OutputWriter() = default;
+
+  virtual size_t Write(const protobuf::Message& message) = 0;
+
+  uint8_t* data() const { return data_; }
+  size_t size() const { return size_; }
+
+ private:
+  uint8_t* data_;
+  size_t size_;
+};
+
+class TextInputReader : public InputReader {
+ public:
+  using InputReader::InputReader;
+
+  bool Read(protobuf::Message* message) const override {
+    return ParseTextMessage(data(), size(), message);
+  }
+};
+
+class TextOutputWriter : public OutputWriter {
+ public:
+  using OutputWriter::OutputWriter;
+
+  size_t Write(const protobuf::Message& message) override {
+    return SaveMessageAsText(message, data(), size());
+  }
+};
+
+size_t MutateTextMessage(unsigned int seed, const InputReader& input,
+                         OutputWriter* output, Message* message) {
+  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  for (int i = 0; i < 100; ++i) {
+    input.Read(message);
+    mutator.Mutate(message, output->size() > input.size()
+                                ? (output->size() - input.size())
+                                : 0);
+    if (size_t new_size = output->Write(*message)) {
+      assert(new_size <= output->size());
+      return new_size;
+    }
+  }
+  return 0;
 }
+
+size_t CrossOverTextMessages(unsigned int seed, const InputReader& input1,
+                             const InputReader& input2, OutputWriter* output,
+                             protobuf::Message* message1,
+                             protobuf::Message* message2) {
+  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  input2.Read(message2);
+  for (int i = 0; i < 100; ++i) {
+    input1.Read(message1);
+    mutator.CrossOver(*message2, message1);
+    if (size_t new_size = output->Write(*message1)) {
+      assert(new_size <= output->size());
+      return new_size;
+    }
+  }
+  return 0;
+}
+
+}  // namespace
 
 int32_t LibFuzzerProtobufMutator::MutateInt32(int32_t value) {
   return MutateValue(value);
@@ -105,17 +187,10 @@ std::string SaveMessageAsText(const protobuf::Message& message) {
 namespace internal {
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
-                         unsigned int seed, Message* message) {
-  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
-  for (int i = 0; i < 100; ++i) {
-    ParseTextMessage(data, size, message);
-    mutator.Mutate(message, max_size > size ? max_size - size : 0);
-    if (size_t new_size = SaveMessageAsText(*message, data, max_size)) {
-      assert(new_size <= max_size);
-      return new_size;
-    }
-  }
-  return 0;
+                         unsigned int seed, protobuf::Message* message) {
+  TextInputReader input(data, size);
+  TextOutputWriter output(data, max_size);
+  return MutateTextMessage(seed, input, &output, message);
 }
 
 size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
@@ -123,17 +198,11 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
                              size_t max_out_size, unsigned int seed,
                              protobuf::Message* message1,
                              protobuf::Message* message2) {
-  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
-  ParseTextMessage(data2, size2, message2);
-  for (int i = 0; i < 100; ++i) {
-    ParseTextMessage(data1, size1, message1);
-    mutator.CrossOver(*message2, message1);
-    if (size_t new_size = SaveMessageAsText(*message1, out, max_out_size)) {
-      assert(new_size <= max_out_size);
-      return new_size;
-    }
-  }
-  return 0;
+  TextInputReader input1(data1, size1);
+  TextInputReader input2(data2, size2);
+  TextOutputWriter output(out, max_out_size);
+  return CrossOverTextMessages(seed, input1, input2, &output, message1,
+                               message2);
 }
 
 }  // namespace internal
