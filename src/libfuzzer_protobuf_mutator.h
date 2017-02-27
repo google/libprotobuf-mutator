@@ -50,6 +50,14 @@ size_t SaveMessageAsText(const protobuf::Message& message, uint8_t* data,
                          size_t max_size);
 std::string SaveMessageAsText(const protobuf::Message& message);
 
+// Same as above but for binary serialization.
+bool ParseBinaryMessage(const uint8_t* data, size_t size,
+                        protobuf::Message* output);
+bool ParseBinaryMessage(const std::string& data, protobuf::Message* output);
+size_t SaveMessageAsBinary(const protobuf::Message& message, uint8_t* data,
+                           size_t max_size);
+std::string SaveMessageAsBinary(const protobuf::Message& message);
+
 namespace internal {
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed, protobuf::Message* message);
@@ -58,6 +66,13 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
                              size_t max_out_size, unsigned int seed,
                              protobuf::Message* message1,
                              protobuf::Message* message2);
+size_t MutateBinaryMessage(uint8_t* data, size_t size, size_t max_size,
+                           unsigned int seed, protobuf::Message* message);
+size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
+                               const uint8_t* data2, size_t size2, uint8_t* out,
+                               size_t max_out_size, unsigned int seed,
+                               protobuf::Message* message1,
+                               protobuf::Message* message2);
 }  // namespace internal
 
 // Mutates proto serialized as text.
@@ -78,6 +93,26 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
   return internal::CrossOverTextMessages(data1, size1, data2, size2, out,
                                          max_out_size, seed, &message1,
                                          &message2);
+}
+
+// Mutates proto serialized as binary.
+template <class MessageType>
+size_t MutateBinaryMessage(uint8_t* data, size_t size, size_t max_size,
+                           unsigned int seed) {
+  MessageType message;
+  return internal::MutateBinaryMessage(data, size, max_size, seed, &message);
+}
+
+// Crossover two protos serialized as binary.
+template <class MessageType>
+size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
+                               const uint8_t* data2, size_t size2, uint8_t* out,
+                               size_t max_out_size, unsigned int seed) {
+  MessageType message1;
+  MessageType message2;
+  return internal::CrossOverBinaryMessages(data1, size1, data2, size2, out,
+                                           max_out_size, seed, &message1,
+                                           &message2);
 }
 
 }  // namespace protobuf_mutator

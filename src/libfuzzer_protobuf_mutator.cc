@@ -88,8 +88,26 @@ class TextOutputWriter : public OutputWriter {
   }
 };
 
-size_t MutateTextMessage(unsigned int seed, const InputReader& input,
-                         OutputWriter* output, Message* message) {
+class BinaryInputReader : public InputReader {
+ public:
+  using InputReader::InputReader;
+
+  bool Read(protobuf::Message* message) const override {
+    return ParseBinaryMessage(data(), size(), message);
+  }
+};
+
+class BinaryOutputWriter : public OutputWriter {
+ public:
+  using OutputWriter::OutputWriter;
+
+  size_t Write(const protobuf::Message& message) override {
+    return SaveMessageAsBinary(message, data(), size());
+  }
+};
+
+size_t MutateMessage(unsigned int seed, const InputReader& input,
+                     OutputWriter* output, Message* message) {
   protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
   for (int i = 0; i < 100; ++i) {
     input.Read(message);
@@ -104,10 +122,10 @@ size_t MutateTextMessage(unsigned int seed, const InputReader& input,
   return 0;
 }
 
-size_t CrossOverTextMessages(unsigned int seed, const InputReader& input1,
-                             const InputReader& input2, OutputWriter* output,
-                             protobuf::Message* message1,
-                             protobuf::Message* message2) {
+size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
+                         const InputReader& input2, OutputWriter* output,
+                         protobuf::Message* message1,
+                         protobuf::Message* message2) {
   protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
   input2.Read(message2);
   for (int i = 0; i < 100; ++i) {
@@ -184,13 +202,36 @@ std::string SaveMessageAsText(const protobuf::Message& message) {
   return MessageToTextString(message);
 }
 
+bool ParseBinaryMessage(const uint8_t* data, size_t size, Message* output) {
+  return ParseBinaryMessage({data, data + size}, output);
+}
+
+bool ParseBinaryMessage(const std::string& data, protobuf::Message* output) {
+  output->Clear();
+  return output->ParsePartialFromString(data);
+}
+
+size_t SaveMessageAsBinary(const Message& message, uint8_t* data,
+                           size_t max_size) {
+  std::string result = SaveMessageAsBinary(message);
+  if (result.size() <= max_size) {
+    memcpy(data, result.data(), result.size());
+    return result.size();
+  }
+  return 0;
+}
+
+std::string SaveMessageAsBinary(const protobuf::Message& message) {
+  return MessageToBinaryString(message);
+}
+
 namespace internal {
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed, protobuf::Message* message) {
   TextInputReader input(data, size);
   TextOutputWriter output(data, max_size);
-  return MutateTextMessage(seed, input, &output, message);
+  return MutateMessage(seed, input, &output, message);
 }
 
 size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
@@ -201,8 +242,25 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
   TextInputReader input1(data1, size1);
   TextInputReader input2(data2, size2);
   TextOutputWriter output(out, max_out_size);
-  return CrossOverTextMessages(seed, input1, input2, &output, message1,
-                               message2);
+  return CrossOverMessages(seed, input1, input2, &output, message1, message2);
+}
+
+size_t MutateBinaryMessage(uint8_t* data, size_t size, size_t max_size,
+                           unsigned int seed, protobuf::Message* message) {
+  BinaryInputReader input(data, size);
+  BinaryOutputWriter output(data, max_size);
+  return MutateMessage(seed, input, &output, message);
+}
+
+size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
+                               const uint8_t* data2, size_t size2, uint8_t* out,
+                               size_t max_out_size, unsigned int seed,
+                               protobuf::Message* message1,
+                               protobuf::Message* message2) {
+  BinaryInputReader input1(data1, size1);
+  BinaryInputReader input2(data2, size2);
+  BinaryOutputWriter output(out, max_out_size);
+  return CrossOverMessages(seed, input1, input2, &output, message1, message2);
 }
 
 }  // namespace internal
