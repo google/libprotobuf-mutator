@@ -34,6 +34,14 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
   return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
 }
 
+extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t* data1, size_t size1,
+                                            const uint8_t* data2, size_t size2,
+                                            uint8_t* out, size_t max_out_size,
+                                            unsigned int seed) {
+  return protobuf_mutator::xml::CrossOverTextMessages(
+      data1, size1, data2, size2, out, max_out_size, seed);
+}
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   int options = 0;
   std::string xml;

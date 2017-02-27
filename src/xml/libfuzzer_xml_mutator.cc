@@ -52,5 +52,13 @@ size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                                              &message);
 }
 
+size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
+                             const uint8_t* data2, size_t size2, uint8_t* out,
+                             size_t max_out_size, unsigned int seed) {
+  Input message;
+  return protobuf_mutator::CrossOverTextMessages(
+      data1, size1, data2, size2, out, max_out_size, seed, &message);
+}
+
 }  // namespace xml
 }  // namespace protobuf_mutator
