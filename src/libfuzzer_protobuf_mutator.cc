@@ -22,13 +22,13 @@
 #include "port/protobuf.h"
 #include "src/protobuf_mutator.h"
 
-using protobuf::Message;
-using protobuf::TextFormat;
-
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
     __attribute__((weak));
 
 namespace protobuf_mutator {
+
+using protobuf::Message;
+using protobuf::TextFormat;
 
 namespace {
 
@@ -181,7 +181,7 @@ size_t SaveMessageAsText(const Message& message, uint8_t* data,
 }
 
 std::string SaveMessageAsText(const protobuf::Message& message) {
-  return PrintMessageToString(message);
+  return MessageToTextString(message);
 }
 
 namespace internal {

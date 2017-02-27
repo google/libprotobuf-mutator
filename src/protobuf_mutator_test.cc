@@ -23,13 +23,13 @@
 #include "port/gtest.h"
 #include "src/protobuf_mutator.pb.h"
 
+namespace protobuf_mutator {
+
 using protobuf::TextFormat;
 using protobuf::util::MessageDifferencer;
 using testing::TestWithParam;
 using testing::ValuesIn;
 using testing::WithParamInterface;
-
-namespace protobuf_mutator {
 
 const char kMessages[] = R"(
   required_msg {}
@@ -509,7 +509,7 @@ TEST(ProtobufMutatorMessagesTest, SizeControl) {
       mutator.Mutate(&message2,
                      control ? kTargetSize - std::min(str.size(), kTargetSize)
                              : kTargetSize);
-      std::string str2 = PrintMessageToString(message2);
+      std::string str2 = MessageToTextString(message2);
       if (str2.size() > kTargetSize) {
         ++overflows;
       } else if (str2.size() > kTargetSize - 150 || str2.size() > str.size()) {
@@ -534,7 +534,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   std::set<std::string> mutations;
   for (int j = 0; j < 1000; ++j) {
     mutator.Mutate(&message, 1000);
-    std::string str = PrintMessageToString(message);
+    std::string str = MessageToTextString(message);
     mutations.insert(str);
   }
 

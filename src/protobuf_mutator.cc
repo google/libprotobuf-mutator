@@ -23,6 +23,8 @@
 #include "src/field_instance.h"
 #include "src/weighted_reservoir_sampler.h"
 
+namespace protobuf_mutator {
+
 using protobuf::Descriptor;
 using protobuf::EnumDescriptor;
 using protobuf::EnumValueDescriptor;
@@ -30,8 +32,6 @@ using protobuf::FieldDescriptor;
 using protobuf::Message;
 using protobuf::OneofDescriptor;
 using protobuf::Reflection;
-
-namespace protobuf_mutator {
 
 namespace {
 
