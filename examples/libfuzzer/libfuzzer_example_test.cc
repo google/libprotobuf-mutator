@@ -32,3 +32,17 @@ TEST(LibFuzzerExampleTest, Crash) {
   // Cleanup.
   EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
 }
+
+TEST(LibFuzzerExampleTest, CrashBinary) {
+  char dir_template[] = "/tmp/libfuzzer_example_test_XXXXXX";
+  auto dir = mkdtemp(dir_template);
+  ASSERT_TRUE(dir);
+
+  std::string cmd = "./libfuzzer_bin_example -max_len=150 -artifact_prefix=" +
+                    std::string(dir) + "/ " + dir + "/";
+  int retvalue = std::system(cmd.c_str());
+  EXPECT_EQ(kDefaultLibFuzzerError, WSTOPSIG(retvalue));
+
+  // Cleanup.
+  EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
+}

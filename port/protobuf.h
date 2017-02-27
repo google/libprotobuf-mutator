@@ -32,6 +32,13 @@ inline std::string MessageToTextString(const protobuf::Message& message) {
   if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
   return tmp;
 }
+
+inline std::string MessageToBinaryString(const protobuf::Message& message) {
+  std::string tmp;
+  if (!message.SerializeToString(&tmp)) return {};
+  return tmp;
+}
+
 }  // namespace protobuf_mutator
 
 #endif  // PORT_PROTOBUF_H_
