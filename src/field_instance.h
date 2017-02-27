@@ -23,7 +23,7 @@
 namespace protobuf_mutator {
 
 // Helper class for common protobuf fields operations.
-class FieldInstance {
+class ConstFieldInstance {
  public:
   static const size_t kInvalidIndex = -1;
 
@@ -32,11 +32,11 @@ class FieldInstance {
     size_t count;
   };
 
-  FieldInstance()
+  ConstFieldInstance()
       : message_(nullptr), descriptor_(nullptr), index_(kInvalidIndex) {}
 
-  FieldInstance(protobuf::Message* message,
-                const protobuf::FieldDescriptor* field, size_t index)
+  ConstFieldInstance(const protobuf::Message* message,
+                     const protobuf::FieldDescriptor* field, size_t index)
       : message_(message), descriptor_(field), index_(index) {
     assert(message_);
     assert(descriptor_);
@@ -44,22 +44,12 @@ class FieldInstance {
     assert(descriptor_->is_repeated());
   }
 
-  FieldInstance(protobuf::Message* msg, const protobuf::FieldDescriptor* f)
-      : message_(msg), descriptor_(f), index_(kInvalidIndex) {
+  ConstFieldInstance(const protobuf::Message* message,
+                     const protobuf::FieldDescriptor* field)
+      : message_(message), descriptor_(field), index_(kInvalidIndex) {
     assert(message_);
     assert(descriptor_);
     assert(!descriptor_->is_repeated());
-  }
-
-  void Delete() const {
-    if (!is_repeated()) return reflection().ClearField(message_, descriptor_);
-    int field_size = reflection().FieldSize(*message_, descriptor_);
-    // API has only method to delete the last message, so we move method from
-    // the
-    // middle to the end.
-    for (int i = index_ + 1; i < field_size; ++i)
-      reflection().SwapElements(message_, descriptor_, i, i - 1);
-    reflection().RemoveLast(message_, descriptor_);
   }
 
   void GetDefault(int32_t* out) const {
@@ -102,12 +92,6 @@ class FieldInstance {
 
   void GetDefault(std::unique_ptr<protobuf::Message>* out) const {
     out->reset();
-  }
-
-  template <class T>
-  void Create(const T& value) const {
-    if (!is_repeated()) return Store(value);
-    InsertRepeated(value);
   }
 
   void Load(int32_t* value) const {
@@ -180,81 +164,6 @@ class FieldInstance {
     (*value)->CopyFrom(source);
   }
 
-  void Store(int32_t value) const {
-    if (is_repeated())
-      reflection().SetRepeatedInt32(message_, descriptor_, index_, value);
-    else
-      reflection().SetInt32(message_, descriptor_, value);
-  }
-
-  void Store(int64_t value) const {
-    if (is_repeated())
-      reflection().SetRepeatedInt64(message_, descriptor_, index_, value);
-    else
-      reflection().SetInt64(message_, descriptor_, value);
-  }
-
-  void Store(uint32_t value) const {
-    if (is_repeated())
-      reflection().SetRepeatedUInt32(message_, descriptor_, index_, value);
-    else
-      reflection().SetUInt32(message_, descriptor_, value);
-  }
-
-  void Store(uint64_t value) const {
-    if (is_repeated())
-      reflection().SetRepeatedUInt64(message_, descriptor_, index_, value);
-    else
-      reflection().SetUInt64(message_, descriptor_, value);
-  }
-
-  void Store(double value) const {
-    if (is_repeated())
-      reflection().SetRepeatedDouble(message_, descriptor_, index_, value);
-    else
-      reflection().SetDouble(message_, descriptor_, value);
-  }
-
-  void Store(float value) const {
-    if (is_repeated())
-      reflection().SetRepeatedFloat(message_, descriptor_, index_, value);
-    else
-      reflection().SetFloat(message_, descriptor_, value);
-  }
-
-  void Store(bool value) const {
-    if (is_repeated())
-      reflection().SetRepeatedBool(message_, descriptor_, index_, value);
-    else
-      reflection().SetBool(message_, descriptor_, value);
-  }
-
-  void Store(const Enum& value) const {
-    assert(value.index < value.count);
-    const protobuf::EnumValueDescriptor* enum_value =
-        descriptor_->enum_type()->value(value.index);
-    if (is_repeated())
-      reflection().SetRepeatedEnum(message_, descriptor_, index_, enum_value);
-    else
-      reflection().SetEnum(message_, descriptor_, enum_value);
-  }
-
-  void Store(const std::string& value) const {
-    if (is_repeated())
-      reflection().SetRepeatedString(message_, descriptor_, index_, value);
-    else
-      reflection().SetString(message_, descriptor_, value);
-  }
-
-  void Store(const std::unique_ptr<protobuf::Message>& value) const {
-    protobuf::Message* mutable_message =
-        is_repeated()
-            ? reflection().MutableRepeatedMessage(message_, descriptor_, index_)
-            : reflection().MutableMessage(message_, descriptor_);
-    mutable_message->Clear();
-    if (value) mutable_message->CopyFrom(*value);
-  }
-
   protobuf::FieldDescriptor::CppType cpp_type() const {
     return descriptor_->cpp_type();
   }
@@ -267,9 +176,132 @@ class FieldInstance {
     return descriptor_->message_type();
   }
 
+ protected:
+  bool is_repeated() const { return descriptor_->is_repeated(); }
+
+  const protobuf::Reflection& reflection() const {
+    return *message_->GetReflection();
+  }
+
+  const protobuf::FieldDescriptor* descriptor() const { return descriptor_; }
+
+  size_t index() const { return index_; }
+
+ private:
+  const protobuf::Message* message_;
+  const protobuf::FieldDescriptor* descriptor_;
+  size_t index_;
+};
+
+class FieldInstance : public ConstFieldInstance {
+ public:
+  static const size_t kInvalidIndex = -1;
+
+  FieldInstance() : ConstFieldInstance(), message_(nullptr) {}
+
+  FieldInstance(protobuf::Message* message,
+                const protobuf::FieldDescriptor* field, size_t index)
+      : ConstFieldInstance(message, field, index), message_(message) {}
+
+  FieldInstance(protobuf::Message* message,
+                const protobuf::FieldDescriptor* field)
+      : ConstFieldInstance(message, field), message_(message) {}
+
+  void Delete() const {
+    if (!is_repeated()) return reflection().ClearField(message_, descriptor());
+    int field_size = reflection().FieldSize(*message_, descriptor());
+    // API has only method to delete the last message, so we move method from
+    // the
+    // middle to the end.
+    for (int i = index() + 1; i < field_size; ++i)
+      reflection().SwapElements(message_, descriptor(), i, i - 1);
+    reflection().RemoveLast(message_, descriptor());
+  }
+
+  template <class T>
+  void Create(const T& value) const {
+    if (!is_repeated()) return Store(value);
+    InsertRepeated(value);
+  }
+
+  void Store(int32_t value) const {
+    if (is_repeated())
+      reflection().SetRepeatedInt32(message_, descriptor(), index(), value);
+    else
+      reflection().SetInt32(message_, descriptor(), value);
+  }
+
+  void Store(int64_t value) const {
+    if (is_repeated())
+      reflection().SetRepeatedInt64(message_, descriptor(), index(), value);
+    else
+      reflection().SetInt64(message_, descriptor(), value);
+  }
+
+  void Store(uint32_t value) const {
+    if (is_repeated())
+      reflection().SetRepeatedUInt32(message_, descriptor(), index(), value);
+    else
+      reflection().SetUInt32(message_, descriptor(), value);
+  }
+
+  void Store(uint64_t value) const {
+    if (is_repeated())
+      reflection().SetRepeatedUInt64(message_, descriptor(), index(), value);
+    else
+      reflection().SetUInt64(message_, descriptor(), value);
+  }
+
+  void Store(double value) const {
+    if (is_repeated())
+      reflection().SetRepeatedDouble(message_, descriptor(), index(), value);
+    else
+      reflection().SetDouble(message_, descriptor(), value);
+  }
+
+  void Store(float value) const {
+    if (is_repeated())
+      reflection().SetRepeatedFloat(message_, descriptor(), index(), value);
+    else
+      reflection().SetFloat(message_, descriptor(), value);
+  }
+
+  void Store(bool value) const {
+    if (is_repeated())
+      reflection().SetRepeatedBool(message_, descriptor(), index(), value);
+    else
+      reflection().SetBool(message_, descriptor(), value);
+  }
+
+  void Store(const Enum& value) const {
+    assert(value.index < value.count);
+    const protobuf::EnumValueDescriptor* enum_value =
+        descriptor()->enum_type()->value(value.index);
+    if (is_repeated())
+      reflection().SetRepeatedEnum(message_, descriptor(), index(), enum_value);
+    else
+      reflection().SetEnum(message_, descriptor(), enum_value);
+  }
+
+  void Store(const std::string& value) const {
+    if (is_repeated())
+      reflection().SetRepeatedString(message_, descriptor(), index(), value);
+    else
+      reflection().SetString(message_, descriptor(), value);
+  }
+
+  void Store(const std::unique_ptr<protobuf::Message>& value) const {
+    protobuf::Message* mutable_message =
+        is_repeated() ? reflection().MutableRepeatedMessage(
+                            message_, descriptor(), index())
+                      : reflection().MutableMessage(message_, descriptor());
+    mutable_message->Clear();
+    if (value) mutable_message->CopyFrom(*value);
+  }
+
   template <class Transformation>
   void Apply(const Transformation& transformation) const {
-    assert(descriptor_);
+    assert(descriptor());
     using protobuf::FieldDescriptor;
     switch (cpp_type()) {
       case FieldDescriptor::CPPTYPE_INT32:
@@ -302,80 +334,72 @@ class FieldInstance {
   template <class T>
   void InsertRepeated(const T& value) const {
     PushBackRepeated(value);
-    size_t field_size = reflection().FieldSize(*message_, descriptor_);
+    size_t field_size = reflection().FieldSize(*message_, descriptor());
     if (field_size == 1) return;
     // API has only method to add field to the end of the list. So we add
-    // descriptor_
+    // descriptor()
     // and move it into the middle.
-    for (size_t i = field_size - 1; i > index_; --i)
-      reflection().SwapElements(message_, descriptor_, i, i - 1);
+    for (size_t i = field_size - 1; i > index(); --i)
+      reflection().SwapElements(message_, descriptor(), i, i - 1);
   }
-
-  bool is_repeated() const { return descriptor_->is_repeated(); }
 
   void PushBackRepeated(int32_t value) const {
     assert(is_repeated());
-    reflection().AddInt32(message_, descriptor_, value);
+    reflection().AddInt32(message_, descriptor(), value);
   }
 
   void PushBackRepeated(int64_t value) const {
     assert(is_repeated());
-    reflection().AddInt64(message_, descriptor_, value);
+    reflection().AddInt64(message_, descriptor(), value);
   }
 
   void PushBackRepeated(uint32_t value) const {
     assert(is_repeated());
-    reflection().AddUInt32(message_, descriptor_, value);
+    reflection().AddUInt32(message_, descriptor(), value);
   }
 
   void PushBackRepeated(uint64_t value) const {
     assert(is_repeated());
-    reflection().AddUInt64(message_, descriptor_, value);
+    reflection().AddUInt64(message_, descriptor(), value);
   }
 
   void PushBackRepeated(double value) const {
     assert(is_repeated());
-    reflection().AddDouble(message_, descriptor_, value);
+    reflection().AddDouble(message_, descriptor(), value);
   }
 
   void PushBackRepeated(float value) const {
     assert(is_repeated());
-    reflection().AddFloat(message_, descriptor_, value);
+    reflection().AddFloat(message_, descriptor(), value);
   }
 
   void PushBackRepeated(bool value) const {
     assert(is_repeated());
-    reflection().AddBool(message_, descriptor_, value);
+    reflection().AddBool(message_, descriptor(), value);
   }
 
   void PushBackRepeated(const Enum& value) const {
     assert(value.index < value.count);
     const protobuf::EnumValueDescriptor* enum_value =
-        descriptor_->enum_type()->value(value.index);
+        descriptor()->enum_type()->value(value.index);
     assert(is_repeated());
-    reflection().AddEnum(message_, descriptor_, enum_value);
+    reflection().AddEnum(message_, descriptor(), enum_value);
   }
 
   void PushBackRepeated(const std::string& value) const {
     assert(is_repeated());
-    reflection().AddString(message_, descriptor_, value);
+    reflection().AddString(message_, descriptor(), value);
   }
 
   void PushBackRepeated(const std::unique_ptr<protobuf::Message>& value) const {
     assert(is_repeated());
     protobuf::Message* mutable_message =
-        reflection().AddMessage(message_, descriptor_);
+        reflection().AddMessage(message_, descriptor());
     mutable_message->Clear();
     if (value) mutable_message->CopyFrom(*value);
   }
 
-  const protobuf::Reflection& reflection() const {
-    return *message_->GetReflection();
-  }
-
   protobuf::Message* message_;
-  const protobuf::FieldDescriptor* descriptor_;
-  size_t index_;
 };
 
 }  // namespace protobuf_mutator
