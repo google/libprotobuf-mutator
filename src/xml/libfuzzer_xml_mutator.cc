@@ -35,19 +35,6 @@ bool ParseTextMessage(const uint8_t* data, size_t size, std::string* xml,
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed) {
   Input message;
-  // If the data is a proto we can convert it to XML and store as a content
-  // field. This mutation allows to grow coverage faster.
-  if (seed % 33 == 0) {
-    protobuf_mutator::ParseTextMessage(data, size, &message);
-    message.mutable_document()->Clear();
-    message.mutable_document()->mutable_element()->add_content()->set_char_data(
-        MessageToXml(message.document()));
-    if (size_t new_size =
-            protobuf_mutator::SaveMessageAsText(message, data, max_size)) {
-      size = new_size;
-    }
-  }
-
   return protobuf_mutator::MutateTextMessage(data, size, max_size, seed,
                                              &message);
 }
@@ -55,6 +42,27 @@ size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
 size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
                              const uint8_t* data2, size_t size2, uint8_t* out,
                              size_t max_out_size, unsigned int seed) {
+  // If the data is a proto we can convert it to XML and store as a content
+  // field.
+  if (seed % 33 == 0) {
+    Input message1;
+    protobuf_mutator::ParseTextMessage(data1, size1, &message1);
+    Input message2;
+    protobuf_mutator::ParseTextMessage(data2, size2, &message2);
+    for (int i = 0; i < 2; ++i) {
+      message1.mutable_document()
+          ->mutable_element()
+          ->add_content()
+          ->set_char_data(MessageToXml(message2.document()));
+      if (size_t new_size = protobuf_mutator::SaveMessageAsText(message1, out,
+                                                                max_out_size)) {
+        return new_size;
+      }
+      message1.Clear();
+    }
+    return 0;
+  }
+
   Input message;
   return protobuf_mutator::CrossOverTextMessages(
       data1, size1, data2, size2, out, max_out_size, seed, &message);
