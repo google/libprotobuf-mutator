@@ -50,7 +50,7 @@ size_t SaveMessageAsText(const protobuf::Message& message, uint8_t* data,
                          size_t max_size);
 std::string SaveMessageAsText(const protobuf::Message& message);
 
-// Mutates proto serialized as test.
+// Mutates proto serialized as text.
 // |prototype| is message of user-defined type which will be used as a
 // temporary storage.
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
