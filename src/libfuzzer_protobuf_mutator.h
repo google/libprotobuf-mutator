@@ -50,19 +50,35 @@ size_t SaveMessageAsText(const protobuf::Message& message, uint8_t* data,
                          size_t max_size);
 std::string SaveMessageAsText(const protobuf::Message& message);
 
-// Mutates proto serialized as text.
-// |prototype| is message of user-defined type which will be used as a
-// temporary storage.
+namespace internal {
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
-                         unsigned int seed, protobuf::Message* prototype);
-
-// Crossover two protos serialized as text.
-// |prototype| is message of user-defined type which will be used as a
-// temporary storage.
+                         unsigned int seed, protobuf::Message* message);
 size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
                              const uint8_t* data2, size_t size2, uint8_t* out,
                              size_t max_out_size, unsigned int seed,
-                             protobuf::Message* prototype);
+                             protobuf::Message* message1,
+                             protobuf::Message* message2);
+}
+
+// Mutates proto serialized as text.
+template <class MessageType>
+size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
+                         unsigned int seed) {
+  MessageType message;
+  return internal::MutateTextMessage(data, size, max_size, seed, &message);
+}
+
+// Crossover two protos serialized as text.
+template <class MessageType>
+size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
+                             const uint8_t* data2, size_t size2, uint8_t* out,
+                             size_t max_out_size, unsigned int seed) {
+  MessageType message1;
+  MessageType message2;
+  return internal::CrossOverTextMessages(data1, size1, data2, size2, out,
+                                         max_out_size, seed, &message1,
+                                         &message2);
+}
 
 }  // namespace protobuf_mutator
 
