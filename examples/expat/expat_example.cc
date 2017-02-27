@@ -28,13 +28,6 @@ std::vector<const char*> kEncodings = {{"UTF-16", "UTF-8", "ISO-8859-1",
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t max_size, unsigned int seed) {
-// Experimental
-#ifdef LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
-  if (seed % 33 == 0) {
-    ++seed;
-  }
-#endif  // LIB_PROTO_MUTATOR_XML2_NO_FLATTENING
-
   return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
 }
 
