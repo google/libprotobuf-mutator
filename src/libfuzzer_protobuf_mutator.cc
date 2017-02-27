@@ -103,11 +103,10 @@ std::string SaveMessageAsText(const protobuf::Message& message) {
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed, Message* prototype) {
-  assert(size <= max_size);
   protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
   for (int i = 0; i < 100; ++i) {
     ParseTextMessage(data, size, prototype);
-    mutator.Mutate(prototype, max_size - size);
+    mutator.Mutate(prototype, max_size > size ? max_size - size : 0);
     if (size_t new_size = SaveMessageAsText(*prototype, data, max_size)) {
       assert(new_size <= max_size);
       return new_size;
