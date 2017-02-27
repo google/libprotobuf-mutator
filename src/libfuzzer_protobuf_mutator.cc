@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include <cassert>
+#include <memory>
 #include <string>
 
 #include "port/protobuf.h"
