@@ -58,7 +58,7 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
                              size_t max_out_size, unsigned int seed,
                              protobuf::Message* message1,
                              protobuf::Message* message2);
-}
+}  // namespace internal
 
 // Mutates proto serialized as text.
 template <class MessageType>
