@@ -23,12 +23,15 @@
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 
+namespace protobuf_mutator {
+
 namespace protobuf = google::protobuf;
 
-inline std::string PrintMessageToString(const protobuf::Message& message) {
+inline std::string MessageToTextString(const protobuf::Message& message) {
   std::string tmp;
   if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
   return tmp;
 }
+}  // namespace protobuf_mutator
 
 #endif  // PORT_PROTOBUF_H_
