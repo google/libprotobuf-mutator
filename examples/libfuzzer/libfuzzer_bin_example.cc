@@ -34,7 +34,7 @@ extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t* data1, size_t size1,
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  libfuzzer_example::Msg message;
+  Msg message;
   protobuf_mutator::ParseBinaryMessage(data, size, &message);
 
   // Emulate a bug.
