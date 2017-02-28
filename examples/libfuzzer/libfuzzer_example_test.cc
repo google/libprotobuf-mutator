@@ -12,37 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-#include <sys/wait.h>
-
+#include "examples/fuzzer_test.h"
 #include "port/gtest.h"
+
+namespace {
 
 const int kDefaultLibFuzzerError = 77;
 
-TEST(LibFuzzerExampleTest, Crash) {
-  char dir_template[] = "/tmp/libfuzzer_example_test_XXXXXX";
-  auto dir = mkdtemp(dir_template);
-  ASSERT_TRUE(dir);
+class LibFuzzerExampleTest : public FuzzerTest {};
 
-  std::string cmd = "./libfuzzer_example -max_len=150 -artifact_prefix=" +
-                    std::string(dir) + "/ " + dir + "/";
-  int retvalue = std::system(cmd.c_str());
-  EXPECT_EQ(kDefaultLibFuzzerError, WSTOPSIG(retvalue));
+int GetError(int exit_code) { return WSTOPSIG(exit_code); }
 
-  // Cleanup.
-  EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
+TEST_F(LibFuzzerExampleTest, Text) {
+  EXPECT_EQ(kDefaultLibFuzzerError,
+            GetError(RunFuzzer("libfuzzer_example", 150, 10000000)));
 }
 
-TEST(LibFuzzerExampleTest, CrashBinary) {
-  char dir_template[] = "/tmp/libfuzzer_example_test_XXXXXX";
-  auto dir = mkdtemp(dir_template);
-  ASSERT_TRUE(dir);
-
-  std::string cmd = "./libfuzzer_bin_example -max_len=150 -artifact_prefix=" +
-                    std::string(dir) + "/ " + dir + "/";
-  int retvalue = std::system(cmd.c_str());
-  EXPECT_EQ(kDefaultLibFuzzerError, WSTOPSIG(retvalue));
-
-  // Cleanup.
-  EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
+TEST_F(LibFuzzerExampleTest, Binary) {
+  EXPECT_EQ(kDefaultLibFuzzerError,
+            GetError(RunFuzzer("libfuzzer_bin_example", 150, 10000000)));
 }
+
+}  // namespace
