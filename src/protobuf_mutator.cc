@@ -71,6 +71,11 @@ size_t GetRandomIndex(ProtobufMutator::RandomEngine* random, size_t count) {
   return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
 }
 
+// Return true with probability about 1-of-n.
+bool GetRandomBool(ProtobufMutator::RandomEngine* random, size_t n = 2) {
+  return GetRandomIndex(random, n) == 0;
+}
+
 struct CreateDefaultFieldTransformation {
   template <class T>
   void Apply(const FieldInstance& field) const {
@@ -386,7 +391,7 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
     case Mutation::None:
       break;
     case Mutation::Add:
-      if (std::uniform_int_distribution<uint8_t>(0, 1)(random_)) {
+      if (GetRandomBool(&random_)) {
         mutation.field().Apply(
             CreateFieldTransformation(size_increase_hint / 2, this));
       } else {
@@ -479,10 +484,10 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
 
     } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
       if (!reflection->HasField(message1, field)) {
-        if (GetRandomIndex(&random_, 2))
+        if (GetRandomBool(&random_))
           FieldInstance(message2, field).Apply(DeleteFieldTransformation());
       } else if (!reflection->HasField(*message2, field)) {
-        if (GetRandomIndex(&random_, 2)) {
+        if (GetRandomBool(&random_)) {
           ConstFieldInstance source(&message1, field);
           FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
         }
@@ -491,7 +496,7 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
                       reflection->MutableMessage(message2, field));
       }
     } else {
-      if (GetRandomIndex(&random_, 2)) {
+      if (GetRandomBool(&random_)) {
         if (reflection->HasField(message1, field)) {
           ConstFieldInstance source(&message1, field);
           FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
@@ -558,26 +563,21 @@ double ProtobufMutator::MutateDouble(double value) {
   return FlipBit(value, &random_);
 }
 
-bool ProtobufMutator::MutateBool(bool value) {
-  return std::uniform_int_distribution<uint8_t>(0, 1)(random_);
-}
+bool ProtobufMutator::MutateBool(bool value) { return !value; }
 
 size_t ProtobufMutator::MutateEnum(size_t index, size_t item_count) {
-  return (index +
-          std::uniform_int_distribution<uint8_t>(1, item_count - 1)(random_)) %
-         item_count;
+  return (index + 1 + GetRandomIndex(&random_, item_count - 1)) % item_count;
 }
 
 std::string ProtobufMutator::MutateString(const std::string& value,
                                           size_t size_increase_hint) {
-  std::uniform_int_distribution<uint8_t> distrib(0, 1);
   std::string result = value;
 
-  while (!result.empty() && distrib(*random())) {
+  while (!result.empty() && GetRandomBool(&random_)) {
     result.erase(GetRandomIndex(&random_, result.size()), 1);
   }
 
-  while (result.size() < size_increase_hint && distrib(*random())) {
+  while (result.size() < size_increase_hint && GetRandomBool(&random_)) {
     size_t index = GetRandomIndex(&random_, result.size() + 1);
     result.insert(result.begin() + index, GetRandomIndex(&random_, 1 << 8));
   }
