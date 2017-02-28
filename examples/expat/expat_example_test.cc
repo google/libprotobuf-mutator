@@ -12,41 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <dirent.h>
-#include <memory>
 #include "port/gtest.h"
+
+#include "examples/fuzzer_test.h"
+
+using testing::Test;
 
 namespace {
 
-size_t CountFilesInDir(const std::string& path) {
-  size_t res = 0;
-  std::unique_ptr<DIR, decltype(&closedir)> dir(opendir(path.c_str()),
-                                                &closedir);
-  if (!dir) return 0;
-  while (readdir(dir.get())) {
-    ++res;
-  }
-  if (res <= 2) return 0;
-  res -= 2;  // . and ..
-  return res;
+class ExpatExampleTest : public FuzzerTest {};
+
+TEST_F(ExpatExampleTest, Fuzz) {
+  EXPECT_EQ(0, RunFuzzer("expat_example", 500, 10000));
+  EXPECT_GT(CountFilesInDir(), 50);
 }
 
 }  // namespace
-
-TEST(ExpatExampleTest, Fuzz) {
-  char dir_template[] = "/tmp/libxml2_example_test_XXXXXX";
-  auto dir = mkdtemp(dir_template);
-  ASSERT_TRUE(dir);
-
-  EXPECT_EQ(0, CountFilesInDir(dir));
-
-  std::string cmd =
-      "./expat_example -max_len=500 -runs=10000 -artifact_prefix=" +
-      std::string(dir) + "/ " + dir + "/";
-  EXPECT_EQ(0, std::system(cmd.c_str()));
-
-  EXPECT_GT(CountFilesInDir(dir), 50);
-
-  // Cleanup.
-  EXPECT_EQ(0, std::system((std::string("rm -rf ") + dir).c_str()));
-}
