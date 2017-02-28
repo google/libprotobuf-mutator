@@ -213,6 +213,12 @@ class TestProtobufMutator : public ProtobufMutator {
 
   double MutateDouble(double value) override { return MutateFloat(value); }
 
+  bool MutateBool(bool value) override {
+    // Hack for test which expects that bool sometimes can be returned
+    // unchanged.
+    return std::uniform_int_distribution<uint8_t>(0, 1)(random_);
+  }
+
  private:
   RandomEngine random_;
 };
