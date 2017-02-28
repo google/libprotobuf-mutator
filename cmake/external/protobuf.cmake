@@ -38,6 +38,10 @@ endforeach(lib)
 
 set(PROTOBUF_PROTOC_EXECUTABLE ${PROTOFUB_INSTALL_DIR}/bin/protoc)
 list(APPEND PROTOFUB_BUILD_BYPRODUCTS ${PROTOBUF_PROTOC_EXECUTABLE})
+add_executable(protoc IMPORTED)
+set_property(TARGET protoc PROPERTY IMPORTED_LOCATION
+             ${PROTOBUF_PROTOC_EXECUTABLE})
+add_dependencies(protoc ${PROTOBUF_TARGET})
 
 include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
