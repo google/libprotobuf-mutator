@@ -39,8 +39,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   protobuf_mutator::ParseBinaryMessage(data, size, &message);
 
   // Emulate a bug.
-  if (message.optional_bool() &&
-      std::hash<std::string>()(message.optional_string()) % 1000 == 9) {
+  if (message.optional_string() == "FooBar" &&
+      message.optional_uint64() == 17 &&
+      !std::isnan(message.optional_float()) &&
+      fabs(message.optional_float()) > 1000 &&
+      fabs(message.optional_float()) < 1E10) {
     abort();
   }
 
