@@ -19,6 +19,7 @@
 #include "src/libfuzzer_protobuf_mutator.h"
 
 using libfuzzer_example::Msg;
+protobuf_mutator::protobuf::LogSilencer log_silincer;
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
                                           size_t max_size, unsigned int seed) {
