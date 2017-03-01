@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/xml/libfuzzer_xml_mutator.h"
+#include "src/xml/mutator.h"
 
-#include "src/libfuzzer/libfuzzer_protobuf_mutator.h"
+#include "src/libfuzzer/mutator.h"
 #include "src/text_format.h"
 #include "src/xml/xml.pb.h"
 #include "src/xml/xml_writer.h"

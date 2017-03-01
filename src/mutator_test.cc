@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/protobuf_mutator.h"
+#include "src/mutator.h"
 
 #include <algorithm>
 #include <set>
@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "port/gtest.h"
-#include "src/protobuf_mutator.pb.h"
-#include "src/protobuf_mutator_proto3.pb.h"
+#include "src/mutator_test_proto2.pb.h"
+#include "src/mutator_test_proto3.pb.h"
 
 namespace protobuf_mutator {
 

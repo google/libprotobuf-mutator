@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/protobuf_mutator.h"
+#include "src/mutator.h"
 
 #include <algorithm>
 #include <iostream>
