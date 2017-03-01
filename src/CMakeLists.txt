@@ -13,9 +13,9 @@
 # limitations under the License.
 
 add_subdirectory(xml)
+add_subdirectory(libfuzzer)
 
 add_library(protobuf-mutator
-            libfuzzer_protobuf_mutator.cc
             text_format.cc
             binary_format.cc
             protobuf_mutator.cc)

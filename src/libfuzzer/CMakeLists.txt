@@ -12,22 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Libraries
-protobuf_generate_cpp(XML_PROTO_SRCS
-                      XML_PROTO_HDRS
-                      xml.proto)
-
-add_library(protobuf-mutator-xml
-            libfuzzer_xml_mutator.cc
-            xml_writer.cc
-            ${XML_PROTO_SRCS})
-target_link_libraries(protobuf-mutator-xml
-                      protobuf-mutator-libfuzzer)
-set_property(TARGET protobuf-mutator-xml
+add_library(protobuf-mutator-libfuzzer
+            libfuzzer_protobuf_mutator.cc)
+target_link_libraries(protobuf-mutator-libfuzzer
+                      protobuf-mutator
+                      ${PROTOBUF_LIBRARY})
+set_property(TARGET protobuf-mutator-libfuzzer
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
-
-
-add_executable(xml_converter
-               xml_converter.cc)
-target_link_libraries(xml_converter
-                      protobuf-mutator-xml)
