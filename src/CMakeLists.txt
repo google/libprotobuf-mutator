@@ -16,23 +16,23 @@ add_subdirectory(xml)
 add_subdirectory(libfuzzer)
 
 add_library(protobuf-mutator
+            mutator.cc
             text_format.cc
-            binary_format.cc
-            protobuf_mutator.cc)
+            binary_format.cc)
 target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
 set_property(TARGET protobuf-mutator
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
-                      protobuf_mutator.proto
-                      protobuf_mutator_proto3.proto)
+                      mutator_test_proto2.proto
+                      mutator_test_proto3.proto)
 
-add_executable(protobuf_mutator_test
-               protobuf_mutator_test.cc
+add_executable(mutator_test
+               mutator_test.cc
                weighted_reservoir_sampler_test.cc
                ${PROTO_SRCS})
-target_link_libraries(protobuf_mutator_test
+target_link_libraries(mutator_test
                       protobuf-mutator
                       ${ZLIB_LIBRARIES}
                       ${GTEST_BOTH_LIBRARIES}
@@ -42,7 +42,7 @@ ProcessorCount(CPU_COUNT)
 math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
 math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
 foreach(SHARD RANGE ${TEST_SHARDS_MAX})
-  add_test(test.protobuf_mutator_test_${SHARD} protobuf_mutator_test --gtest_color=yes AUTO)
+  add_test(test.protobuf_mutator_test_${SHARD} mutator_test --gtest_color=yes AUTO)
   set_property(
       TEST test.protobuf_mutator_test_${SHARD}
       APPEND PROPERTY ENVIRONMENT
@@ -50,4 +50,4 @@ foreach(SHARD RANGE ${TEST_SHARDS_MAX})
       GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
 endforeach(SHARD)
 
-add_dependencies(check protobuf_mutator_test)
+add_dependencies(check mutator_test)

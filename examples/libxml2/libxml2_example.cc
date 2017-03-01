@@ -15,7 +15,7 @@
 #include "libxml/parser.h"
 
 #include "port/protobuf.h"
-#include "src/xml/libfuzzer_xml_mutator.h"
+#include "src/xml/mutator.h"
 
 namespace {
 protobuf_mutator::protobuf::LogSilencer log_silincer;

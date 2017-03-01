@@ -18,7 +18,7 @@ protobuf_generate_cpp(XML_PROTO_SRCS
                       xml.proto)
 
 add_library(protobuf-mutator-xml
-            libfuzzer_xml_mutator.cc
+            mutator.cc
             xml_writer.cc
             ${XML_PROTO_SRCS})
 target_link_libraries(protobuf-mutator-xml

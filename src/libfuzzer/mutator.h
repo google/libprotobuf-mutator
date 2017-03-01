@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_LIBFUZZER_LIBFUZZER_PROTOBUF_MUTATOR_H_
-#define SRC_LIBFUZZER_LIBFUZZER_PROTOBUF_MUTATOR_H_
+#ifndef SRC_LIBFUZZER_MUTATOR_H_
+#define SRC_LIBFUZZER_MUTATOR_H_
 
 #include <string>
 
-#include "src/protobuf_mutator.h"
+#include "src/mutator.h"
 
 namespace protobuf_mutator {
 
@@ -98,4 +98,4 @@ size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
 
 }  // namespace protobuf_mutator
 
-#endif  // SRC_LIBFUZZER_LIBFUZZER_PROTOBUF_MUTATOR_H_
+#endif  // SRC_LIBFUZZER_MUTATOR_H_

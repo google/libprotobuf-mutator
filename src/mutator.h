@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_PROTOBUF_MUTATOR_H_
-#define SRC_PROTOBUF_MUTATOR_H_
+#ifndef SRC_MUTATOR_H_
+#define SRC_MUTATOR_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -89,4 +89,4 @@ class ProtobufMutator {
 
 }  // namespace protobuf_mutator
 
-#endif  // SRC_PROTOBUF_MUTATOR_H_
+#endif  // SRC_MUTATOR_H_
