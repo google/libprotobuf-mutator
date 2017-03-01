@@ -16,6 +16,7 @@
 #include <cstdint>
 
 #include "examples/libfuzzer/libfuzzer_example.pb.h"
+#include "src/binary_format.h"
 #include "src/libfuzzer_protobuf_mutator.h"
 
 using libfuzzer_example::Msg;

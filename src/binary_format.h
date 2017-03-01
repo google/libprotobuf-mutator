@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PORT_PROTOBUF_H_
-#define PORT_PROTOBUF_H_
+#ifndef SRC_BINARY_FORMAT_H_
+#define SRC_BINARY_FORMAT_H_
 
 #include <string>
 
-#include "google/protobuf/message.h"
-#include "google/protobuf/stubs/common.h"
-#include "google/protobuf/stubs/logging.h"
-#include "google/protobuf/text_format.h"
-#include "google/protobuf/util/message_differencer.h"
+#include "port/protobuf.h"
 
 namespace protobuf_mutator {
 
-namespace protobuf = google::protobuf;
-
-inline std::string MessageToTextString(const protobuf::Message& message) {
-  std::string tmp;
-  if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
-  return tmp;
-}
-
-inline std::string MessageToBinaryString(const protobuf::Message& message) {
-  std::string tmp;
-  if (!message.SerializePartialToString(&tmp)) return {};
-  return tmp;
-}
+// Binary serialization of protos.
+bool ParseBinaryMessage(const uint8_t* data, size_t size,
+                        protobuf::Message* output);
+bool ParseBinaryMessage(const std::string& data, protobuf::Message* output);
+size_t SaveMessageAsBinary(const protobuf::Message& message, uint8_t* data,
+                           size_t max_size);
+std::string SaveMessageAsBinary(const protobuf::Message& message);
 
 }  // namespace protobuf_mutator
 
-#endif  // PORT_PROTOBUF_H_
+#endif  // SRC_BINARY_FORMAT_H_

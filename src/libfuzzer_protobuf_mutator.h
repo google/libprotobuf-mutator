@@ -39,25 +39,6 @@ class LibFuzzerProtobufMutator : public ProtobufMutator {
                            size_t size_increase_hint) override;
 };
 
-// Parses proto from text same way as |MutateTextMessage|.
-// libFuzzer expects user will define LLVMFuzzerTestOneInput and
-// LLVMFuzzerCustomMutator. It's important that both of them use same
-// serialization format.
-bool ParseTextMessage(const uint8_t* data, size_t size,
-                      protobuf::Message* output);
-bool ParseTextMessage(const std::string& data, protobuf::Message* output);
-size_t SaveMessageAsText(const protobuf::Message& message, uint8_t* data,
-                         size_t max_size);
-std::string SaveMessageAsText(const protobuf::Message& message);
-
-// Same as above but for binary serialization.
-bool ParseBinaryMessage(const uint8_t* data, size_t size,
-                        protobuf::Message* output);
-bool ParseBinaryMessage(const std::string& data, protobuf::Message* output);
-size_t SaveMessageAsBinary(const protobuf::Message& message, uint8_t* data,
-                           size_t max_size);
-std::string SaveMessageAsBinary(const protobuf::Message& message);
-
 namespace internal {
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed, protobuf::Message* message);
