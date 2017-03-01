@@ -20,7 +20,9 @@
 #include <string>
 
 #include "port/protobuf.h"
+#include "src/binary_format.h"
 #include "src/protobuf_mutator.h"
+#include "src/text_format.h"
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
     __attribute__((weak));
@@ -28,7 +30,6 @@ extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
 namespace protobuf_mutator {
 
 using protobuf::Message;
-using protobuf::TextFormat;
 
 namespace {
 
@@ -175,54 +176,6 @@ std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
   result.resize(LLVMFuzzerMutate(reinterpret_cast<uint8_t*>(&result[0]),
                                  value.size(), result.size()));
   return result;
-}
-
-bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
-  return ParseTextMessage({data, data + size}, output);
-}
-
-bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
-  output->Clear();
-  TextFormat::Parser parser;
-  parser.AllowPartialMessage(true);
-  return parser.ParseFromString(data, output);
-}
-
-size_t SaveMessageAsText(const Message& message, uint8_t* data,
-                         size_t max_size) {
-  std::string result = SaveMessageAsText(message);
-  if (result.size() <= max_size) {
-    memcpy(data, result.data(), result.size());
-    return result.size();
-  }
-  return 0;
-}
-
-std::string SaveMessageAsText(const protobuf::Message& message) {
-  return MessageToTextString(message);
-}
-
-bool ParseBinaryMessage(const uint8_t* data, size_t size, Message* output) {
-  return ParseBinaryMessage({data, data + size}, output);
-}
-
-bool ParseBinaryMessage(const std::string& data, protobuf::Message* output) {
-  output->Clear();
-  return output->ParsePartialFromString(data);
-}
-
-size_t SaveMessageAsBinary(const Message& message, uint8_t* data,
-                           size_t max_size) {
-  std::string result = SaveMessageAsBinary(message);
-  if (result.size() <= max_size) {
-    memcpy(data, result.data(), result.size());
-    return result.size();
-  }
-  return 0;
-}
-
-std::string SaveMessageAsBinary(const protobuf::Message& message) {
-  return MessageToBinaryString(message);
 }
 
 namespace internal {

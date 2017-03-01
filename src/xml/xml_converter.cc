@@ -19,6 +19,7 @@
 
 #include "port/protobuf.h"
 #include "src/libfuzzer_protobuf_mutator.h"
+#include "src/text_format.h"
 #include "src/xml/xml.pb.h"
 #include "src/xml/xml_writer.h"
 
