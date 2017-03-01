@@ -2,6 +2,7 @@ syntax = "proto2";
 package libfuzzer_example;
 
 message Msg {
-  optional bool optional_bool = 1;
-  optional string optional_string = 2;
+  optional float optional_float = 1;
+  optional uint64 optional_uint64 = 2;
+  optional string optional_string = 3;
 }
