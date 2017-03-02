@@ -27,17 +27,8 @@ namespace protobuf_mutator {
 
 namespace protobuf = google::protobuf;
 
-inline std::string MessageToTextString(const protobuf::Message& message) {
-  std::string tmp;
-  if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
-  return tmp;
-}
-
-inline std::string MessageToBinaryString(const protobuf::Message& message) {
-  std::string tmp;
-  if (!message.SerializePartialToString(&tmp)) return {};
-  return tmp;
-}
+// String type used by google::protobuf.
+using String = std::string;
 
 }  // namespace protobuf_mutator
 

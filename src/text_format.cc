@@ -41,7 +41,9 @@ size_t SaveMessageAsText(const Message& message, uint8_t* data,
 }
 
 std::string SaveMessageAsText(const protobuf::Message& message) {
-  return MessageToTextString(message);
+  String tmp;
+  if (!protobuf::TextFormat::PrintToString(message, &tmp)) return {};
+  return tmp;
 }
 
 }  // namespace protobuf_mutator
