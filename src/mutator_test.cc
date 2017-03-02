@@ -28,7 +28,6 @@
 
 namespace protobuf_mutator {
 
-using protobuf::TextFormat;
 using protobuf::util::MessageDifferencer;
 using testing::TestWithParam;
 using testing::ValuesIn;
@@ -320,8 +319,8 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
   }
 
   ADD_FAILURE() << "Failed to get from:\n"
-                << MessageToTextString(from) << "\nto:\n"
-                << MessageToTextString(to);
+                << SaveMessageAsText(from) << "\nto:\n"
+                << SaveMessageAsText(to);
   return false;
 }
 
@@ -335,10 +334,7 @@ class MutatorTest : public TestWithParam<TestParams> {
   }
 
   void LoadMessage(protobuf::Message* message) {
-    message->Clear();
-    TextFormat::Parser parser;
-    parser.AllowPartialMessage(true);
-    EXPECT_TRUE(parser.ParseFromString(text_, message));
+    EXPECT_TRUE(ParseTextMessage(text_, message));
   }
 
   bool LoadWithoutLine(protobuf::Message* message) {
@@ -347,10 +343,7 @@ class MutatorTest : public TestWithParam<TestParams> {
     for (size_t i = 0; i != lines.size(); ++i) {
       if (i != line_) oss << lines[i] << '\n';
     }
-    message->Clear();
-    TextFormat::Parser parser;
-    parser.AllowPartialMessage(true);
-    return parser.ParseFromString(oss.str(), message);
+    return ParseTextMessage(oss.str(), message);
   }
 
   bool LoadWithChangedLine(protobuf::Message* message, int value) {
@@ -375,10 +368,7 @@ class MutatorTest : public TestWithParam<TestParams> {
         oss << s << '\n';
       }
     }
-    message->Clear();
-    TextFormat::Parser parser;
-    parser.AllowPartialMessage(true);
-    return parser.ParseFromString(oss.str(), message);
+    return ParseTextMessage(oss.str(), message);
   }
 
   std::string text_;
