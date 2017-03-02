@@ -38,7 +38,9 @@ size_t SaveMessageAsBinary(const Message& message, uint8_t* data,
 }
 
 std::string SaveMessageAsBinary(const protobuf::Message& message) {
-  return MessageToBinaryString(message);
+  String tmp;
+  if (!message.SerializePartialToString(&tmp)) return {};
+  return tmp;
 }
 
 }  // namespace protobuf_mutator
