@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PORT_PROTOBUF_H_
-#define PORT_PROTOBUF_H_
+#ifndef PORT_PROTOBUF_TEXT_FORMAT_H_
+#define PORT_PROTOBUF_TEXT_FORMAT_H_
 
-#include <string>
+#include "google/protobuf/text_format.h"
+#include "port/protobuf.h"
 
-#include "google/protobuf/message.h"
-#include "google/protobuf/util/message_differencer.h"
-
-namespace protobuf_mutator {
-
-namespace protobuf = google::protobuf;
-
-// String type used by google::protobuf.
-using String = std::string;
-
-}  // namespace protobuf_mutator
-
-#endif  // PORT_PROTOBUF_H_
+#endif  // PORT_PROTOBUF_TEXT_FORMAT_H_
