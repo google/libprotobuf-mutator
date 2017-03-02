@@ -28,6 +28,7 @@ extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
     __attribute__((weak));
 
 namespace protobuf_mutator {
+namespace libfuzzer {
 
 using protobuf::Message;
 
@@ -109,7 +110,7 @@ class BinaryOutputWriter : public OutputWriter {
 
 size_t MutateMessage(unsigned int seed, const InputReader& input,
                      OutputWriter* output, Message* message) {
-  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  Mutator mutator(seed);
   for (int i = 0; i < 100; ++i) {
     input.Read(message);
     mutator.Mutate(message, output->size() > input.size()
@@ -127,7 +128,7 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
                          const InputReader& input2, OutputWriter* output,
                          protobuf::Message* message1,
                          protobuf::Message* message2) {
-  protobuf_mutator::LibFuzzerProtobufMutator mutator(seed);
+  Mutator mutator(seed);
   input2.Read(message2);
   for (int i = 0; i < 100; ++i) {
     input1.Read(message1);
@@ -142,32 +143,20 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
 
 }  // namespace
 
-int32_t LibFuzzerProtobufMutator::MutateInt32(int32_t value) {
-  return MutateValue(value);
-}
+int32_t Mutator::MutateInt32(int32_t value) { return MutateValue(value); }
 
-int64_t LibFuzzerProtobufMutator::MutateInt64(int64_t value) {
-  return MutateValue(value);
-}
+int64_t Mutator::MutateInt64(int64_t value) { return MutateValue(value); }
 
-uint32_t LibFuzzerProtobufMutator::MutateUInt32(uint32_t value) {
-  return MutateValue(value);
-}
+uint32_t Mutator::MutateUInt32(uint32_t value) { return MutateValue(value); }
 
-uint64_t LibFuzzerProtobufMutator::MutateUInt64(uint64_t value) {
-  return MutateValue(value);
-}
+uint64_t Mutator::MutateUInt64(uint64_t value) { return MutateValue(value); }
 
-float LibFuzzerProtobufMutator::MutateFloat(float value) {
-  return MutateValue(value);
-}
+float Mutator::MutateFloat(float value) { return MutateValue(value); }
 
-double LibFuzzerProtobufMutator::MutateDouble(double value) {
-  return MutateValue(value);
-}
+double Mutator::MutateDouble(double value) { return MutateValue(value); }
 
-std::string LibFuzzerProtobufMutator::MutateString(const std::string& value,
-                                                   size_t size_increase_hint) {
+std::string Mutator::MutateString(const std::string& value,
+                                  size_t size_increase_hint) {
   // Randomly return empty strings as LLVMFuzzerMutate does not produce them.
   if (!std::uniform_int_distribution<uint8_t>(0, 20)(*random())) return {};
   std::string result = value;
@@ -218,4 +207,5 @@ size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
 
 }  // namespace internal
 
+}  // namespace libfuzzer
 }  // namespace protobuf_mutator

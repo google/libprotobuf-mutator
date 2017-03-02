@@ -41,9 +41,9 @@ using [libFuzzer](http://libfuzzer.info)'s mutators.
 
 To apply one mutation to a protobuf object do the following:
 ```
-class MyProtobufMutator : public ProtobufMutator {
+class MyProtobufMutator : public protobuf_mutator::Mutator {
  public:
-  MyProtobufMutator(uint32_t seed) : ProtobufMutator(seed) {}
+  MyProtobufMutator(uint32_t seed) : protobuf_mutator::Mutator(seed) {}
   // Optionally redefine the Mutate* methods to perform more sophisticated mutations.
 }
 void Mutate(MyMessage* message) {

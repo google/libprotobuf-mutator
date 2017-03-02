@@ -35,7 +35,8 @@ bool ParseTextMessage(const uint8_t* data, size_t size, std::string* xml,
 
 size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
                          unsigned int seed) {
-  return protobuf_mutator::MutateTextMessage<Input>(data, size, max_size, seed);
+  return protobuf_mutator::libfuzzer::MutateTextMessage<Input>(data, size,
+                                                               max_size, seed);
 }
 
 size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
@@ -62,7 +63,7 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
     return 0;
   }
 
-  return protobuf_mutator::CrossOverTextMessages<Input>(
+  return protobuf_mutator::libfuzzer::CrossOverTextMessages<Input>(
       data1, size1, data2, size2, out, max_out_size, seed);
 }
 
