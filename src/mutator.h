@@ -23,6 +23,7 @@
 #include <string>
 
 #include "port/protobuf.h"
+#include "src/random.h"
 
 namespace protobuf_mutator {
 
@@ -40,10 +41,8 @@ namespace protobuf_mutator {
 // library like libFuzzer.
 class Mutator {
  public:
-  using RandomEngine = std::mt19937;
-
   // seed: value to initialize random number generator.
-  explicit Mutator(uint32_t seed);
+  explicit Mutator(RandomEngine* random);
   virtual ~Mutator() = default;
 
   // message: message to mutate.
@@ -74,7 +73,7 @@ class Mutator {
   //   * Callbacks to recursive traversal.
   //   * Callbacks for particular proto level mutations.
 
-  RandomEngine* random() { return &random_; }
+  RandomEngine* random() { return random_; }
 
  private:
   friend class FieldMutator;
@@ -84,7 +83,7 @@ class Mutator {
                      protobuf::Message* message2);
 
   bool keep_initialized_ = true;
-  RandomEngine random_;
+  RandomEngine* random_;
 };
 
 }  // namespace protobuf_mutator

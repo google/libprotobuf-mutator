@@ -27,7 +27,7 @@ namespace libfuzzer {
 // implementation of this methods.
 class Mutator : public protobuf_mutator::Mutator {
  public:
-  explicit Mutator(uint32_t seed) : protobuf_mutator::Mutator(seed) {}
+  using protobuf_mutator::Mutator::Mutator;
 
  protected:
   int32_t MutateInt32(int32_t value) override;

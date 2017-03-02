@@ -216,7 +216,7 @@ const char kRepeatedNestedFields[] = R"(
 
 class TestMutator : public Mutator {
  public:
-  explicit TestMutator(bool keep_initialized) : Mutator(17) {
+  explicit TestMutator(bool keep_initialized) : Mutator(&random_), random_(17) {
     keep_initialized_ = keep_initialized;
   }
 
@@ -225,11 +225,14 @@ class TestMutator : public Mutator {
                         protobuf::Message* message2) {
     CrossOverImpl(message1, message2);
   }
+
+ private:
+  RandomEngine random_;
 };
 
 class ReducedTestMutator : public TestMutator {
  public:
-  ReducedTestMutator() : TestMutator(false), random_(13) {
+  ReducedTestMutator() : TestMutator(false) {
     for (float i = 1000; i > 0.1; i /= 7) {
       values_.push_back(i);
       values_.push_back(-i);
@@ -255,16 +258,15 @@ class ReducedTestMutator : public TestMutator {
   std::string MutateString(const std::string& value,
                            size_t size_increase_hint) override {
     return strings_[std::uniform_int_distribution<uint8_t>(
-        0, strings_.size() - 1)(random_)];
+        0, strings_.size() - 1)(*random())];
   }
 
  private:
   float GetRandomValue() {
     return values_[std::uniform_int_distribution<uint8_t>(
-        0, values_.size() - 1)(random_)];
+        0, values_.size() - 1)(*random())];
   }
 
-  RandomEngine random_;
   std::vector<float> values_;
   std::vector<std::string> strings_ = {
       "", "\001", "\000", "a", "b", "ab",
