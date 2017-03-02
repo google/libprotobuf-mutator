@@ -110,7 +110,8 @@ class BinaryOutputWriter : public OutputWriter {
 
 size_t MutateMessage(unsigned int seed, const InputReader& input,
                      OutputWriter* output, Message* message) {
-  Mutator mutator(seed);
+  RandomEngine random(seed);
+  Mutator mutator(&random);
   for (int i = 0; i < 100; ++i) {
     input.Read(message);
     mutator.Mutate(message, output->size() > input.size()
@@ -128,7 +129,8 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
                          const InputReader& input2, OutputWriter* output,
                          protobuf::Message* message1,
                          protobuf::Message* message2) {
-  Mutator mutator(seed);
+  RandomEngine random(seed);
+  Mutator mutator(&random);
   input2.Read(message2);
   for (int i = 0; i < 100; ++i) {
     input1.Read(message1);

@@ -54,27 +54,27 @@ enum class Mutation {
 };
 
 // Return random integer from [0, count)
-size_t GetRandomIndex(Mutator::RandomEngine* random, size_t count) {
+size_t GetRandomIndex(RandomEngine* random, size_t count) {
   assert(count > 0);
   if (count == 1) return 0;
   return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
 }
 
 // Flips random bit in the buffer.
-void FlipBit(size_t size, uint8_t* bytes, Mutator::RandomEngine* random) {
+void FlipBit(size_t size, uint8_t* bytes, RandomEngine* random) {
   size_t bit = GetRandomIndex(random, size * 8);
   bytes[bit / 8] ^= (1u << (bit % 8));
 }
 
 // Flips random bit in the value.
 template <class T>
-T FlipBit(T value, Mutator::RandomEngine* random) {
+T FlipBit(T value, RandomEngine* random) {
   FlipBit(sizeof(value), reinterpret_cast<uint8_t*>(&value), random);
   return value;
 }
 
 // Return true with probability about 1-of-n.
-bool GetRandomBool(Mutator::RandomEngine* random, size_t n = 2) {
+bool GetRandomBool(RandomEngine* random, size_t n = 2) {
   return GetRandomIndex(random, n) == 0;
 }
 
@@ -155,7 +155,7 @@ class IsEqualValueField : public FieldFunction<IsEqualValueField, bool> {
 class MutationSampler {
  public:
   MutationSampler(bool keep_initialized, size_t size_increase_hint,
-                  Mutator::RandomEngine* random, Message* message)
+                  RandomEngine* random, Message* message)
       : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
     if (size_increase_hint < kDeletionThreshold) {
       // Avoid adding new field and prefer deleting fields if we getting close
@@ -270,7 +270,7 @@ class MutationSampler {
   uint64_t add_weight_ = kMutateWeight / 10;
   uint64_t delete_weight_ = kMutateWeight / 10;
 
-  Mutator::RandomEngine* random_;
+  RandomEngine* random_;
 
   struct Result {
     Result() = default;
@@ -279,14 +279,14 @@ class MutationSampler {
     FieldInstance field;
     Mutation mutation = Mutation::None;
   };
-  WeightedReservoirSampler<Result, Mutator::RandomEngine> sampler_;
+  WeightedReservoirSampler<Result, RandomEngine> sampler_;
 };
 
 // Selects random field of compatible type to use for clone mutations.
 class DataSourceSampler {
  public:
-  DataSourceSampler(const ConstFieldInstance& match,
-                    Mutator::RandomEngine* random, Message* message)
+  DataSourceSampler(const ConstFieldInstance& match, RandomEngine* random,
+                    Message* message)
       : match_(match), random_(random), sampler_(random) {
     Sample(message);
   }
@@ -342,9 +342,9 @@ class DataSourceSampler {
   }
 
   ConstFieldInstance match_;
-  Mutator::RandomEngine* random_;
+  RandomEngine* random_;
 
-  WeightedReservoirSampler<ConstFieldInstance, Mutator::RandomEngine> sampler_;
+  WeightedReservoirSampler<ConstFieldInstance, RandomEngine> sampler_;
 };
 
 }  // namespace
@@ -435,19 +435,19 @@ struct CreateField : public FieldFunction<CreateField> {
 
 }  // namespace
 
-Mutator::Mutator(uint32_t seed) : random_(seed) {}
+Mutator::Mutator(RandomEngine* random) : random_(random) {}
 
 void Mutator::Mutate(Message* message, size_t size_increase_hint) {
   bool repeat;
   do {
     repeat = false;
-    MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
+    MutationSampler mutation(keep_initialized_, size_increase_hint, random_,
                              message);
     switch (mutation.mutation()) {
       case Mutation::None:
         break;
       case Mutation::Add:
-        if (GetRandomBool(&random_)) {
+        if (GetRandomBool(random_)) {
           CreateField()(mutation.field(), this);
         } else {
           CreateDefaultField()(mutation.field());
@@ -460,7 +460,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
         DeleteField()(mutation.field());
         break;
       case Mutation::Copy: {
-        DataSourceSampler source(mutation.field(), &random_, message);
+        DataSourceSampler source(mutation.field(), random_, message);
         if (source.IsEmpty()) {
           repeat = true;
           break;
@@ -522,20 +522,20 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
 
       // Shuffle
       for (int j = 0; j < field_size2; ++j) {
-        if (int k = GetRandomIndex(&random_, field_size2 - j)) {
+        if (int k = GetRandomIndex(random_, field_size2 - j)) {
           reflection->SwapElements(message2, field, j, j + k);
         }
       }
 
-      int keep = GetRandomIndex(&random_, field_size2 + 1);
+      int keep = GetRandomIndex(random_, field_size2 + 1);
 
       if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
         int remove = field_size2 - keep;
         // Cross some message to keep with messages to remove.
-        int cross = GetRandomIndex(&random_, std::min(keep, remove) + 1);
+        int cross = GetRandomIndex(random_, std::min(keep, remove) + 1);
         for (int j = 0; j < cross; ++j) {
-          int k = GetRandomIndex(&random_, keep);
-          int r = keep + GetRandomIndex(&random_, remove);
+          int k = GetRandomIndex(random_, keep);
+          int r = keep + GetRandomIndex(random_, remove);
           assert(k != r);
           CrossOverImpl(reflection->GetRepeatedMessage(*message2, field, r),
                         reflection->MutableRepeatedMessage(message2, field, k));
@@ -548,10 +548,10 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
 
     } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
       if (!reflection->HasField(message1, field)) {
-        if (GetRandomBool(&random_))
+        if (GetRandomBool(random_))
           DeleteField()(FieldInstance(message2, field));
       } else if (!reflection->HasField(*message2, field)) {
-        if (GetRandomBool(&random_)) {
+        if (GetRandomBool(random_)) {
           ConstFieldInstance source(&message1, field);
           CopyField()(source, FieldInstance(message2, field));
         }
@@ -560,7 +560,7 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
                       reflection->MutableMessage(message2, field));
       }
     } else {
-      if (GetRandomBool(&random_)) {
+      if (GetRandomBool(random_)) {
         if (reflection->HasField(message1, field)) {
           ConstFieldInstance source(&message1, field);
           CopyField()(source, FieldInstance(message2, field));
@@ -603,50 +603,50 @@ void Mutator::InitializeMessage(Message* message, size_t max_depth) {
   }
 }
 
-int32_t Mutator::MutateInt32(int32_t value) { return FlipBit(value, &random_); }
+int32_t Mutator::MutateInt32(int32_t value) { return FlipBit(value, random_); }
 
-int64_t Mutator::MutateInt64(int64_t value) { return FlipBit(value, &random_); }
+int64_t Mutator::MutateInt64(int64_t value) { return FlipBit(value, random_); }
 
 uint32_t Mutator::MutateUInt32(uint32_t value) {
-  return FlipBit(value, &random_);
+  return FlipBit(value, random_);
 }
 
 uint64_t Mutator::MutateUInt64(uint64_t value) {
-  return FlipBit(value, &random_);
+  return FlipBit(value, random_);
 }
 
-float Mutator::MutateFloat(float value) { return FlipBit(value, &random_); }
+float Mutator::MutateFloat(float value) { return FlipBit(value, random_); }
 
-double Mutator::MutateDouble(double value) { return FlipBit(value, &random_); }
+double Mutator::MutateDouble(double value) { return FlipBit(value, random_); }
 
 bool Mutator::MutateBool(bool value) { return !value; }
 
 size_t Mutator::MutateEnum(size_t index, size_t item_count) {
-  return (index + 1 + GetRandomIndex(&random_, item_count - 1)) % item_count;
+  return (index + 1 + GetRandomIndex(random_, item_count - 1)) % item_count;
 }
 
 std::string Mutator::MutateString(const std::string& value,
                                   size_t size_increase_hint) {
   std::string result = value;
 
-  while (!result.empty() && GetRandomBool(&random_)) {
-    result.erase(GetRandomIndex(&random_, result.size()), 1);
+  while (!result.empty() && GetRandomBool(random_)) {
+    result.erase(GetRandomIndex(random_, result.size()), 1);
   }
 
-  while (result.size() < size_increase_hint && GetRandomBool(&random_)) {
-    size_t index = GetRandomIndex(&random_, result.size() + 1);
-    result.insert(result.begin() + index, GetRandomIndex(&random_, 1 << 8));
+  while (result.size() < size_increase_hint && GetRandomBool(random_)) {
+    size_t index = GetRandomIndex(random_, result.size() + 1);
+    result.insert(result.begin() + index, GetRandomIndex(random_, 1 << 8));
   }
 
   if (result != value) return result;
 
   if (result.empty()) {
-    result.push_back(GetRandomIndex(&random_, 1 << 8));
+    result.push_back(GetRandomIndex(random_, 1 << 8));
     return result;
   }
 
   if (!result.empty())
-    FlipBit(result.size(), reinterpret_cast<uint8_t*>(&result[0]), &random_);
+    FlipBit(result.size(), reinterpret_cast<uint8_t*>(&result[0]), random_);
   return result;
 }
 
