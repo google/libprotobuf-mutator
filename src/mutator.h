@@ -28,7 +28,7 @@ namespace protobuf_mutator {
 
 // Randomly makes incremental change in the given protobuf.
 // Usage example:
-//    ProtobufMutator mutator(1);
+//    protobuf_mutator::Mutator mutator(1);
 //    MyMessage message;
 //    message.ParseFromString(encoded_message);
 //    mutator.Mutate(&message, 10000);
@@ -36,15 +36,15 @@ namespace protobuf_mutator {
 // Class implements very basic mutations of fields. E.g. it just flips bits for
 // integers, floats and strings. Also it increases, decreases size of
 // strings only by one. For better results users should override
-// ProtobufMutator::Mutate* methods with more useful logic, e.g. using library
-// like libFuzzer.
-class ProtobufMutator {
+// protobuf_mutator::Mutator::Mutate* methods with more useful logic, e.g. using
+// library like libFuzzer.
+class Mutator {
  public:
   using RandomEngine = std::mt19937;
 
   // seed: value to initialize random number generator.
-  explicit ProtobufMutator(uint32_t seed);
-  virtual ~ProtobufMutator() = default;
+  explicit Mutator(uint32_t seed);
+  virtual ~Mutator() = default;
 
   // message: message to mutate.
   // size_increase_hint: approximate number of bytes which can be added to the
@@ -78,7 +78,7 @@ class ProtobufMutator {
 
  private:
   friend class FieldMutator;
-  friend class TestProtobufMutator;
+  friend class TestMutator;
   void InitializeMessage(protobuf::Message* message, size_t max_depth);
   void CrossOverImpl(const protobuf::Message& message1,
                      protobuf::Message* message2);

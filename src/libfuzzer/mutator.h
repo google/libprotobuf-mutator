@@ -20,13 +20,14 @@
 #include "src/mutator.h"
 
 namespace protobuf_mutator {
+namespace libfuzzer {
 
-// Overrides ProtobufMutator::Mutate* methods with implementation which
-// uses libFuzzer library. ProtobufMutator has very basic implementation of this
-// methods.
-class LibFuzzerProtobufMutator : public ProtobufMutator {
+// Overrides protobuf_mutator::Mutator::Mutate* methods with implementation
+// which uses libFuzzer library. protobuf_mutator::Mutator has very basic
+// implementation of this methods.
+class Mutator : public protobuf_mutator::Mutator {
  public:
-  explicit LibFuzzerProtobufMutator(uint32_t seed) : ProtobufMutator(seed) {}
+  explicit Mutator(uint32_t seed) : protobuf_mutator::Mutator(seed) {}
 
  protected:
   int32_t MutateInt32(int32_t value) override;
@@ -96,6 +97,7 @@ size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
                                            &message2);
 }
 
+}  // namespace libfuzzer
 }  // namespace protobuf_mutator
 
 #endif  // SRC_LIBFUZZER_MUTATOR_H_

@@ -54,28 +54,27 @@ enum class Mutation {
 };
 
 // Return random integer from [0, count)
-size_t GetRandomIndex(ProtobufMutator::RandomEngine* random, size_t count) {
+size_t GetRandomIndex(Mutator::RandomEngine* random, size_t count) {
   assert(count > 0);
   if (count == 1) return 0;
   return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
 }
 
 // Flips random bit in the buffer.
-void FlipBit(size_t size, uint8_t* bytes,
-             ProtobufMutator::RandomEngine* random) {
+void FlipBit(size_t size, uint8_t* bytes, Mutator::RandomEngine* random) {
   size_t bit = GetRandomIndex(random, size * 8);
   bytes[bit / 8] ^= (1u << (bit % 8));
 }
 
 // Flips random bit in the value.
 template <class T>
-T FlipBit(T value, ProtobufMutator::RandomEngine* random) {
+T FlipBit(T value, Mutator::RandomEngine* random) {
   FlipBit(sizeof(value), reinterpret_cast<uint8_t*>(&value), random);
   return value;
 }
 
 // Return true with probability about 1-of-n.
-bool GetRandomBool(ProtobufMutator::RandomEngine* random, size_t n = 2) {
+bool GetRandomBool(Mutator::RandomEngine* random, size_t n = 2) {
   return GetRandomIndex(random, n) == 0;
 }
 
@@ -156,7 +155,7 @@ class IsEqualValueField : public FieldFunction<IsEqualValueField, bool> {
 class MutationSampler {
  public:
   MutationSampler(bool keep_initialized, size_t size_increase_hint,
-                  ProtobufMutator::RandomEngine* random, Message* message)
+                  Mutator::RandomEngine* random, Message* message)
       : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
     if (size_increase_hint < kDeletionThreshold) {
       // Avoid adding new field and prefer deleting fields if we getting close
@@ -271,7 +270,7 @@ class MutationSampler {
   uint64_t add_weight_ = kMutateWeight / 10;
   uint64_t delete_weight_ = kMutateWeight / 10;
 
-  ProtobufMutator::RandomEngine* random_;
+  Mutator::RandomEngine* random_;
 
   struct Result {
     Result() = default;
@@ -280,14 +279,14 @@ class MutationSampler {
     FieldInstance field;
     Mutation mutation = Mutation::None;
   };
-  WeightedReservoirSampler<Result, ProtobufMutator::RandomEngine> sampler_;
+  WeightedReservoirSampler<Result, Mutator::RandomEngine> sampler_;
 };
 
 // Selects random field of compatible type to use for clone mutations.
 class DataSourceSampler {
  public:
   DataSourceSampler(const ConstFieldInstance& match,
-                    ProtobufMutator::RandomEngine* random, Message* message)
+                    Mutator::RandomEngine* random, Message* message)
       : match_(match), random_(random), sampler_(random) {
     Sample(message);
   }
@@ -343,58 +342,54 @@ class DataSourceSampler {
   }
 
   ConstFieldInstance match_;
-  ProtobufMutator::RandomEngine* random_;
+  Mutator::RandomEngine* random_;
 
-  WeightedReservoirSampler<ConstFieldInstance, ProtobufMutator::RandomEngine>
-      sampler_;
+  WeightedReservoirSampler<ConstFieldInstance, Mutator::RandomEngine> sampler_;
 };
 
 }  // namespace
 
 class FieldMutator {
  public:
-  FieldMutator(size_t size_increase_hint, ProtobufMutator* mutator)
+  FieldMutator(size_t size_increase_hint, Mutator* mutator)
       : size_increase_hint_(size_increase_hint), mutator_(mutator) {}
 
   void Mutate(int32_t* value) const {
-    RepeatMutate(value, std::bind(&ProtobufMutator::MutateInt32, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateInt32, mutator_, _1));
   }
 
   void Mutate(int64_t* value) const {
-    RepeatMutate(value, std::bind(&ProtobufMutator::MutateInt64, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateInt64, mutator_, _1));
   }
 
   void Mutate(uint32_t* value) const {
-    RepeatMutate(value,
-                 std::bind(&ProtobufMutator::MutateUInt32, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateUInt32, mutator_, _1));
   }
 
   void Mutate(uint64_t* value) const {
-    RepeatMutate(value,
-                 std::bind(&ProtobufMutator::MutateUInt64, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateUInt64, mutator_, _1));
   }
 
   void Mutate(float* value) const {
-    RepeatMutate(value, std::bind(&ProtobufMutator::MutateFloat, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateFloat, mutator_, _1));
   }
 
   void Mutate(double* value) const {
-    RepeatMutate(value,
-                 std::bind(&ProtobufMutator::MutateDouble, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateDouble, mutator_, _1));
   }
 
   void Mutate(bool* value) const {
-    RepeatMutate(value, std::bind(&ProtobufMutator::MutateBool, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateBool, mutator_, _1));
   }
 
   void Mutate(FieldInstance::Enum* value) const {
-    RepeatMutate(&value->index, std::bind(&ProtobufMutator::MutateEnum,
-                                          mutator_, _1, value->count));
+    RepeatMutate(&value->index,
+                 std::bind(&Mutator::MutateEnum, mutator_, _1, value->count));
     assert(value->index < value->count);
   }
 
   void Mutate(std::string* value) const {
-    RepeatMutate(value, std::bind(&ProtobufMutator::MutateString, mutator_, _1,
+    RepeatMutate(value, std::bind(&Mutator::MutateString, mutator_, _1,
                                   size_increase_hint_));
   }
 
@@ -411,7 +406,7 @@ class FieldMutator {
   }
 
   size_t size_increase_hint_;
-  ProtobufMutator* mutator_;
+  Mutator* mutator_;
 };
 
 namespace {
@@ -419,7 +414,7 @@ namespace {
 struct MutateField : public FieldFunction<MutateField> {
   template <class T>
   void ForType(const FieldInstance& field, size_t size_increase_hint,
-               ProtobufMutator* mutator) const {
+               Mutator* mutator) const {
     T value;
     field.Load(&value);
     FieldMutator(size_increase_hint, mutator).Mutate(&value);
@@ -430,7 +425,7 @@ struct MutateField : public FieldFunction<MutateField> {
 struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
-  void ForType(const FieldInstance& field, ProtobufMutator* mutator) const {
+  void ForType(const FieldInstance& field, Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
     FieldMutator(0, mutator).Mutate(&value);
@@ -440,9 +435,9 @@ struct CreateField : public FieldFunction<CreateField> {
 
 }  // namespace
 
-ProtobufMutator::ProtobufMutator(uint32_t seed) : random_(seed) {}
+Mutator::Mutator(uint32_t seed) : random_(seed) {}
 
-void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
+void Mutator::Mutate(Message* message, size_t size_increase_hint) {
   bool repeat;
   do {
     repeat = false;
@@ -484,8 +479,8 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
   }
 }
 
-void ProtobufMutator::CrossOver(const protobuf::Message& message1,
-                                protobuf::Message* message2) {
+void Mutator::CrossOver(const protobuf::Message& message1,
+                        protobuf::Message* message2) {
   // CrossOver can produce result which still equals to inputs. So we backup
   // message2 to later comparison. message1 is already constant.
   std::unique_ptr<protobuf::Message> message2_copy(message2->New());
@@ -504,8 +499,8 @@ void ProtobufMutator::CrossOver(const protobuf::Message& message1,
   }
 }
 
-void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
-                                    protobuf::Message* message2) {
+void Mutator::CrossOverImpl(const protobuf::Message& message1,
+                            protobuf::Message* message2) {
   const Descriptor* descriptor = message2->GetDescriptor();
   const Reflection* reflection = message2->GetReflection();
   assert(message1.GetDescriptor() == descriptor);
@@ -577,7 +572,7 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
   }
 }
 
-void ProtobufMutator::InitializeMessage(Message* message, size_t max_depth) {
+void Mutator::InitializeMessage(Message* message, size_t max_depth) {
   assert(keep_initialized_);
   // It's pointless but possible to have infinite recursion of required
   // messages.
@@ -608,38 +603,30 @@ void ProtobufMutator::InitializeMessage(Message* message, size_t max_depth) {
   }
 }
 
-int32_t ProtobufMutator::MutateInt32(int32_t value) {
+int32_t Mutator::MutateInt32(int32_t value) { return FlipBit(value, &random_); }
+
+int64_t Mutator::MutateInt64(int64_t value) { return FlipBit(value, &random_); }
+
+uint32_t Mutator::MutateUInt32(uint32_t value) {
   return FlipBit(value, &random_);
 }
 
-int64_t ProtobufMutator::MutateInt64(int64_t value) {
+uint64_t Mutator::MutateUInt64(uint64_t value) {
   return FlipBit(value, &random_);
 }
 
-uint32_t ProtobufMutator::MutateUInt32(uint32_t value) {
-  return FlipBit(value, &random_);
-}
+float Mutator::MutateFloat(float value) { return FlipBit(value, &random_); }
 
-uint64_t ProtobufMutator::MutateUInt64(uint64_t value) {
-  return FlipBit(value, &random_);
-}
+double Mutator::MutateDouble(double value) { return FlipBit(value, &random_); }
 
-float ProtobufMutator::MutateFloat(float value) {
-  return FlipBit(value, &random_);
-}
+bool Mutator::MutateBool(bool value) { return !value; }
 
-double ProtobufMutator::MutateDouble(double value) {
-  return FlipBit(value, &random_);
-}
-
-bool ProtobufMutator::MutateBool(bool value) { return !value; }
-
-size_t ProtobufMutator::MutateEnum(size_t index, size_t item_count) {
+size_t Mutator::MutateEnum(size_t index, size_t item_count) {
   return (index + 1 + GetRandomIndex(&random_, item_count - 1)) % item_count;
 }
 
-std::string ProtobufMutator::MutateString(const std::string& value,
-                                          size_t size_increase_hint) {
+std::string Mutator::MutateString(const std::string& value,
+                                  size_t size_increase_hint) {
   std::string result = value;
 
   while (!result.empty() && GetRandomBool(&random_)) {
