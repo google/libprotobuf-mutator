@@ -254,7 +254,7 @@ std::vector<std::pair<const char*, size_t>> GetMessageTestParams(
   return results;
 }
 
-void LoadMessage(const std::string& text_message, Msg* message) {
+void LoadMessage(const std::string& text_message, protobuf::Message* message) {
   message->Clear();
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
@@ -262,7 +262,7 @@ void LoadMessage(const std::string& text_message, Msg* message) {
 }
 
 bool LoadWithoutLine(const std::string& text_message, size_t line,
-                     Msg* message) {
+                     protobuf::Message* message) {
   std::ostringstream oss;
   auto lines = Split(text_message);
   for (size_t i = 0; i != lines.size(); ++i) {
@@ -275,7 +275,7 @@ bool LoadWithoutLine(const std::string& text_message, size_t line,
 }
 
 bool LoadWithChangedLine(const std::string& text_message, size_t line,
-                         Msg* message, int value) {
+                         protobuf::Message* message, int value) {
   auto lines = Split(text_message);
   std::ostringstream oss;
   for (size_t i = 0; i != lines.size(); ++i) {
@@ -303,13 +303,14 @@ bool LoadWithChangedLine(const std::string& text_message, size_t line,
   return parser.ParseFromString(oss.str(), message);
 }
 
-bool Mutate(const Msg& from, const Msg& to) {
+template <class Message>
+bool Mutate(const Message& from, const Message& to) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
 
   TestProtobufMutator mutator(false);
 
   for (int j = 0; j < 1000000; ++j) {
-    Msg message;
+    Message message;
     message.CopyFrom(from);
     mutator.Mutate(&message, 1000);
     if (MessageDifferencer::Equals(message, to)) return true;
@@ -419,13 +420,22 @@ TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
   EXPECT_GE(iterations * .6, match_to_);
 }
 
-TEST(ProtobufMutatorTest, CrossOverRepeated) {
-  Msg m1;
+template <typename T>
+class ProtobufMutatorTypedTest : public ::testing::Test {
+ public:
+  using Message = T;
+};
+
+using ProtobufMutatorTypedTestTypes = testing::Types<Msg>;
+TYPED_TEST_CASE(ProtobufMutatorTypedTest, ProtobufMutatorTypedTestTypes);
+
+TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeated) {
+  typename TestFixture::Message m1;
   m1.add_repeated_int32(1);
   m1.add_repeated_int32(2);
   m1.add_repeated_int32(3);
 
-  Msg m2;
+  typename TestFixture::Message m2;
   m2.add_repeated_int32(4);
   m2.add_repeated_int32(5);
   m2.add_repeated_int32(6);
@@ -434,7 +444,7 @@ TEST(ProtobufMutatorTest, CrossOverRepeated) {
   std::set<std::set<int>> sets;
   TestProtobufMutator mutator(false);
   for (int j = 0; j < iterations; ++j) {
-    Msg message;
+    typename TestFixture::Message message;
     message.CopyFrom(m1);
     mutator.CrossOver(m2, &message);
     sets.insert(
@@ -444,13 +454,13 @@ TEST(ProtobufMutatorTest, CrossOverRepeated) {
   EXPECT_EQ(1 << 6, sets.size());
 }
 
-TEST(ProtobufMutatorTest, CrossOverRepeatedMessages) {
-  Msg m1;
+TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeatedMessages) {
+  typename TestFixture::Message m1;
   auto* rm1 = m1.add_repeated_msg();
   rm1->add_repeated_int32(1);
   rm1->add_repeated_int32(2);
 
-  Msg m2;
+  typename TestFixture::Message m2;
   auto* rm2 = m2.add_repeated_msg();
   rm2->add_repeated_int32(3);
   rm2->add_repeated_int32(4);
@@ -461,7 +471,7 @@ TEST(ProtobufMutatorTest, CrossOverRepeatedMessages) {
   std::set<std::set<int>> sets;
   TestProtobufMutator mutator(false);
   for (int j = 0; j < iterations; ++j) {
-    Msg message;
+    typename TestFixture::Message message;
     message.CopyFrom(m1);
     mutator.CrossOver(m2, &message);
     for (const auto& msg : message.repeated_msg())
@@ -471,46 +481,26 @@ TEST(ProtobufMutatorTest, CrossOverRepeatedMessages) {
   EXPECT_EQ(1 << 6, sets.size());
 }
 
-class ProtobufMutatorMessagesTest : public ProtobufMutatorFieldTest {};
-
-INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorMessagesTest,
-                        ValuesIn(GetMessageTestParams({kMessages})));
-
-TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
-  LoadMessage(test_message_, &from_);
-  LoadWithoutLine(test_message_, field_, &to_);
-  EXPECT_TRUE(Mutate(from_, to_));
-}
-
-TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
-  LoadWithoutLine(test_message_, field_, &from_);
-  LoadMessage(test_message_, &to_);
-  EXPECT_TRUE(Mutate(from_, to_));
-}
-
-TEST(ProtobufMutatorMessagesTest, SmallBenchmark) {
+TYPED_TEST(ProtobufMutatorTypedTest, SmallBenchmark) {
   TestProtobufMutator mutator(false);
   for (int i = 0; i < 100000; ++i) {
-    Msg message;
+    typename TestFixture::Message message;
     for (int j = 0; j < 20; ++j) {
       mutator.Mutate(&message, 1000);
     }
   }
 }
 
-// TODO(vitalybuka): Better benchmark.
-
-TEST(ProtobufMutatorMessagesTest, SizeControl) {
+TYPED_TEST(ProtobufMutatorTypedTest, Size) {
   const size_t kIterations = 10000;
-
   auto loop = [&](bool control) {
-    Msg message;
+    typename TestFixture::Message message;
     std::string str;
     TestProtobufMutator mutator(false);
     const size_t kTargetSize = 1000;
     size_t overflows = 0;
     for (size_t j = 0; j < kIterations; ++j) {
-      Msg message2;
+      typename TestFixture::Message message2;
       message2.CopyFrom(message);
       mutator.Mutate(&message2,
                      control ? kTargetSize - std::min(str.size(), kTargetSize)
@@ -528,6 +518,23 @@ TEST(ProtobufMutatorMessagesTest, SizeControl) {
 
   EXPECT_GT(loop(false), kIterations * 0.2);
   EXPECT_LE(loop(true), kIterations * 0.05);
+}
+
+class ProtobufMutatorMessagesTest : public ProtobufMutatorFieldTest {};
+
+INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorMessagesTest,
+                        ValuesIn(GetMessageTestParams({kMessages})));
+
+TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
+  LoadMessage(test_message_, &from_);
+  LoadWithoutLine(test_message_, field_, &to_);
+  EXPECT_TRUE(Mutate(from_, to_));
+}
+
+TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
+  LoadWithoutLine(test_message_, field_, &from_);
+  LoadMessage(test_message_, &to_);
+  EXPECT_TRUE(Mutate(from_, to_));
 }
 
 // TODO(vitalybuka): Special tests for oneof.
