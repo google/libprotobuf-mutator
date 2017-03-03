@@ -50,10 +50,17 @@ enum class Mutation {
   // Clone,  // Adds new field with value copied from another field.
 };
 
+// Return random integer from [0, count)
+size_t GetRandomIndex(ProtobufMutator::RandomEngine* random, size_t count) {
+  assert(count > 0);
+  if (count == 1) return 0;
+  return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
+}
+
 // Flips random bit in the buffer.
 void FlipBit(size_t size, uint8_t* bytes,
              ProtobufMutator::RandomEngine* random) {
-  size_t bit = std::uniform_int_distribution<size_t>(0, size * 8 - 1)(*random);
+  size_t bit = GetRandomIndex(random, size * 8);
   bytes[bit / 8] ^= (1u << (bit % 8));
 }
 
@@ -62,13 +69,6 @@ template <class T>
 T FlipBit(T value, ProtobufMutator::RandomEngine* random) {
   FlipBit(sizeof(value), reinterpret_cast<uint8_t*>(&value), random);
   return value;
-}
-
-// Return random integer from [0, count)
-size_t GetRandomIndex(ProtobufMutator::RandomEngine* random, size_t count) {
-  assert(count > 0);
-  if (count == 1) return 0;
-  return std::uniform_int_distribution<size_t>(0, count - 1)(*random);
 }
 
 // Return true with probability about 1-of-n.
