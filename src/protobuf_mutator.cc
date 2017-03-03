@@ -29,9 +29,11 @@ using protobuf::Descriptor;
 using protobuf::EnumDescriptor;
 using protobuf::EnumValueDescriptor;
 using protobuf::FieldDescriptor;
+using protobuf::FileDescriptor;
 using protobuf::Message;
 using protobuf::OneofDescriptor;
 using protobuf::Reflection;
+using std::placeholders::_1;
 
 namespace {
 
@@ -309,37 +311,61 @@ class FieldMutator {
   FieldMutator(size_t size_increase_hint, ProtobufMutator* mutator)
       : size_increase_hint_(size_increase_hint), mutator_(mutator) {}
 
-  void Mutate(int32_t* value) const { *value = mutator_->MutateInt32(*value); }
+  void Mutate(int32_t* value) const {
+    RepeatMutate(value, std::bind(&ProtobufMutator::MutateInt32, mutator_, _1));
+  }
 
-  void Mutate(int64_t* value) const { *value = mutator_->MutateInt64(*value); }
+  void Mutate(int64_t* value) const {
+    RepeatMutate(value, std::bind(&ProtobufMutator::MutateInt64, mutator_, _1));
+  }
 
   void Mutate(uint32_t* value) const {
-    *value = mutator_->MutateUInt32(*value);
+    RepeatMutate(value,
+                 std::bind(&ProtobufMutator::MutateUInt32, mutator_, _1));
   }
 
   void Mutate(uint64_t* value) const {
-    *value = mutator_->MutateUInt64(*value);
+    RepeatMutate(value,
+                 std::bind(&ProtobufMutator::MutateUInt64, mutator_, _1));
   }
 
-  void Mutate(float* value) const { *value = mutator_->MutateFloat(*value); }
+  void Mutate(float* value) const {
+    RepeatMutate(value, std::bind(&ProtobufMutator::MutateFloat, mutator_, _1));
+  }
 
-  void Mutate(double* value) const { *value = mutator_->MutateDouble(*value); }
+  void Mutate(double* value) const {
+    RepeatMutate(value,
+                 std::bind(&ProtobufMutator::MutateDouble, mutator_, _1));
+  }
 
-  void Mutate(bool* value) const { *value = mutator_->MutateBool(*value); }
+  void Mutate(bool* value) const {
+    RepeatMutate(value, std::bind(&ProtobufMutator::MutateBool, mutator_, _1));
+  }
 
   void Mutate(FieldInstance::Enum* value) const {
-    value->index = mutator_->MutateEnum(value->index, value->count);
+    RepeatMutate(&value->index, std::bind(&ProtobufMutator::MutateEnum,
+                                          mutator_, _1, value->count));
     assert(value->index < value->count);
   }
 
   void Mutate(std::string* value) const {
-    *value = mutator_->MutateString(*value, size_increase_hint_);
+    RepeatMutate(value, std::bind(&ProtobufMutator::MutateString, mutator_, _1,
+                                  size_increase_hint_));
   }
 
   void Mutate(std::unique_ptr<Message>*) const {
   }
 
  private:
+  template <class T, class F>
+  void RepeatMutate(T* value, F mutate) const {
+    T tmp = *value;
+    for (int i = 0; i < 10; ++i) {
+      *value = mutate(*value);
+      if (*value != tmp) return;
+    }
+  }
+
   size_t size_increase_hint_;
   ProtobufMutator* mutator_;
 };
