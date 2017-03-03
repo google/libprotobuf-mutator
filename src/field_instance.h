@@ -164,6 +164,8 @@ class ConstFieldInstance {
     (*value)->CopyFrom(source);
   }
 
+  const std::string& name() const { return descriptor_->name(); }
+
   protobuf::FieldDescriptor::CppType cpp_type() const {
     return descriptor_->cpp_type();
   }
