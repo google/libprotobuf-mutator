@@ -78,48 +78,40 @@ bool GetRandomBool(ProtobufMutator::RandomEngine* random, size_t n = 2) {
   return GetRandomIndex(random, n) == 0;
 }
 
-struct CreateDefaultFieldTransformation {
+struct CreateDefaultField : public FieldFunction<CreateDefaultField> {
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const FieldInstance& field) const {
     T value;
     field.GetDefault(&value);
     field.Create(value);
   }
 };
 
-struct DeleteFieldTransformation {
+struct DeleteField : public FieldFunction<DeleteField> {
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const FieldInstance& field) const {
     field.Delete();
   }
 };
 
-struct CopyFieldTransformation {
-  explicit CopyFieldTransformation(const ConstFieldInstance& field)
-      : source(field) {}
-
+struct CopyField : public FieldFunction<CopyField> {
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const ConstFieldInstance& source,
+               const FieldInstance& field) const {
     T value;
     source.Load(&value);
     field.Store(value);
   }
-
-  ConstFieldInstance source;
 };
 
-struct AppendFieldTransformation {
-  explicit AppendFieldTransformation(const ConstFieldInstance& field)
-      : source(field) {}
-
+struct AppendField : public FieldFunction<AppendField> {
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const ConstFieldInstance& source,
+               const FieldInstance& field) const {
     T value;
     source.Load(&value);
     field.Create(value);
   }
-
-  ConstFieldInstance source;
 };
 
 // Selects random field and mutation from the given proto message.
@@ -380,38 +372,27 @@ class FieldMutator {
 
 namespace {
 
-class MutateTransformation {
- public:
-  MutateTransformation(size_t size_increase_hint, ProtobufMutator* mutator)
-      : mutator_(size_increase_hint, mutator) {}
-
+struct MutateField : public FieldFunction<MutateField> {
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const FieldInstance& field, size_t size_increase_hint,
+               ProtobufMutator* mutator) const {
     T value;
     field.Load(&value);
-    mutator_.Mutate(&value);
+    FieldMutator(size_increase_hint, mutator).Mutate(&value);
     field.Store(value);
   }
-
- private:
-  FieldMutator mutator_;
 };
 
-class CreateFieldTransformation {
+struct CreateField : public FieldFunction<CreateField> {
  public:
-  CreateFieldTransformation(size_t size_increase_hint, ProtobufMutator* mutator)
-      : mutator_(size_increase_hint, mutator) {}
-
   template <class T>
-  void Apply(const FieldInstance& field) const {
+  void ForType(const FieldInstance& field, size_t size_increase_hint,
+               ProtobufMutator* mutator) const {
     T value;
     field.GetDefault(&value);
-    mutator_.Mutate(&value);
+    FieldMutator(size_increase_hint, mutator).Mutate(&value);
     field.Create(value);
   }
-
- private:
-  FieldMutator mutator_;
 };
 
 }  // namespace
@@ -426,27 +407,25 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
       break;
     case Mutation::Add:
       if (GetRandomBool(&random_)) {
-        mutation.field().Apply(
-            CreateFieldTransformation(size_increase_hint / 2, this));
+        CreateField()(mutation.field(), size_increase_hint / 2, this);
       } else {
-        mutation.field().Apply(CreateDefaultFieldTransformation());
+        CreateDefaultField()(mutation.field());
       }
       break;
     case Mutation::Mutate:
-      mutation.field().Apply(
-          MutateTransformation(size_increase_hint / 2, this));
+      MutateField()(mutation.field(), size_increase_hint / 2, this);
       break;
     case Mutation::Delete:
-      mutation.field().Apply(DeleteFieldTransformation());
+      DeleteField()(mutation.field());
       break;
     case Mutation::Copy: {
       DataSourceSampler source(mutation.field(), &random_, message);
       if (source.IsEmpty()) {
         // Fallback to message deletion.
-        mutation.field().Apply(DeleteFieldTransformation());
+        DeleteField()(mutation.field());
         break;
       }
-      mutation.field().Apply(CopyFieldTransformation(source.field()));
+      CopyField()(source.field(), mutation.field());
       break;
     }
     default:
@@ -485,7 +464,7 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
       for (int j = 0; j < field_size1; ++j) {
         ConstFieldInstance source(&message1, field, j);
         FieldInstance destination(message2, field, field_size2++);
-        destination.Apply(AppendFieldTransformation(source));
+        AppendField()(source, destination);
       }
 
       assert(field_size2 == reflection->FieldSize(*message2, field));
@@ -519,11 +498,11 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
     } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
       if (!reflection->HasField(message1, field)) {
         if (GetRandomBool(&random_))
-          FieldInstance(message2, field).Apply(DeleteFieldTransformation());
+          DeleteField()(FieldInstance(message2, field));
       } else if (!reflection->HasField(*message2, field)) {
         if (GetRandomBool(&random_)) {
           ConstFieldInstance source(&message1, field);
-          FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
+          CopyField()(source, FieldInstance(message2, field));
         }
       } else {
         CrossOverImpl(reflection->GetMessage(message1, field),
@@ -533,9 +512,9 @@ void ProtobufMutator::CrossOverImpl(const protobuf::Message& message1,
       if (GetRandomBool(&random_)) {
         if (reflection->HasField(message1, field)) {
           ConstFieldInstance source(&message1, field);
-          FieldInstance(message2, field).Apply(CopyFieldTransformation(source));
+          CopyField()(source, FieldInstance(message2, field));
         } else {
-          FieldInstance(message2, field).Apply(DeleteFieldTransformation());
+          DeleteField()(FieldInstance(message2, field));
         }
       }
     }
@@ -552,7 +531,7 @@ void ProtobufMutator::InitializeMessage(Message* message, size_t max_depth) {
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
     if (field->is_required() && !reflection->HasField(*message, field))
-      FieldInstance(message, field).Apply(CreateDefaultFieldTransformation());
+      CreateDefaultField()(FieldInstance(message, field));
 
     if (max_depth > 0 &&
         field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
