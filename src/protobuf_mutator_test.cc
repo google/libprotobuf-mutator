@@ -475,14 +475,28 @@ TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeatedMessages) {
   EXPECT_EQ(1 << 6, sets.size());
 }
 
-TYPED_TEST(ProtobufMutatorTypedTest, SmallBenchmark) {
+TYPED_TEST(ProtobufMutatorTypedTest, FailedMutations) {
   TestProtobufMutator mutator(false);
-  for (int i = 0; i < 100000; ++i) {
-    typename TestFixture::Message message;
+  size_t crossovers = 0;
+  for (int i = 0; i < 10000; ++i) {
+    typename TestFixture::Message messages[2];
+    typename TestFixture::Message tmp;
     for (int j = 0; j < 20; ++j) {
-      mutator.Mutate(&message, 1000);
+      for (auto& m : messages) {
+        tmp.CopyFrom(m);
+        mutator.Mutate(&m, 1000);
+        // Mutate must not produce the same result.
+        EXPECT_FALSE(MessageDifferencer::Equals(m, tmp));
+      }
     }
+
+    tmp.CopyFrom(messages[1]);
+    mutator.CrossOver(messages[0], &tmp);
+    if (MessageDifferencer::Equals(tmp, messages[1])) ++crossovers;
   }
+
+  // CrossOver may fail but very rare.
+  EXPECT_LT(crossovers, 100);
 }
 
 TYPED_TEST(ProtobufMutatorTypedTest, Size) {

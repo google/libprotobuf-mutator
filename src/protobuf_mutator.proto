@@ -93,7 +93,9 @@ message Msg {
     Msg oneof_msg = 68;
   }
 
-  map<string, uint64> map = 69;
+  // TODO(vitalybuka): Tests maps.
+  // map<string, uint64> map = 69;
+  // map<int32, bytes> map2 = 71;
 
   required group Group = 70 {
     required bool required_bool = 1;
