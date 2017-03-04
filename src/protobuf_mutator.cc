@@ -608,6 +608,13 @@ std::string ProtobufMutator::MutateString(const std::string& value,
     result.insert(result.begin() + index, GetRandomIndex(&random_, 1 << 8));
   }
 
+  if (result != value) return result;
+
+  if (result.empty()) {
+    result.push_back(GetRandomIndex(&random_, 1 << 8));
+    return result;
+  }
+
   if (!result.empty())
     FlipBit(result.size(), reinterpret_cast<uint8_t*>(&result[0]), &random_);
   return result;
