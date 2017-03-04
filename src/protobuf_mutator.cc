@@ -156,18 +156,26 @@ class MutationSampler {
       if (const OneofDescriptor* oneof = field->containing_oneof()) {
         // Handle entire oneof group on the first field.
         if (field->index_in_oneof() == 0) {
-          sampler_.Try(
-              add_weight_,
-              {{message,
-                oneof->field(GetRandomIndex(random_, oneof->field_count()))},
-               Mutation::Add});
-          if (const FieldDescriptor* field =
-                  reflection->GetOneofFieldDescriptor(*message, oneof)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
-              sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
-            sampler_.Try(delete_weight_, {{message, field}, Mutation::Delete});
+          assert(oneof->field_count());
+          const FieldDescriptor* current_field =
+              reflection->GetOneofFieldDescriptor(*message, oneof);
+          for (;;) {
+            const FieldDescriptor* add_field =
+                oneof->field(GetRandomIndex(random_, oneof->field_count()));
+            if (add_field != current_field) {
+              sampler_.Try(add_weight_, {{message, add_field}, Mutation::Add});
+              break;
+            }
+            if (oneof->field_count() < 2) break;
+          }
+          if (current_field) {
+            if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              sampler_.Try(kMutateWeight,
+                           {{message, current_field}, Mutation::Mutate});
+            sampler_.Try(delete_weight_,
+                         {{message, current_field}, Mutation::Delete});
             sampler_.Try(GetCopyWeight(field),
-                         {{message, field}, Mutation::Copy});
+                         {{message, current_field}, Mutation::Copy});
           }
         }
       } else {
