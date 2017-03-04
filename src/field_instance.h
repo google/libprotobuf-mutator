@@ -414,9 +414,9 @@ struct FieldFunction {
         return static_cast<const Fn*>(this)
             ->template ForType<std::unique_ptr<protobuf::Message>>(field,
                                                                    args...);
-      default:
-        assert(!"Unknown type");
     }
+    assert(!"Unknown type");
+    abort();
   }
 };
 
