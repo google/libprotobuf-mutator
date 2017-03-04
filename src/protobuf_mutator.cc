@@ -432,37 +432,40 @@ struct CreateField : public FieldFunction<CreateField> {
 ProtobufMutator::ProtobufMutator(uint32_t seed) : random_(seed) {}
 
 void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
-  MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
-                           message);
-  switch (mutation.mutation()) {
-    case Mutation::None:
-      break;
-    case Mutation::Add:
-      if (GetRandomBool(&random_)) {
-        CreateField()(mutation.field(), 0, this);
-      } else {
-        CreateDefaultField()(mutation.field());
-      }
-      break;
-    case Mutation::Mutate:
-      MutateField()(mutation.field(), size_increase_hint / 2, this);
-      break;
-    case Mutation::Delete:
-      DeleteField()(mutation.field());
-      break;
-    case Mutation::Copy: {
-      DataSourceSampler source(mutation.field(), &random_, message);
-      if (source.IsEmpty()) {
-        // Fallback to message deletion.
+  bool repeat;
+  do {
+    repeat = false;
+    MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
+                             message);
+    switch (mutation.mutation()) {
+      case Mutation::None:
+        break;
+      case Mutation::Add:
+        if (GetRandomBool(&random_)) {
+          CreateField()(mutation.field(), 0, this);
+        } else {
+          CreateDefaultField()(mutation.field());
+        }
+        break;
+      case Mutation::Mutate:
+        MutateField()(mutation.field(), size_increase_hint / 2, this);
+        break;
+      case Mutation::Delete:
         DeleteField()(mutation.field());
         break;
+      case Mutation::Copy: {
+        DataSourceSampler source(mutation.field(), &random_, message);
+        if (source.IsEmpty()) {
+          repeat = true;
+          break;
+        }
+        CopyField()(source.field(), mutation.field());
+        break;
       }
-      CopyField()(source.field(), mutation.field());
-      break;
+      default:
+        assert(false && "unexpected mutation");
     }
-    default:
-      assert(false && "unexpected mutation");
-  }
+  } while (repeat);
 
   if (keep_initialized_ && !message->IsInitialized()) {
     InitializeMessage(message, kMaxInitializeDepth);
