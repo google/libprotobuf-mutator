@@ -33,6 +33,7 @@ using protobuf::FileDescriptor;
 using protobuf::Message;
 using protobuf::OneofDescriptor;
 using protobuf::Reflection;
+using protobuf::util::MessageDifferencer;
 using std::placeholders::_1;
 
 namespace {
@@ -111,6 +112,35 @@ struct AppendField : public FieldFunction<AppendField> {
     T value;
     source.Load(&value);
     field.Create(value);
+  }
+};
+
+class IsEqualValueField : public FieldFunction<IsEqualValueField, bool> {
+ public:
+  template <class T>
+  bool ForType(const ConstFieldInstance& a, const ConstFieldInstance& b) const {
+    T aa;
+    a.Load(&aa);
+    T bb;
+    b.Load(&bb);
+    return IsEqual(aa, bb);
+  }
+
+ private:
+  bool IsEqual(const ConstFieldInstance::Enum& a,
+               const ConstFieldInstance::Enum& b) const {
+    assert(a.count == b.count);
+    return a.index == b.index;
+  }
+
+  bool IsEqual(const std::unique_ptr<protobuf::Message>& a,
+               const std::unique_ptr<protobuf::Message>& b) const {
+    return MessageDifferencer::Equals(*a, *b);
+  }
+
+  template <class T>
+  bool IsEqual(const T& a, const T& b) const {
+    return a == b;
   }
 };
 
@@ -283,15 +313,17 @@ class DataSourceSampler {
         if (field->message_type() != match_.message_type()) continue;
       }
 
-      // TODO(vitalybuka) : make sure that values are different
       if (field->is_repeated()) {
         if (int field_size = reflection->FieldSize(*message, field)) {
-          sampler_.Try(field_size,
-                       {message, field, GetRandomIndex(random_, field_size)});
+          ConstFieldInstance source(message, field,
+                                    GetRandomIndex(random_, field_size));
+          if (!IsEqualValueField()(match_, source))
+            sampler_.Try(field_size, source);
         }
       } else {
         if (reflection->HasField(*message, field)) {
-          sampler_.Try(1, {message, field});
+          ConstFieldInstance source(message, field);
+          if (!IsEqualValueField()(match_, source)) sampler_.Try(1, source);
         }
       }
     }

@@ -510,8 +510,8 @@ TYPED_TEST(ProtobufMutatorTypedTest, Size) {
     return overflows;
   };
 
-  EXPECT_GT(loop(false), kIterations * 0.2);
-  EXPECT_LE(loop(true), kIterations * 0.05);
+  EXPECT_GT(loop(false), kIterations * 0.1);
+  EXPECT_LE(loop(true), kIterations * 0.1);
 }
 
 class ProtobufMutatorMessagesTest : public ProtobufMutatorFieldTest {};
