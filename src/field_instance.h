@@ -190,6 +190,9 @@ class ConstFieldInstance {
   size_t index() const { return index_; }
 
  private:
+  template <class Fn, class T>
+  friend struct FieldFunction;
+
   const protobuf::Message* message_;
   const protobuf::FieldDescriptor* descriptor_;
   size_t index_;
@@ -301,37 +304,6 @@ class FieldInstance : public ConstFieldInstance {
     if (value) mutable_message->CopyFrom(*value);
   }
 
-  template <class Transformation>
-  void Apply(const Transformation& transformation) const {
-    assert(descriptor());
-    using protobuf::FieldDescriptor;
-    switch (cpp_type()) {
-      case FieldDescriptor::CPPTYPE_INT32:
-        return transformation.template Apply<int32_t>(*this);
-      case FieldDescriptor::CPPTYPE_INT64:
-        return transformation.template Apply<int64_t>(*this);
-      case FieldDescriptor::CPPTYPE_UINT32:
-        return transformation.template Apply<uint32_t>(*this);
-      case FieldDescriptor::CPPTYPE_UINT64:
-        return transformation.template Apply<uint64_t>(*this);
-      case FieldDescriptor::CPPTYPE_DOUBLE:
-        return transformation.template Apply<double>(*this);
-      case FieldDescriptor::CPPTYPE_FLOAT:
-        return transformation.template Apply<float>(*this);
-      case FieldDescriptor::CPPTYPE_BOOL:
-        return transformation.template Apply<bool>(*this);
-      case FieldDescriptor::CPPTYPE_ENUM:
-        return transformation.template Apply<FieldInstance::Enum>(*this);
-      case FieldDescriptor::CPPTYPE_STRING:
-        return transformation.template Apply<std::string>(*this);
-      case FieldDescriptor::CPPTYPE_MESSAGE:
-        return transformation
-            .template Apply<std::unique_ptr<protobuf::Message>>(*this);
-      default:
-        assert(!"Unknown type");
-    }
-  }
-
  private:
   template <class T>
   void InsertRepeated(const T& value) const {
@@ -402,6 +374,50 @@ class FieldInstance : public ConstFieldInstance {
   }
 
   protobuf::Message* message_;
+};
+
+template <class Fn, class R = void>
+struct FieldFunction {
+  template <class Field, class... Args>
+  R operator()(const Field& field, const Args&... args) const {
+    assert(field.descriptor());
+    using protobuf::FieldDescriptor;
+    switch (field.cpp_type()) {
+      case FieldDescriptor::CPPTYPE_INT32:
+        return static_cast<const Fn*>(this)->template ForType<int32_t>(field,
+                                                                       args...);
+      case FieldDescriptor::CPPTYPE_INT64:
+        return static_cast<const Fn*>(this)->template ForType<int64_t>(field,
+                                                                       args...);
+      case FieldDescriptor::CPPTYPE_UINT32:
+        return static_cast<const Fn*>(this)->template ForType<uint32_t>(
+            field, args...);
+      case FieldDescriptor::CPPTYPE_UINT64:
+        return static_cast<const Fn*>(this)->template ForType<uint64_t>(
+            field, args...);
+      case FieldDescriptor::CPPTYPE_DOUBLE:
+        return static_cast<const Fn*>(this)->template ForType<double>(field,
+                                                                      args...);
+      case FieldDescriptor::CPPTYPE_FLOAT:
+        return static_cast<const Fn*>(this)->template ForType<float>(field,
+                                                                     args...);
+      case FieldDescriptor::CPPTYPE_BOOL:
+        return static_cast<const Fn*>(this)->template ForType<bool>(field,
+                                                                    args...);
+      case FieldDescriptor::CPPTYPE_ENUM:
+        return static_cast<const Fn*>(this)
+            ->template ForType<ConstFieldInstance::Enum>(field, args...);
+      case FieldDescriptor::CPPTYPE_STRING:
+        return static_cast<const Fn*>(this)->template ForType<std::string>(
+            field, args...);
+      case FieldDescriptor::CPPTYPE_MESSAGE:
+        return static_cast<const Fn*>(this)
+            ->template ForType<std::unique_ptr<protobuf::Message>>(field,
+                                                                   args...);
+      default:
+        assert(!"Unknown type");
+    }
+  }
 };
 
 }  // namespace protobuf_mutator
