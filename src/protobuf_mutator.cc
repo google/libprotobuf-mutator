@@ -398,8 +398,7 @@ class FieldMutator {
                                   size_increase_hint_));
   }
 
-  void Mutate(std::unique_ptr<Message>*) const {
-  }
+  void Mutate(std::unique_ptr<Message>*) const {}
 
  private:
   template <class T, class F>

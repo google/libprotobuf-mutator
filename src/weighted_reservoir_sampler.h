@@ -45,9 +45,8 @@ class WeightedReservoirSampler {
   bool Pick(uint64_t weight) {
     if (weight == 0) return false;
     total_weight_ += weight;
-    return weight == total_weight_ ||
-           std::uniform_int_distribution<uint64_t>(
-               1, total_weight_)(*random_) <= weight;
+    return weight == total_weight_ || std::uniform_int_distribution<uint64_t>(
+                                          1, total_weight_)(*random_) <= weight;
   }
 
   T selected_ = {};

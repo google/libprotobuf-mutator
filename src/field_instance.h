@@ -107,24 +107,21 @@ class ConstFieldInstance {
   }
 
   void Load(uint32_t* value) const {
-    *value =
-        is_repeated()
-            ? reflection().GetRepeatedUInt32(*message_, descriptor_, index_)
-            : reflection().GetUInt32(*message_, descriptor_);
+    *value = is_repeated() ? reflection().GetRepeatedUInt32(*message_,
+                                                            descriptor_, index_)
+                           : reflection().GetUInt32(*message_, descriptor_);
   }
 
   void Load(uint64_t* value) const {
-    *value =
-        is_repeated()
-            ? reflection().GetRepeatedUInt64(*message_, descriptor_, index_)
-            : reflection().GetUInt64(*message_, descriptor_);
+    *value = is_repeated() ? reflection().GetRepeatedUInt64(*message_,
+                                                            descriptor_, index_)
+                           : reflection().GetUInt64(*message_, descriptor_);
   }
 
   void Load(double* value) const {
-    *value =
-        is_repeated()
-            ? reflection().GetRepeatedDouble(*message_, descriptor_, index_)
-            : reflection().GetDouble(*message_, descriptor_);
+    *value = is_repeated() ? reflection().GetRepeatedDouble(*message_,
+                                                            descriptor_, index_)
+                           : reflection().GetDouble(*message_, descriptor_);
   }
 
   void Load(float* value) const {
@@ -149,10 +146,9 @@ class ConstFieldInstance {
   }
 
   void Load(std::string* value) const {
-    *value =
-        is_repeated()
-            ? reflection().GetRepeatedString(*message_, descriptor_, index_)
-            : reflection().GetString(*message_, descriptor_);
+    *value = is_repeated() ? reflection().GetRepeatedString(*message_,
+                                                            descriptor_, index_)
+                           : reflection().GetString(*message_, descriptor_);
   }
 
   void Load(std::unique_ptr<protobuf::Message>* value) const {
