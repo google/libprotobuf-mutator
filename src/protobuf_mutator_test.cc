@@ -288,55 +288,6 @@ std::vector<TestParams> GetMessageTestParams(
   return results;
 }
 
-void LoadMessage(const std::string& text_message, protobuf::Message* message) {
-  message->Clear();
-  TextFormat::Parser parser;
-  parser.AllowPartialMessage(true);
-  EXPECT_TRUE(parser.ParseFromString(text_message, message));
-}
-
-bool LoadWithoutLine(const std::string& text_message, size_t line,
-                     protobuf::Message* message) {
-  std::ostringstream oss;
-  auto lines = Split(text_message);
-  for (size_t i = 0; i != lines.size(); ++i) {
-    if (i != line) oss << lines[i] << '\n';
-  }
-  message->Clear();
-  TextFormat::Parser parser;
-  parser.AllowPartialMessage(true);
-  return parser.ParseFromString(oss.str(), message);
-}
-
-bool LoadWithChangedLine(const std::string& text_message, size_t line,
-                         protobuf::Message* message, int value) {
-  auto lines = Split(text_message);
-  std::ostringstream oss;
-  for (size_t i = 0; i != lines.size(); ++i) {
-    if (i != line) {
-      oss << lines[i] << '\n';
-    } else {
-      std::string s = lines[i];
-      s.resize(s.find(':') + 2);
-
-      if (lines[i].back() == '\"') {
-        // strings
-        s += value ? "\"\\" + std::to_string(value) + "\"" : "\"\"";
-      } else if (lines[i].back() == 'e') {
-        // bools
-        s += value ? "true" : "false";
-      } else {
-        s += std::to_string(value);
-      }
-      oss << s << '\n';
-    }
-  }
-  message->Clear();
-  TextFormat::Parser parser;
-  parser.AllowPartialMessage(true);
-  return parser.ParseFromString(oss.str(), message);
-}
-
 bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestProtobufMutator mutator;
@@ -356,16 +307,63 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
 class ProtobufMutatorTest : public TestWithParam<TestParams> {
  protected:
   void SetUp() override {
-    from_.reset(std::get<0>(GetParam())->New());
-    to_.reset(std::get<0>(GetParam())->New());
-    test_message_ = std::get<1>(GetParam());
-    field_ = std::get<2>(GetParam());
+    m1_.reset(std::get<0>(GetParam())->New());
+    m2_.reset(std::get<0>(GetParam())->New());
+    text_ = std::get<1>(GetParam());
+    line_ = std::get<2>(GetParam());
   }
 
-  std::string test_message_;
-  size_t field_;
-  std::unique_ptr<protobuf::Message> from_;
-  std::unique_ptr<protobuf::Message> to_;
+  void LoadMessage(protobuf::Message* message) {
+    message->Clear();
+    TextFormat::Parser parser;
+    parser.AllowPartialMessage(true);
+    EXPECT_TRUE(parser.ParseFromString(text_, message));
+  }
+
+  bool LoadWithoutLine(protobuf::Message* message) {
+    std::ostringstream oss;
+    auto lines = Split(text_);
+    for (size_t i = 0; i != lines.size(); ++i) {
+      if (i != line_) oss << lines[i] << '\n';
+    }
+    message->Clear();
+    TextFormat::Parser parser;
+    parser.AllowPartialMessage(true);
+    return parser.ParseFromString(oss.str(), message);
+  }
+
+  bool LoadWithChangedLine(protobuf::Message* message, int value) {
+    auto lines = Split(text_);
+    std::ostringstream oss;
+    for (size_t i = 0; i != lines.size(); ++i) {
+      if (i != line_) {
+        oss << lines[i] << '\n';
+      } else {
+        std::string s = lines[i];
+        s.resize(s.find(':') + 2);
+
+        if (lines[i].back() == '\"') {
+          // strings
+          s += value ? "\"\\" + std::to_string(value) + "\"" : "\"\"";
+        } else if (lines[i].back() == 'e') {
+          // bools
+          s += value ? "true" : "false";
+        } else {
+          s += std::to_string(value);
+        }
+        oss << s << '\n';
+      }
+    }
+    message->Clear();
+    TextFormat::Parser parser;
+    parser.AllowPartialMessage(true);
+    return parser.ParseFromString(oss.str(), message);
+  }
+
+  std::string text_;
+  size_t line_;
+  std::unique_ptr<protobuf::Message> m1_;
+  std::unique_ptr<protobuf::Message> m2_;
 };
 
 class ProtobufMutatorFieldTest : public ProtobufMutatorTest {};
@@ -377,47 +375,47 @@ INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorFieldTest,
                              kRepeatedNestedFields})));
 
 TEST_P(ProtobufMutatorFieldTest, Initialized) {
-  LoadWithoutLine(test_message_, field_, from_.get());
+  LoadWithoutLine(m1_.get());
   TestProtobufMutator mutator(true);
-  mutator.Mutate(from_.get(), 1000);
-  EXPECT_TRUE(from_->IsInitialized());
+  mutator.Mutate(m1_.get(), 1000);
+  EXPECT_TRUE(m1_->IsInitialized());
 }
 
 TEST_P(ProtobufMutatorFieldTest, DeleteField) {
-  LoadMessage(test_message_, from_.get());
-  LoadWithoutLine(test_message_, field_, to_.get());
-  EXPECT_TRUE(Mutate(*from_, *to_));
+  LoadMessage(m1_.get());
+  LoadWithoutLine(m2_.get());
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, InsertField) {
-  LoadWithoutLine(test_message_, field_, from_.get());
-  LoadWithChangedLine(test_message_, field_, to_.get(), 0);
-  EXPECT_TRUE(Mutate(*from_, *to_));
+  LoadWithoutLine(m1_.get());
+  LoadWithChangedLine(m2_.get(), 0);
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, ChangeField) {
-  LoadWithChangedLine(test_message_, field_, from_.get(), 0);
-  LoadWithChangedLine(test_message_, field_, to_.get(), 1);
-  EXPECT_TRUE(Mutate(*from_, *to_));
-  EXPECT_TRUE(Mutate(*to_, *from_));
+  LoadWithChangedLine(m1_.get(), 0);
+  LoadWithChangedLine(m2_.get(), 1);
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
+  EXPECT_TRUE(Mutate(*m2_, *m1_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, CopyField) {
-  LoadWithChangedLine(test_message_, field_, from_.get(), 7);
-  LoadWithChangedLine(test_message_, field_, to_.get(), 0);
+  LoadWithChangedLine(m1_.get(), 7);
+  LoadWithChangedLine(m2_.get(), 0);
 
   Msg from;
-  from.add_repeated_msg()->CopyFrom(*from_);
-  from.add_repeated_msg()->CopyFrom(*to_);
+  from.add_repeated_msg()->CopyFrom(*m1_);
+  from.add_repeated_msg()->CopyFrom(*m2_);
 
   Msg to;
-  to.add_repeated_msg()->CopyFrom(*from_);
-  to.add_repeated_msg()->CopyFrom(*from_);
+  to.add_repeated_msg()->CopyFrom(*m1_);
+  to.add_repeated_msg()->CopyFrom(*m1_);
   EXPECT_TRUE(Mutate(from, to));
 
   to.Clear();
-  to.add_repeated_msg()->CopyFrom(*to_);
-  to.add_repeated_msg()->CopyFrom(*to_);
+  to.add_repeated_msg()->CopyFrom(*m2_);
+  to.add_repeated_msg()->CopyFrom(*m2_);
   EXPECT_TRUE(Mutate(from, to));
 }
 
@@ -430,27 +428,27 @@ INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorSingleFieldTest,
                         })));
 
 TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
-  LoadWithoutLine(test_message_, field_, from_.get());
-  LoadMessage(test_message_, to_.get());
+  LoadWithoutLine(m1_.get());
+  LoadMessage(m2_.get());
 
-  EXPECT_FALSE(MessageDifferencer::Equals(*from_, *to_));
+  EXPECT_FALSE(MessageDifferencer::Equals(*m1_, *m2_));
   TestProtobufMutator mutator(false);
 
-  int match_from_ = 0;
-  int match_to_ = 0;
+  int match_m1_ = 0;
+  int match_m2_ = 0;
   int iterations = 1000;
-  std::unique_ptr<protobuf::Message> message(from_->New());
+  std::unique_ptr<protobuf::Message> message(m1_->New());
   for (int j = 0; j < iterations; ++j) {
-    message->CopyFrom(*from_);
-    mutator.CrossOver(*to_, message.get());
-    if (MessageDifferencer::Equals(*message, *to_)) ++match_to_;
-    if (MessageDifferencer::Equals(*message, *from_)) ++match_from_;
+    message->CopyFrom(*m1_);
+    mutator.CrossOver(*m2_, message.get());
+    if (MessageDifferencer::Equals(*message, *m2_)) ++match_m2_;
+    if (MessageDifferencer::Equals(*message, *m1_)) ++match_m1_;
   }
 
-  EXPECT_LT(iterations * .4, match_from_);
-  EXPECT_GE(iterations * .6, match_from_);
-  EXPECT_LT(iterations * .4, match_to_);
-  EXPECT_GE(iterations * .6, match_to_);
+  EXPECT_LT(iterations * .4, match_m1_);
+  EXPECT_GE(iterations * .6, match_m1_);
+  EXPECT_LT(iterations * .4, match_m2_);
+  EXPECT_GE(iterations * .6, match_m2_);
 }
 
 template <typename T>
@@ -573,15 +571,15 @@ INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorMessagesTest,
                         ValuesIn(GetMessageTestParams<Msg>({kMessages})));
 
 TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
-  LoadMessage(test_message_, from_.get());
-  LoadWithoutLine(test_message_, field_, to_.get());
-  EXPECT_TRUE(Mutate(*from_, *to_));
+  LoadMessage(m1_.get());
+  LoadWithoutLine(m2_.get());
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
-  LoadWithoutLine(test_message_, field_, from_.get());
-  LoadMessage(test_message_, to_.get());
-  EXPECT_TRUE(Mutate(*from_, *to_));
+  LoadWithoutLine(m1_.get());
+  LoadMessage(m2_.get());
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST(ProtobufMutatorMessagesTest, UsageExample) {
