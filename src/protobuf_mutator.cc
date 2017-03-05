@@ -79,6 +79,14 @@ bool GetRandomBool(ProtobufMutator::RandomEngine* random, size_t n = 2) {
   return GetRandomIndex(random, n) == 0;
 }
 
+bool IsProto3SimpleField(const FieldDescriptor& field) {
+  assert(field.file()->syntax() == FileDescriptor::SYNTAX_PROTO3 ||
+         field.file()->syntax() == FileDescriptor::SYNTAX_PROTO2);
+  return field.file()->syntax() == FileDescriptor::SYNTAX_PROTO3 &&
+         field.cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
+         !field.containing_oneof() && !field.is_repeated();
+}
+
 struct CreateDefaultField : public FieldFunction<CreateDefaultField> {
   template <class T>
   void ForType(const FieldInstance& field) const {
@@ -191,9 +199,10 @@ class MutationSampler {
             if (oneof->field_count() < 2) break;
           }
           if (current_field) {
-            if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+            if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
               sampler_.Try(kMutateWeight,
                            {{message, current_field}, Mutation::Mutate});
+            }
             sampler_.Try(delete_weight_,
                          {{message, current_field}, Mutation::Delete});
             sampler_.Try(GetCopyWeight(field),
@@ -209,21 +218,25 @@ class MutationSampler {
 
           if (field_size) {
             size_t random_index = GetRandomIndex(random_, field_size);
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
               sampler_.Try(kMutateWeight,
                            {{message, field, random_index}, Mutation::Mutate});
+            }
             sampler_.Try(delete_weight_,
                          {{message, field, random_index}, Mutation::Delete});
             sampler_.Try(GetCopyWeight(field),
                          {{message, field, random_index}, Mutation::Copy});
           }
         } else {
-          if (reflection->HasField(*message, field)) {
+          if (reflection->HasField(*message, field) ||
+              IsProto3SimpleField(*field)) {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
               sampler_.Try(kMutateWeight, {{message, field}, Mutation::Mutate});
-            if ((!field->is_required() || !keep_initialized_))
+            if (!IsProto3SimpleField(*field) &&
+                (!field->is_required() || !keep_initialized_)) {
               sampler_.Try(delete_weight_,
                            {{message, field}, Mutation::Delete});
+            }
             sampler_.Try(GetCopyWeight(field),
                          {{message, field}, Mutation::Copy});
           } else {
@@ -418,11 +431,10 @@ struct MutateField : public FieldFunction<MutateField> {
 struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
-  void ForType(const FieldInstance& field, size_t size_increase_hint,
-               ProtobufMutator* mutator) const {
+  void ForType(const FieldInstance& field, ProtobufMutator* mutator) const {
     T value;
     field.GetDefault(&value);
-    FieldMutator(size_increase_hint, mutator).Mutate(&value);
+    FieldMutator(0, mutator).Mutate(&value);
     field.Create(value);
   }
 };
@@ -442,7 +454,7 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
         break;
       case Mutation::Add:
         if (GetRandomBool(&random_)) {
-          CreateField()(mutation.field(), 0, this);
+          CreateField()(mutation.field(), this);
         } else {
           CreateDefaultField()(mutation.field());
         }
