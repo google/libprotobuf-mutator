@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -257,25 +258,31 @@ std::vector<std::string> Split(const std::string& str) {
   return result;
 }
 
-std::vector<std::pair<const char*, size_t>> GetFieldTestParams(
+using TestParams = std::tuple<const protobuf::Message*, const char*, size_t>;
+
+template <class T>
+std::vector<TestParams> GetFieldTestParams(
     const std::vector<const char*>& tests) {
-  std::vector<std::pair<const char*, size_t>> results;
+  std::vector<TestParams> results;
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
-      if (lines[i].find(':') != std::string::npos) results.push_back({t, i});
+      if (lines[i].find(':') != std::string::npos)
+        results.push_back(std::make_tuple(&T::default_instance(), t, i));
     }
   }
   return results;
 }
 
-std::vector<std::pair<const char*, size_t>> GetMessageTestParams(
+template <class T>
+std::vector<TestParams> GetMessageTestParams(
     const std::vector<const char*>& tests) {
-  std::vector<std::pair<const char*, size_t>> results;
+  std::vector<TestParams> results;
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
-      if (lines[i].find("{}") != std::string::npos) results.push_back({t, i});
+      if (lines[i].find("{}") != std::string::npos)
+        results.push_back(std::make_tuple(&T::default_instance(), t, i));
     }
   }
   return results;
@@ -330,17 +337,14 @@ bool LoadWithChangedLine(const std::string& text_message, size_t line,
   return parser.ParseFromString(oss.str(), message);
 }
 
-template <class Message>
-bool Mutate(const Message& from, const Message& to) {
+bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
-
   ReducedTestProtobufMutator mutator;
-
+  std::unique_ptr<protobuf::Message> message(from.New());
   for (int j = 0; j < 1000000; ++j) {
-    Message message;
-    message.CopyFrom(from);
-    mutator.Mutate(&message, 1000);
-    if (MessageDifferencer::Equals(message, to)) return true;
+    message->CopyFrom(from);
+    mutator.Mutate(message.get(), 1000);
+    if (MessageDifferencer::Equals(*message, to)) return true;
   }
 
   ADD_FAILURE() << "Failed to get from:\n"
@@ -349,100 +353,98 @@ bool Mutate(const Message& from, const Message& to) {
   return false;
 }
 
-class ProtobufMutatorTest {
- protected:
-  std::string test_message_;
-  size_t field_;
-  Msg from_;
-  Msg to_;
-};
-
-class ProtobufMutatorFieldTest
-    : public ProtobufMutatorTest,
-      public TestWithParam<std::pair<const char*, size_t>> {
+class ProtobufMutatorTest : public TestWithParam<TestParams> {
  protected:
   void SetUp() override {
-    test_message_ = GetParam().first;
-    field_ = GetParam().second;
+    from_.reset(std::get<0>(GetParam())->New());
+    to_.reset(std::get<0>(GetParam())->New());
+    test_message_ = std::get<1>(GetParam());
+    field_ = std::get<2>(GetParam());
   }
+
+  std::string test_message_;
+  size_t field_;
+  std::unique_ptr<protobuf::Message> from_;
+  std::unique_ptr<protobuf::Message> to_;
 };
 
-INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorFieldTest,
-                        ValuesIn(GetFieldTestParams(
+class ProtobufMutatorFieldTest : public ProtobufMutatorTest {};
+
+INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorFieldTest,
+                        ValuesIn(GetFieldTestParams<Msg>(
                             {kRequiredFields, kOptionalFields, kRepeatedFields,
                              kRequiredNestedFields, kOptionalNestedFields,
                              kRepeatedNestedFields})));
 
 TEST_P(ProtobufMutatorFieldTest, Initialized) {
-  LoadWithoutLine(test_message_, field_, &from_);
+  LoadWithoutLine(test_message_, field_, from_.get());
   TestProtobufMutator mutator(true);
-  mutator.Mutate(&from_, 1000);
-  EXPECT_TRUE(from_.IsInitialized());
+  mutator.Mutate(from_.get(), 1000);
+  EXPECT_TRUE(from_->IsInitialized());
 }
 
 TEST_P(ProtobufMutatorFieldTest, DeleteField) {
-  LoadMessage(test_message_, &from_);
-  LoadWithoutLine(test_message_, field_, &to_);
-  EXPECT_TRUE(Mutate(from_, to_));
+  LoadMessage(test_message_, from_.get());
+  LoadWithoutLine(test_message_, field_, to_.get());
+  EXPECT_TRUE(Mutate(*from_, *to_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, InsertField) {
-  LoadWithoutLine(test_message_, field_, &from_);
-  LoadWithChangedLine(test_message_, field_, &to_, 0);
-  EXPECT_TRUE(Mutate(from_, to_));
+  LoadWithoutLine(test_message_, field_, from_.get());
+  LoadWithChangedLine(test_message_, field_, to_.get(), 0);
+  EXPECT_TRUE(Mutate(*from_, *to_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, ChangeField) {
-  LoadWithChangedLine(test_message_, field_, &from_, 0);
-  LoadWithChangedLine(test_message_, field_, &to_, 1);
-  EXPECT_TRUE(Mutate(from_, to_));
-  EXPECT_TRUE(Mutate(to_, from_));
+  LoadWithChangedLine(test_message_, field_, from_.get(), 0);
+  LoadWithChangedLine(test_message_, field_, to_.get(), 1);
+  EXPECT_TRUE(Mutate(*from_, *to_));
+  EXPECT_TRUE(Mutate(*to_, *from_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, CopyField) {
-  Msg msg1;
-  LoadWithChangedLine(test_message_, field_, &msg1, 7);
+  LoadWithChangedLine(test_message_, field_, from_.get(), 7);
+  LoadWithChangedLine(test_message_, field_, to_.get(), 0);
 
-  Msg msg2;
-  LoadWithChangedLine(test_message_, field_, &msg2, 0);
+  Msg from;
+  from.add_repeated_msg()->CopyFrom(*from_);
+  from.add_repeated_msg()->CopyFrom(*to_);
 
-  from_.add_repeated_msg()->CopyFrom(msg1);
-  from_.add_repeated_msg()->CopyFrom(msg2);
+  Msg to;
+  to.add_repeated_msg()->CopyFrom(*from_);
+  to.add_repeated_msg()->CopyFrom(*from_);
+  EXPECT_TRUE(Mutate(from, to));
 
-  to_.add_repeated_msg()->CopyFrom(msg1);
-  to_.add_repeated_msg()->CopyFrom(msg1);
-  EXPECT_TRUE(Mutate(from_, to_));
-
-  to_.Clear();
-  to_.add_repeated_msg()->CopyFrom(msg2);
-  to_.add_repeated_msg()->CopyFrom(msg2);
-  EXPECT_TRUE(Mutate(from_, to_));
+  to.Clear();
+  to.add_repeated_msg()->CopyFrom(*to_);
+  to.add_repeated_msg()->CopyFrom(*to_);
+  EXPECT_TRUE(Mutate(from, to));
 }
 
-class ProtobufMutatorSingleFieldTest : public ProtobufMutatorFieldTest {};
+class ProtobufMutatorSingleFieldTest : public ProtobufMutatorTest {};
 
-INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorSingleFieldTest,
-                        ValuesIn(GetFieldTestParams({
+INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorSingleFieldTest,
+                        ValuesIn(GetFieldTestParams<Msg>({
                             kRequiredFields, kOptionalFields,
                             kRequiredNestedFields, kOptionalNestedFields,
                         })));
 
 TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
-  LoadWithoutLine(test_message_, field_, &from_);
-  LoadMessage(test_message_, &to_);
+  LoadWithoutLine(test_message_, field_, from_.get());
+  LoadMessage(test_message_, to_.get());
 
-  EXPECT_FALSE(MessageDifferencer::Equals(from_, to_));
+  EXPECT_FALSE(MessageDifferencer::Equals(*from_, *to_));
   TestProtobufMutator mutator(false);
 
   int match_from_ = 0;
   int match_to_ = 0;
   int iterations = 1000;
+  std::unique_ptr<protobuf::Message> message(from_->New());
   for (int j = 0; j < iterations; ++j) {
-    Msg message;
-    message.CopyFrom(from_);
-    mutator.CrossOver(to_, &message);
-    if (MessageDifferencer::Equals(message, to_)) ++match_to_;
-    if (MessageDifferencer::Equals(message, from_)) ++match_from_;
+    message->CopyFrom(*from_);
+    mutator.CrossOver(*to_, message.get());
+    if (MessageDifferencer::Equals(*message, *to_)) ++match_to_;
+    if (MessageDifferencer::Equals(*message, *from_)) ++match_from_;
   }
 
   EXPECT_LT(iterations * .4, match_from_);
@@ -565,21 +567,21 @@ TYPED_TEST(ProtobufMutatorTypedTest, Size) {
   EXPECT_LE(loop(true), kIterations * 0.1);
 }
 
-class ProtobufMutatorMessagesTest : public ProtobufMutatorFieldTest {};
+class ProtobufMutatorMessagesTest : public ProtobufMutatorTest {};
 
-INSTANTIATE_TEST_CASE_P(AllTest, ProtobufMutatorMessagesTest,
-                        ValuesIn(GetMessageTestParams({kMessages})));
+INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorMessagesTest,
+                        ValuesIn(GetMessageTestParams<Msg>({kMessages})));
 
 TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
-  LoadMessage(test_message_, &from_);
-  LoadWithoutLine(test_message_, field_, &to_);
-  EXPECT_TRUE(Mutate(from_, to_));
+  LoadMessage(test_message_, from_.get());
+  LoadWithoutLine(test_message_, field_, to_.get());
+  EXPECT_TRUE(Mutate(*from_, *to_));
 }
 
 TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
-  LoadWithoutLine(test_message_, field_, &from_);
-  LoadMessage(test_message_, &to_);
-  EXPECT_TRUE(Mutate(from_, to_));
+  LoadWithoutLine(test_message_, field_, from_.get());
+  LoadMessage(test_message_, to_.get());
+  EXPECT_TRUE(Mutate(*from_, *to_));
 }
 
 TEST(ProtobufMutatorMessagesTest, UsageExample) {
