@@ -201,20 +201,53 @@ const char kRepeatedNestedFields[] = R"(
 
 class TestProtobufMutator : public ProtobufMutator {
  public:
-  explicit TestProtobufMutator(bool keep_initialized)
-      : ProtobufMutator(17), random_(13) {
+  explicit TestProtobufMutator(bool keep_initialized) : ProtobufMutator(17) {
     keep_initialized_ = keep_initialized;
   }
+};
 
-  float MutateFloat(float value) override {
-    // Hack for tests. It's hard compare reals generated using random mutations.
-    return std::uniform_int_distribution<uint8_t>(-10, 10)(random_);
+class ReducedTestProtobufMutator : public TestProtobufMutator {
+ public:
+  ReducedTestProtobufMutator() : TestProtobufMutator(false), random_(13) {
+    for (float i = 1000; i > 0.1; i /= 7) {
+      values_.push_back(i);
+      values_.push_back(-i);
+    }
+    values_.push_back(-1.0);
+    values_.push_back(0.0);
+    values_.push_back(1.0);
   }
 
-  double MutateDouble(double value) override { return MutateFloat(value); }
+ protected:
+  int32_t MutateInt32(int32_t value) override { return GetRandomValue(); }
+
+  int64_t MutateInt64(int64_t value) override { return GetRandomValue(); }
+
+  uint32_t MutateUInt32(uint32_t value) override { return GetRandomValue(); }
+
+  uint64_t MutateUInt64(uint64_t value) override { return GetRandomValue(); }
+
+  float MutateFloat(float value) override { return GetRandomValue(); }
+
+  double MutateDouble(double value) override { return GetRandomValue(); }
+
+  std::string MutateString(const std::string& value,
+                           size_t size_increase_hint) override {
+    return strings_[std::uniform_int_distribution<uint8_t>(
+        0, strings_.size() - 1)(random_)];
+  }
 
  private:
+  float GetRandomValue() {
+    return values_[std::uniform_int_distribution<uint8_t>(
+        0, values_.size() - 1)(random_)];
+  }
+
   RandomEngine random_;
+  std::vector<float> values_;
+  std::vector<std::string> strings_ = {
+      "", "\001", "\000", "a", "b", "ab",
+  };
 };
 
 std::vector<std::string> Split(const std::string& str) {
@@ -301,7 +334,7 @@ template <class Message>
 bool Mutate(const Message& from, const Message& to) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
 
-  TestProtobufMutator mutator(false);
+  ReducedTestProtobufMutator mutator;
 
   for (int j = 0; j < 1000000; ++j) {
     Message message;
@@ -309,6 +342,10 @@ bool Mutate(const Message& from, const Message& to) {
     mutator.Mutate(&message, 1000);
     if (MessageDifferencer::Equals(message, to)) return true;
   }
+
+  ADD_FAILURE() << "Failed to get from:\n"
+                << MessageToTextString(from) << "\nto:\n"
+                << MessageToTextString(to);
   return false;
 }
 
@@ -545,8 +582,6 @@ TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
   EXPECT_TRUE(Mutate(from_, to_));
 }
 
-// TODO(vitalybuka): Special tests for oneof.
-
 TEST(ProtobufMutatorMessagesTest, UsageExample) {
   SmallMessage message;
   TestProtobufMutator mutator(false);
@@ -562,5 +597,7 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   // 3 states for boolean and 5 for enum, including missing fields.
   EXPECT_EQ(3u * 5u, mutations.size());
 }
+
+// TODO(vitalybuka): Special tests for oneof.
 
 }  // namespace protobuf_mutator
