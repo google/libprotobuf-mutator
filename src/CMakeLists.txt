@@ -22,7 +22,9 @@ target_link_libraries(protobuf-mutator
 set_property(TARGET protobuf-mutator
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS protobuf_mutator.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                      protobuf_mutator.proto
+                      protobuf_mutator_proto3.proto)
 
 add_executable(protobuf_mutator_test
                protobuf_mutator_test.cc

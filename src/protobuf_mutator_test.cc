@@ -23,6 +23,7 @@
 
 #include "port/gtest.h"
 #include "src/protobuf_mutator.pb.h"
+#include "src/protobuf_mutator_proto3.pb.h"
 
 namespace protobuf_mutator {
 
@@ -43,6 +44,19 @@ const char kMessages[] = R"(
     optional_msg {}
     repeated_msg {}
     repeated_msg { required_int32: 67 }
+    repeated_msg {}
+  }
+)";
+
+const char kMessagesProto3[] = R"(
+  optional_msg {}
+  repeated_msg {}
+  repeated_msg {optional_sint32: 56}
+  repeated_msg {}
+  repeated_msg {
+    optional_msg {}
+    repeated_msg {}
+    repeated_msg { optional_int32: 67 }
     repeated_msg {}
   }
 )";
@@ -78,7 +92,7 @@ const char kOptionalFields[] = R"(
   optional_fixed64: 8542688694448488723
   optional_sfixed32: 4926
   optional_sfixed64: 60
-  optional_bool: false
+  optional_bool: true
   optional_string: "QWERT"
   optional_bytes: "ASDF"
   optional_enum: ENUM_5
@@ -141,7 +155,7 @@ const char kRequiredNestedFields[] = R"(
 )";
 
 const char kOptionalNestedFields[] = R"(
-  required_int32: 123
+  optional_int32: 123
   optional_msg {
     optional_double: 1.93177850152856e-314
     optional_float: 4.7397519e-41
@@ -155,7 +169,7 @@ const char kOptionalNestedFields[] = R"(
     optional_fixed64: 8542688694448488723
     optional_sfixed32: 4926
     optional_sfixed64: 60
-    optional_bool: false
+    optional_bool: true
     optional_string: "QWERT"
     optional_bytes: "ASDF"
     optional_enum: ENUM_5
@@ -163,7 +177,7 @@ const char kOptionalNestedFields[] = R"(
 )";
 
 const char kRepeatedNestedFields[] = R"(
-  required_int32: 123
+  optional_int32: 123
   optional_msg {
     repeated_double: 1.93177850152856e-314
     repeated_double: 1.26685288449177e-313
@@ -366,31 +380,48 @@ class ProtobufMutatorTest : public TestWithParam<TestParams> {
   std::unique_ptr<protobuf::Message> m2_;
 };
 
-class ProtobufMutatorFieldTest : public ProtobufMutatorTest {};
+// These tests are irrelevant for Proto3 as it has no required fields and
+// insertion/deletion.
 
+class ProtobufMutatorFieldInsDelTest : public ProtobufMutatorTest {};
+INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorFieldInsDelTest,
+                        ValuesIn(GetFieldTestParams<Msg>(
+                            {kRequiredFields, kOptionalFields, kRepeatedFields,
+                             kRequiredNestedFields, kOptionalNestedFields,
+                             kRepeatedNestedFields})));
+
+TEST_P(ProtobufMutatorFieldInsDelTest, DeleteField) {
+  LoadMessage(m1_.get());
+  LoadWithoutLine(m2_.get());
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
+}
+
+TEST_P(ProtobufMutatorFieldInsDelTest, InsertField) {
+  LoadWithoutLine(m1_.get());
+  LoadWithChangedLine(m2_.get(), 0);
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
+}
+
+class ProtobufMutatorFieldTest : public ProtobufMutatorTest {
+ public:
+  template <class Msg>
+  void TestCopyField();
+};
 INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorFieldTest,
                         ValuesIn(GetFieldTestParams<Msg>(
                             {kRequiredFields, kOptionalFields, kRepeatedFields,
                              kRequiredNestedFields, kOptionalNestedFields,
                              kRepeatedNestedFields})));
+INSTANTIATE_TEST_CASE_P(Proto3, ProtobufMutatorFieldTest,
+                        ValuesIn(GetFieldTestParams<Msg3>(
+                            {kOptionalFields, kRepeatedFields,
+                             kOptionalNestedFields, kRepeatedNestedFields})));
 
 TEST_P(ProtobufMutatorFieldTest, Initialized) {
   LoadWithoutLine(m1_.get());
   TestProtobufMutator mutator(true);
   mutator.Mutate(m1_.get(), 1000);
   EXPECT_TRUE(m1_->IsInitialized());
-}
-
-TEST_P(ProtobufMutatorFieldTest, DeleteField) {
-  LoadMessage(m1_.get());
-  LoadWithoutLine(m2_.get());
-  EXPECT_TRUE(Mutate(*m1_, *m2_));
-}
-
-TEST_P(ProtobufMutatorFieldTest, InsertField) {
-  LoadWithoutLine(m1_.get());
-  LoadWithChangedLine(m2_.get(), 0);
-  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST_P(ProtobufMutatorFieldTest, ChangeField) {
@@ -400,7 +431,8 @@ TEST_P(ProtobufMutatorFieldTest, ChangeField) {
   EXPECT_TRUE(Mutate(*m2_, *m1_));
 }
 
-TEST_P(ProtobufMutatorFieldTest, CopyField) {
+template <class Msg>
+void ProtobufMutatorFieldTest::TestCopyField() {
   LoadWithChangedLine(m1_.get(), 7);
   LoadWithChangedLine(m2_.get(), 0);
 
@@ -419,12 +451,22 @@ TEST_P(ProtobufMutatorFieldTest, CopyField) {
   EXPECT_TRUE(Mutate(from, to));
 }
 
-class ProtobufMutatorSingleFieldTest : public ProtobufMutatorTest {};
+TEST_P(ProtobufMutatorFieldTest, CopyField) {
+  if (m1_->GetDescriptor() == Msg::descriptor())
+    TestCopyField<Msg>();
+  else
+    TestCopyField<Msg3>();
+}
 
+class ProtobufMutatorSingleFieldTest : public ProtobufMutatorTest {};
 INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorSingleFieldTest,
                         ValuesIn(GetFieldTestParams<Msg>({
                             kRequiredFields, kOptionalFields,
                             kRequiredNestedFields, kOptionalNestedFields,
+                        })));
+INSTANTIATE_TEST_CASE_P(Proto3, ProtobufMutatorSingleFieldTest,
+                        ValuesIn(GetFieldTestParams<Msg3>({
+                            kOptionalFields, kOptionalNestedFields,
                         })));
 
 TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
@@ -457,7 +499,7 @@ class ProtobufMutatorTypedTest : public ::testing::Test {
   using Message = T;
 };
 
-using ProtobufMutatorTypedTestTypes = testing::Types<Msg>;
+using ProtobufMutatorTypedTestTypes = testing::Types<Msg, Msg3>;
 TYPED_TEST_CASE(ProtobufMutatorTypedTest, ProtobufMutatorTypedTestTypes);
 
 TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeated) {
@@ -566,9 +608,11 @@ TYPED_TEST(ProtobufMutatorTypedTest, Size) {
 }
 
 class ProtobufMutatorMessagesTest : public ProtobufMutatorTest {};
-
 INSTANTIATE_TEST_CASE_P(Proto2, ProtobufMutatorMessagesTest,
                         ValuesIn(GetMessageTestParams<Msg>({kMessages})));
+INSTANTIATE_TEST_CASE_P(
+    Proto3, ProtobufMutatorMessagesTest,
+    ValuesIn(GetMessageTestParams<Msg3>({kMessagesProto3})));
 
 TEST_P(ProtobufMutatorMessagesTest, DeletedMessage) {
   LoadMessage(m1_.get());
@@ -581,6 +625,8 @@ TEST_P(ProtobufMutatorMessagesTest, InsertMessage) {
   LoadMessage(m2_.get());
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
+
+// TODO(vitalybuka): Special tests for oneof.
 
 TEST(ProtobufMutatorMessagesTest, UsageExample) {
   SmallMessage message;
@@ -597,7 +643,5 @@ TEST(ProtobufMutatorMessagesTest, UsageExample) {
   // 3 states for boolean and 5 for enum, including missing fields.
   EXPECT_EQ(3u * 5u, mutations.size());
 }
-
-// TODO(vitalybuka): Special tests for oneof.
 
 }  // namespace protobuf_mutator
