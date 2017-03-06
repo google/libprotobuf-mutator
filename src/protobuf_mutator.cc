@@ -166,7 +166,7 @@ class MutationSampler {
       delete_weight_ *= 1 - adjustment;
     }
     Sample(message);
-    assert(mutation() != Mutation::None);
+    assert(mutation() != Mutation::None || !size_increase_hint);
   }
 
   // Returns selected field.
@@ -486,11 +486,21 @@ void ProtobufMutator::Mutate(Message* message, size_t size_increase_hint) {
 
 void ProtobufMutator::CrossOver(const protobuf::Message& message1,
                                 protobuf::Message* message2) {
+  // CrossOver can produce result which still equals to inputs. So we backup
+  // message2 to later comparison. message1 is already constant.
+  std::unique_ptr<protobuf::Message> message2_copy(message2->New());
+  message2_copy->CopyFrom(*message2);
+
   CrossOverImpl(message1, message2);
 
   if (keep_initialized_ && !message2->IsInitialized()) {
     InitializeMessage(message2, kMaxInitializeDepth);
     assert(message2->IsInitialized());
+  }
+
+  if (MessageDifferencer::Equals(*message2_copy, *message2) ||
+      MessageDifferencer::Equals(message1, *message2)) {
+    Mutate(message2, 0);
   }
 }
 

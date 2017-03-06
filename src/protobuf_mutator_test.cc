@@ -219,6 +219,12 @@ class TestProtobufMutator : public ProtobufMutator {
   explicit TestProtobufMutator(bool keep_initialized) : ProtobufMutator(17) {
     keep_initialized_ = keep_initialized;
   }
+
+  // Avoids dedup logic for some tests.
+  void NoDeDupCrossOver(const protobuf::Message& message1,
+                        protobuf::Message* message2) {
+    CrossOverImpl(message1, message2);
+  }
 };
 
 class ReducedTestProtobufMutator : public TestProtobufMutator {
@@ -482,7 +488,7 @@ TEST_P(ProtobufMutatorSingleFieldTest, CrossOver) {
   std::unique_ptr<protobuf::Message> message(m1_->New());
   for (int j = 0; j < iterations; ++j) {
     message->CopyFrom(*m1_);
-    mutator.CrossOver(*m2_, message.get());
+    mutator.NoDeDupCrossOver(*m2_, message.get());
     if (MessageDifferencer::Equals(*message, *m2_)) ++match_m2_;
     if (MessageDifferencer::Equals(*message, *m1_)) ++match_m1_;
   }
@@ -519,7 +525,7 @@ TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeated) {
   for (int j = 0; j < iterations; ++j) {
     typename TestFixture::Message message;
     message.CopyFrom(m1);
-    mutator.CrossOver(m2, &message);
+    mutator.NoDeDupCrossOver(m2, &message);
     sets.insert(
         {message.repeated_int32().begin(), message.repeated_int32().end()});
   }
@@ -546,7 +552,7 @@ TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeatedMessages) {
   for (int j = 0; j < iterations; ++j) {
     typename TestFixture::Message message;
     message.CopyFrom(m1);
-    mutator.CrossOver(m2, &message);
+    mutator.NoDeDupCrossOver(m2, &message);
     for (const auto& msg : message.repeated_msg())
       sets.insert({msg.repeated_int32().begin(), msg.repeated_int32().end()});
   }
@@ -556,7 +562,6 @@ TYPED_TEST(ProtobufMutatorTypedTest, CrossOverRepeatedMessages) {
 
 TYPED_TEST(ProtobufMutatorTypedTest, FailedMutations) {
   TestProtobufMutator mutator(false);
-  size_t crossovers = 0;
   for (int i = 0; i < 10000; ++i) {
     typename TestFixture::Message messages[2];
     typename TestFixture::Message tmp;
@@ -571,11 +576,8 @@ TYPED_TEST(ProtobufMutatorTypedTest, FailedMutations) {
 
     tmp.CopyFrom(messages[1]);
     mutator.CrossOver(messages[0], &tmp);
-    if (MessageDifferencer::Equals(tmp, messages[1])) ++crossovers;
+    EXPECT_FALSE(MessageDifferencer::Equals(tmp, messages[1]));
   }
-
-  // CrossOver may fail but very rare.
-  EXPECT_LT(crossovers, 100);
 }
 
 TYPED_TEST(ProtobufMutatorTypedTest, Size) {
