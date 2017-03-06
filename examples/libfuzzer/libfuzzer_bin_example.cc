@@ -17,7 +17,7 @@
 
 #include "examples/libfuzzer/libfuzzer_example.pb.h"
 #include "src/binary_format.h"
-#include "src/libfuzzer/mutator.h"
+#include "src/libfuzzer/libfuzzer_mutator.h"
 
 using libfuzzer_example::Msg;
 protobuf_mutator::protobuf::LogSilencer log_silincer;

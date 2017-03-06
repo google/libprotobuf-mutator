@@ -13,7 +13,7 @@
 # limitations under the License.
 
 add_library(protobuf-mutator-libfuzzer
-            mutator.cc)
+            libfuzzer_mutator.cc)
 target_link_libraries(protobuf-mutator-libfuzzer
                       protobuf-mutator
                       ${PROTOBUF_LIBRARY})
