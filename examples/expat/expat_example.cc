@@ -17,7 +17,7 @@
 #include "expat.h"  // NOLINT
 
 #include "port/protobuf.h"
-#include "src/xml/mutator.h"
+#include "src/xml/xml_mutator.h"
 
 namespace {
 protobuf_mutator::protobuf::LogSilencer log_silincer;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/libfuzzer/mutator.h"
+#include "src/libfuzzer/libfuzzer_mutator.h"
 
 #include <string.h>
 #include <cassert>
