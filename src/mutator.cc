@@ -493,10 +493,12 @@ void Mutator::CrossOver(const protobuf::Message& message1,
     assert(message2->IsInitialized());
   }
 
-  if (MessageDifferencer::Equals(*message2_copy, *message2) ||
-      MessageDifferencer::Equals(message1, *message2)) {
-    Mutate(message2, 0);
-  }
+  // Can't call mutate from crossover because of a bug in libFuzzer.
+  return;
+  // if (MessageDifferencer::Equals(*message2_copy, *message2) ||
+  //     MessageDifferencer::Equals(message1, *message2)) {
+  //   Mutate(message2, 0);
+  // }
 }
 
 void Mutator::CrossOverImpl(const protobuf::Message& message1,

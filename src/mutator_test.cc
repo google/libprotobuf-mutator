@@ -555,6 +555,7 @@ TYPED_TEST(MutatorTypedTest, CrossOverRepeatedMessages) {
 
 TYPED_TEST(MutatorTypedTest, FailedMutations) {
   TestMutator mutator(false);
+  size_t crossovers = 0;
   for (int i = 0; i < 10000; ++i) {
     typename TestFixture::Message messages[2];
     typename TestFixture::Message tmp;
@@ -569,8 +570,13 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
 
     tmp.CopyFrom(messages[1]);
     mutator.CrossOver(messages[0], &tmp);
-    EXPECT_FALSE(MessageDifferencer::Equals(tmp, messages[1]));
+    if (MessageDifferencer::Equals(tmp, messages[1]) ||
+        MessageDifferencer::Equals(tmp, messages[0]))
+      ++crossovers;
   }
+
+  // CrossOver may fail but very rare.
+  EXPECT_LT(crossovers, 100);
 }
 
 TYPED_TEST(MutatorTypedTest, Size) {
