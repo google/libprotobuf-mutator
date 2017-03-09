@@ -31,7 +31,6 @@ namespace protobuf_mutator {
 using protobuf::util::MessageDifferencer;
 using testing::TestWithParam;
 using testing::ValuesIn;
-using testing::WithParamInterface;
 
 const char kMessages[] = R"(
   required_msg {}
