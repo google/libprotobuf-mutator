@@ -244,17 +244,15 @@ class ReducedTestMutator : public TestMutator {
 
  protected:
   int32_t MutateInt32(int32_t value) override { return GetRandomValue(); }
-
   int64_t MutateInt64(int64_t value) override { return GetRandomValue(); }
-
-  uint32_t MutateUInt32(uint32_t value) override { return GetRandomValue(); }
-
-  uint64_t MutateUInt64(uint64_t value) override { return GetRandomValue(); }
-
+  uint32_t MutateUInt32(uint32_t value) override {
+    return fabs(GetRandomValue());
+  }
+  uint64_t MutateUInt64(uint64_t value) override {
+    return fabs(GetRandomValue());
+  }
   float MutateFloat(float value) override { return GetRandomValue(); }
-
   double MutateDouble(double value) override { return GetRandomValue(); }
-
   std::string MutateString(const std::string& value,
                            size_t size_increase_hint) override {
     return strings_[std::uniform_int_distribution<uint8_t>(
