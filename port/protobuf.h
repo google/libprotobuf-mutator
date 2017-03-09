@@ -18,6 +18,7 @@
 #include <string>
 
 #include "google/protobuf/message.h"
+#include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 
 namespace protobuf_mutator {
