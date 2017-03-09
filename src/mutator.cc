@@ -27,7 +27,6 @@ namespace protobuf_mutator {
 
 using protobuf::Descriptor;
 using protobuf::EnumDescriptor;
-using protobuf::EnumValueDescriptor;
 using protobuf::FieldDescriptor;
 using protobuf::FileDescriptor;
 using protobuf::Message;
