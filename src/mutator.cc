@@ -423,10 +423,11 @@ struct MutateField : public FieldFunction<MutateField> {
 struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
-  void ForType(const FieldInstance& field, Mutator* mutator) const {
+  void ForType(const FieldInstance& field, size_t size_increase_hint,
+               Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
-    FieldMutator(0, mutator).Mutate(&value);
+    FieldMutator(size_increase_hint, mutator).Mutate(&value);
     field.Create(value);
   }
 };
@@ -446,7 +447,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
         break;
       case Mutation::Add:
         if (GetRandomBool(random_)) {
-          CreateField()(mutation.field(), this);
+          CreateField()(mutation.field(), size_increase_hint / 2, this);
         } else {
           CreateDefaultField()(mutation.field());
         }
