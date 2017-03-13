@@ -112,15 +112,13 @@ size_t MutateMessage(unsigned int seed, const InputReader& input,
                      OutputWriter* output, Message* message) {
   RandomEngine random(seed);
   Mutator mutator(&random);
-  for (int i = 0; i < 100; ++i) {
-    input.Read(message);
-    mutator.Mutate(message, output->size() > input.size()
-                                ? (output->size() - input.size())
-                                : 0);
-    if (size_t new_size = output->Write(*message)) {
-      assert(new_size <= output->size());
-      return new_size;
-    }
+  input.Read(message);
+  mutator.Mutate(message, output->size() > input.size()
+                              ? (output->size() - input.size())
+                              : 0);
+  if (size_t new_size = output->Write(*message)) {
+    assert(new_size <= output->size());
+    return new_size;
   }
   return 0;
 }
@@ -131,14 +129,12 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
                          protobuf::Message* message2) {
   RandomEngine random(seed);
   Mutator mutator(&random);
+  input1.Read(message1);
   input2.Read(message2);
-  for (int i = 0; i < 100; ++i) {
-    input1.Read(message1);
-    mutator.CrossOver(*message2, message1);
-    if (size_t new_size = output->Write(*message1)) {
-      assert(new_size <= output->size());
-      return new_size;
-    }
+  mutator.CrossOver(*message2, message1);
+  if (size_t new_size = output->Write(*message1)) {
+    assert(new_size <= output->size());
+    return new_size;
   }
   return 0;
 }
