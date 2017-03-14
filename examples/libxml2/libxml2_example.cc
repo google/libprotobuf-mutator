@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "libxml/parser.h"
+#include "libxml/xmlsave.h"
 
 #include "port/protobuf.h"
 #include "src/xml/xml_mutator.h"
@@ -20,6 +21,11 @@
 namespace {
 protobuf_mutator::protobuf::LogSilencer log_silincer;
 void ignore(void* ctx, const char* msg, ...) {}
+
+template <class T, class D>
+std::unique_ptr<T, D> MakeUnique(T* obj, D del) {
+  return {obj, del};
+}
 }
 
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
@@ -47,9 +53,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                XML_PARSE_DTDLOAD | XML_PARSE_DTDATTR);
 
   xmlSetGenericErrorFunc(nullptr, &ignore);
-  if (auto doc = xmlReadMemory(xml.c_str(), static_cast<int>(xml.size()), "",
-                               nullptr, options)) {
-    xmlFreeDoc(doc);
+
+  if (auto doc =
+          MakeUnique(xmlReadMemory(xml.c_str(), static_cast<int>(xml.size()),
+                                   "", nullptr, options),
+                     &xmlFreeDoc)) {
+    auto buf = MakeUnique(xmlBufferCreate(), &xmlBufferFree);
+    auto ctxt =
+        MakeUnique(xmlSaveToBuffer(buf.get(), nullptr, 0), &xmlSaveClose);
+    xmlSaveDoc(ctxt.get(), doc.get());
   }
 
   return 0;
