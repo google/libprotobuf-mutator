@@ -623,6 +623,7 @@ double Mutator::MutateDouble(double value) { return FlipBit(value, random_); }
 bool Mutator::MutateBool(bool value) { return !value; }
 
 size_t Mutator::MutateEnum(size_t index, size_t item_count) {
+  if (item_count <= 1) return 0;
   return (index + 1 + GetRandomIndex(random_, item_count - 1)) % item_count;
 }
 
