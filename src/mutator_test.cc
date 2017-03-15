@@ -576,35 +576,6 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
   EXPECT_LT(crossovers, 100);
 }
 
-TYPED_TEST(MutatorTypedTest, Size) {
-  const size_t kIterations = 10000;
-  auto loop = [&](bool control) {
-    typename TestFixture::Message message;
-    std::string str;
-    TestMutator mutator(false);
-    const size_t kTargetSize = 1000;
-    size_t overflows = 0;
-    for (size_t j = 0; j < kIterations; ++j) {
-      typename TestFixture::Message message2;
-      message2.CopyFrom(message);
-      mutator.Mutate(&message2,
-                     control ? kTargetSize - std::min(str.size(), kTargetSize)
-                             : kTargetSize);
-      std::string str2 = SaveMessageAsText(message2);
-      if (str2.size() > kTargetSize) {
-        ++overflows;
-      } else if (str2.size() > kTargetSize - 150 || str2.size() > str.size()) {
-        message.CopyFrom(message2);
-        str = str2;
-      }
-    }
-    return overflows;
-  };
-
-  EXPECT_GT(loop(false), kIterations * 0.1);
-  EXPECT_LE(loop(true), kIterations * 0.1);
-}
-
 class MutatorMessagesTest : public MutatorTest {};
 INSTANTIATE_TEST_CASE_P(Proto2, MutatorMessagesTest,
                         ValuesIn(GetMessageTestParams<Msg>({kMessages})));
