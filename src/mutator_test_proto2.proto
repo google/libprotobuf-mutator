@@ -115,3 +115,8 @@ message SmallMessage {
   optional bool opt_bool = 1;
   optional Enum opt_enum = 2;
 }
+
+message RegressionMessage {
+  enum SingleValueEnum { ENUM_0 = 0; }
+  optional SingleValueEnum enum = 2;
+}

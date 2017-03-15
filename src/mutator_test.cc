@@ -642,4 +642,10 @@ TEST(MutatorMessagesTest, UsageExample) {
   EXPECT_EQ(3u * 5u, mutations.size());
 }
 
+TEST(MutatorMessagesTest, Regressions) {
+  RegressionMessage message;
+  TestMutator mutator(false);
+  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
+}
+
 }  // namespace protobuf_mutator
