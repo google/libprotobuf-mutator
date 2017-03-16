@@ -332,8 +332,11 @@ class DataSourceSampler {
 
 class FieldMutator {
  public:
-  FieldMutator(size_t size_increase_hint, Mutator* mutator)
-      : size_increase_hint_(size_increase_hint), mutator_(mutator) {}
+  FieldMutator(size_t size_increase_hint, bool enforce_changes,
+               Mutator* mutator)
+      : size_increase_hint_(size_increase_hint),
+        enforce_changes_(enforce_changes),
+        mutator_(mutator) {}
 
   void Mutate(int32_t* value) const {
     RepeatMutate(value, std::bind(&Mutator::MutateInt32, mutator_, _1));
@@ -360,12 +363,13 @@ class FieldMutator {
   }
 
   void Mutate(bool* value) const {
-    RepeatMutate(value, std::bind(&Mutator::MutateBool, mutator_, _1));
+    RepeatMutate(value, std::bind(&Mutator::MutateBool, mutator_, _1), 2);
   }
 
   void Mutate(FieldInstance::Enum* value) const {
     RepeatMutate(&value->index,
-                 std::bind(&Mutator::MutateEnum, mutator_, _1, value->count));
+                 std::bind(&Mutator::MutateEnum, mutator_, _1, value->count),
+                 std::max<size_t>(value->count, 1));
     assert(value->index < value->count);
   }
 
@@ -378,15 +382,20 @@ class FieldMutator {
 
  private:
   template <class T, class F>
-  void RepeatMutate(T* value, F mutate) const {
+  void RepeatMutate(T* value, F mutate,
+                    size_t unchanged_one_out_of = 100) const {
+    if (!enforce_changes_ &&
+        GetRandomBool(mutator_->random(), unchanged_one_out_of))
+      return;
     T tmp = *value;
     for (int i = 0; i < 10; ++i) {
       *value = mutate(*value);
-      if (*value != tmp) return;
+      if (!enforce_changes_ || *value != tmp) return;
     }
   }
 
   size_t size_increase_hint_;
+  size_t enforce_changes_;
   Mutator* mutator_;
 };
 
@@ -398,7 +407,7 @@ struct MutateField : public FieldFunction<MutateField> {
                Mutator* mutator) const {
     T value;
     field.Load(&value);
-    FieldMutator(size_increase_hint, mutator).Mutate(&value);
+    FieldMutator(size_increase_hint, true, mutator).Mutate(&value);
     field.Store(value);
   }
 };
@@ -410,7 +419,9 @@ struct CreateField : public FieldFunction<CreateField> {
                Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
-    FieldMutator(size_increase_hint, mutator).Mutate(&value);
+    FieldMutator field_mutator(size_increase_hint,
+                               false /* defaults could be useful */, mutator);
+    field_mutator.Mutate(&value);
     field.Create(value);
   }
 };
@@ -428,11 +439,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
       case Mutation::None:
         break;
       case Mutation::Add:
-        if (GetRandomBool(random_)) {
-          CreateField()(mutation.field(), size_increase_hint / 2, this);
-        } else {
-          CreateDefaultField()(mutation.field());
-        }
+        CreateField()(mutation.field(), size_increase_hint / 2, this);
         break;
       case Mutation::Mutate:
         MutateField()(mutation.field(), size_increase_hint / 2, this);
