@@ -38,11 +38,13 @@ class FuzzerTest : public testing::Test {
   }
 
   int RunFuzzer(const std::string& name, int max_len, int runs) {
-    std::string cmd = "./" + name;
-    cmd += " -max_len=" + std::to_string(500);
+    std::string cmd = "ASAN_OPTIONS=detect_leaks=0 ./" + name;
+    cmd += " -detect_leaks=0";
+    cmd += " -max_len=" + std::to_string(max_len);
     cmd += " -runs=" + std::to_string(runs);
     cmd += " -artifact_prefix=" + dir_;
     cmd += " " + dir_;
+    fprintf(stderr, "%s \n", cmd.c_str());
     return std::system(cmd.c_str());
   }
 
