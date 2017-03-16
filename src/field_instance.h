@@ -91,7 +91,10 @@ class ConstFieldInstance {
   }
 
   void GetDefault(std::unique_ptr<protobuf::Message>* out) const {
-    out->reset();
+    out->reset(reflection()
+                   .GetMessageFactory()
+                   ->GetPrototype(descriptor_->message_type())
+                   ->New());
   }
 
   void Load(int32_t* value) const {

@@ -378,15 +378,21 @@ class FieldMutator {
                                   size_increase_hint_));
   }
 
-  void Mutate(std::unique_ptr<Message>*) const {}
+  void Mutate(std::unique_ptr<Message>* message) const {
+    assert(!enforce_changes_);
+    assert(*message);
+    if (GetRandomBool(mutator_->random(), 100)) return;
+    mutator_->Mutate(message->get(), size_increase_hint_);
+  }
 
  private:
   template <class T, class F>
   void RepeatMutate(T* value, F mutate,
                     size_t unchanged_one_out_of = 100) const {
     if (!enforce_changes_ &&
-        GetRandomBool(mutator_->random(), unchanged_one_out_of))
+        GetRandomBool(mutator_->random(), unchanged_one_out_of)) {
       return;
+    }
     T tmp = *value;
     for (int i = 0; i < 10; ++i) {
       *value = mutate(*value);
