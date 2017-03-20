@@ -120,3 +120,6 @@ message RegressionMessage {
   enum SingleValueEnum { ENUM_0 = 0; }
   optional SingleValueEnum enum = 2;
 }
+
+message EmptyMessage {
+}
