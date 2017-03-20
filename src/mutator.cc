@@ -154,7 +154,8 @@ class MutationSampler {
   MutationSampler(bool keep_initialized, RandomEngine* random, Message* message)
       : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
     Sample(message);
-    assert(mutation() != Mutation::None);
+    assert(mutation() != Mutation::None ||
+           message->GetDescriptor()->field_count() == 0);
   }
 
   // Returns selected field.
