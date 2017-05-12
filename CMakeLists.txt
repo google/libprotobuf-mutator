@@ -19,6 +19,7 @@ enable_language(C)
 enable_language(CXX)
 
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
+option(LIB_PROTO_MUTATOR_WITH_COVERAGE_FLAGS "Add libFuzzer specific coverage" ON)
 set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
 # External dependencies
@@ -77,12 +78,14 @@ if (LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
 endif()
 
 if (SANITIZE_COVERAGE_OPTIONS)
-  foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
-    set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
-  endforeach()
-  string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
-  set(NO_FUZZING_FLAGS "-fno-sanitize-coverage=${FUZZING_FLAGS}")
-  set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
+  if (LIB_PROTO_MUTATOR_WITH_COVERAGE_FLAGS)
+    foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
+      set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
+    endforeach()
+    string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
+    set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
+  endif()
+  set(NO_FUZZING_FLAGS "-fsanitize-coverage=0")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
