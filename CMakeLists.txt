@@ -29,6 +29,7 @@ include(ProcessorCount)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 
 find_package(LibLZMA)
@@ -95,6 +96,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
 
 set(PROTOBUF_CFLAGS "${CMAKE_C_FLAGS} ${NO_FUZZING_FLAGS} -w")
 set(PROTOBUF_CXXFLAGS "${CMAKE_CXX_FLAGS} ${NO_FUZZING_FLAGS} -w")
+if(THREADS_HAVE_PTHREAD_ARG)
+  set(PROTOBUF_CFLAGS "${PROTOBUF_CFLAGS} -pthread")
+  set(PROTOBUF_CXXFLAGS "${PROTOBUF_CXXFLAGS} -pthread")
+endif()
 include(protobuf)
 
 enable_testing()
