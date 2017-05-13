@@ -17,10 +17,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "examples/xml/xml.pb.h"
+#include "examples/xml/xml_writer.h"
 #include "port/protobuf.h"
 #include "src/text_format.h"
-#include "src/xml/xml.pb.h"
-#include "src/xml/xml_writer.h"
 
 using protobuf_mutator::xml::Input;
 

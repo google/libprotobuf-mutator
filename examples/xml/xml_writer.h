@@ -23,7 +23,7 @@ namespace xml {
 // Converts protobuf into XML.
 std::string MessageToXml(const class Document& document);
 
-}  // xml
-}  // protobuf_mutator
+}  // namespace xml
+}  // namespace protobuf_mutator
 
 #endif  // SRC_XML_XML_WRITER_H_
