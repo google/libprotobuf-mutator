@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/xml/xml_writer.h"
+#include "examples/xml/xml_writer.h"
 
 #include <algorithm>
 #include <sstream>
 
-#include "src/xml/xml.pb.h"
+#include "examples/xml/xml.pb.h"
 
 namespace protobuf_mutator {
 namespace xml {

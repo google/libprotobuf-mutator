@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/xml/xml_mutator.h"
+#include "examples/xml/xml_mutator.h"
 
+#include "examples/xml/xml.pb.h"
+#include "examples/xml/xml_writer.h"
 #include "src/libfuzzer/libfuzzer_mutator.h"
 #include "src/text_format.h"
-#include "src/xml/xml.pb.h"
-#include "src/xml/xml_writer.h"
 
 using protobuf_mutator::xml::Input;
 
