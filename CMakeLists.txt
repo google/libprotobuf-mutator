@@ -18,8 +18,7 @@ project(LibProtobufMutator CXX)
 enable_language(C)
 enable_language(CXX)
 
-option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" ON)
-option(LIB_PROTO_MUTATOR_WITH_COVERAGE_FLAGS "Add libFuzzer specific coverage" ON)
+option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
 set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
 # External dependencies
@@ -48,8 +47,8 @@ check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=")
-check_cxx_compiler_flag(-fsanitize-coverage= LIB_PROTO_MUTATOR_HAS_COVERAGE)
+set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=0")
+check_cxx_compiler_flag(-fsanitize-coverage= LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
 unset(CMAKE_REQUIRED_FLAGS)
 
 set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
@@ -61,6 +60,7 @@ check_cxx_compiler_flag(-fsanitize-coverage=trace-cmp LIB_PROTO_MUTATOR_HAS_TRAC
 unset(CMAKE_REQUIRED_FLAGS)
 
 set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
     set(EXTRA_FLAGS "${EXTRA_FLAGS} -fsanitize=address")
@@ -85,6 +85,10 @@ if (SANITIZE_COVERAGE_OPTIONS)
     string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
     set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
   endif()
+  set(NO_FUZZING_FLAGS "-fsanitize-coverage=0")
+endif()
+
+if (LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
   set(NO_FUZZING_FLAGS "-fsanitize-coverage=0")
 endif()
 
