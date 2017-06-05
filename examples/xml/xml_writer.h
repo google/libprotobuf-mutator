@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_XML_XML_WRITER_H_
-#define SRC_XML_XML_WRITER_H_
+#ifndef EXAMPLES_XML_XML_WRITER_H_
+#define EXAMPLES_XML_XML_WRITER_H_
 
 #include <string>
 
@@ -26,4 +26,4 @@ std::string MessageToXml(const class Document& document);
 }  // namespace xml
 }  // namespace protobuf_mutator
 
-#endif  // SRC_XML_XML_WRITER_H_
+#endif  // EXAMPLES_XML_XML_WRITER_H_
