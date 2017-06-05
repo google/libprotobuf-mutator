@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_XML_XML_MUTATOR_H_
-#define SRC_XML_XML_MUTATOR_H_
+#ifndef EXAMPLES_XML_XML_MUTATOR_H_
+#define EXAMPLES_XML_XML_MUTATOR_H_
 
 #include <string>
 
@@ -42,4 +42,4 @@ size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
 }  // namespace xml
 }  // namespace protobuf_mutator
 
-#endif  // SRC_XML_XML_MUTATOR_H_
+#endif  // EXAMPLES_XML_XML_MUTATOR_H_
