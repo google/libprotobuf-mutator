@@ -40,63 +40,6 @@ class Mutator : public protobuf_mutator::Mutator {
                            size_t size_increase_hint) override;
 };
 
-namespace internal {
-size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
-                         unsigned int seed, protobuf::Message* message);
-size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
-                             const uint8_t* data2, size_t size2, uint8_t* out,
-                             size_t max_out_size, unsigned int seed,
-                             protobuf::Message* message1,
-                             protobuf::Message* message2);
-size_t MutateBinaryMessage(uint8_t* data, size_t size, size_t max_size,
-                           unsigned int seed, protobuf::Message* message);
-size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
-                               const uint8_t* data2, size_t size2, uint8_t* out,
-                               size_t max_out_size, unsigned int seed,
-                               protobuf::Message* message1,
-                               protobuf::Message* message2);
-}  // namespace internal
-
-// Mutates proto serialized as text.
-template <class MessageType>
-size_t MutateTextMessage(uint8_t* data, size_t size, size_t max_size,
-                         unsigned int seed) {
-  MessageType message;
-  return internal::MutateTextMessage(data, size, max_size, seed, &message);
-}
-
-// Crossover two protos serialized as text.
-template <class MessageType>
-size_t CrossOverTextMessages(const uint8_t* data1, size_t size1,
-                             const uint8_t* data2, size_t size2, uint8_t* out,
-                             size_t max_out_size, unsigned int seed) {
-  MessageType message1;
-  MessageType message2;
-  return internal::CrossOverTextMessages(data1, size1, data2, size2, out,
-                                         max_out_size, seed, &message1,
-                                         &message2);
-}
-
-// Mutates proto serialized as binary.
-template <class MessageType>
-size_t MutateBinaryMessage(uint8_t* data, size_t size, size_t max_size,
-                           unsigned int seed) {
-  MessageType message;
-  return internal::MutateBinaryMessage(data, size, max_size, seed, &message);
-}
-
-// Crossover two protos serialized as binary.
-template <class MessageType>
-size_t CrossOverBinaryMessages(const uint8_t* data1, size_t size1,
-                               const uint8_t* data2, size_t size2, uint8_t* out,
-                               size_t max_out_size, unsigned int seed) {
-  MessageType message1;
-  MessageType message2;
-  return internal::CrossOverBinaryMessages(data1, size1, data2, size2, out,
-                                           max_out_size, seed, &message1,
-                                           &message2);
-}
-
 }  // namespace libfuzzer
 }  // namespace protobuf_mutator
 

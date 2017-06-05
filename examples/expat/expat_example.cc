@@ -16,8 +16,9 @@
 
 #include "expat.h"  // NOLINT
 
-#include "examples/xml/xml_mutator.h"
-#include "port/protobuf.h"
+#include "examples/xml/xml.pb.h"
+#include "examples/xml/xml_writer.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
 
 namespace {
 protobuf_mutator::protobuf::LogSilencer log_silincer;
@@ -26,24 +27,9 @@ std::vector<const char*> kEncodings = {{"UTF-16", "UTF-8", "ISO-8859-1",
                                         "INVALIDENCODING"}};
 }
 
-extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
-                                          size_t max_size, unsigned int seed) {
-  return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
-}
-
-extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t* data1, size_t size1,
-                                            const uint8_t* data2, size_t size2,
-                                            uint8_t* out, size_t max_out_size,
-                                            unsigned int seed) {
-  return protobuf_mutator::xml::CrossOverTextMessages(
-      data1, size1, data2, size2, out, max_out_size, seed);
-}
-
-// Entry point for LibFuzzer.
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  int options = 0;
-  std::string xml;
-  protobuf_mutator::xml::ParseTextMessage(data, size, &xml, &options);
+DEFINE_PROTO_FUZZER(const protobuf_mutator::xml::Input& message) {
+  std::string xml = MessageToXml(message.document());
+  int options = message.options();
 
   int use_ns = options % 2;
   options /= 2;
@@ -52,5 +38,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       use_ns ? XML_ParserCreateNS(enc, '\n') : XML_ParserCreate(enc);
   XML_Parse(parser, xml.data(), xml.size(), true);
   XML_ParserFree(parser);
-  return 0;
 }

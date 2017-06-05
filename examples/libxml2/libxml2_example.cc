@@ -15,8 +15,9 @@
 #include "libxml/parser.h"
 #include "libxml/xmlsave.h"
 
-#include "examples/xml/xml_mutator.h"
-#include "port/protobuf.h"
+#include "examples/xml/xml.pb.h"
+#include "examples/xml/xml_writer.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
 
 namespace {
 protobuf_mutator::protobuf::LogSilencer log_silincer;
@@ -28,23 +29,9 @@ std::unique_ptr<T, D> MakeUnique(T* obj, D del) {
 }
 }
 
-extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* data, size_t size,
-                                          size_t max_size, unsigned int seed) {
-  return protobuf_mutator::xml::MutateTextMessage(data, size, max_size, seed);
-}
-
-extern "C" size_t LLVMFuzzerCustomCrossOver(const uint8_t* data1, size_t size1,
-                                            const uint8_t* data2, size_t size2,
-                                            uint8_t* out, size_t max_out_size,
-                                            unsigned int seed) {
-  return protobuf_mutator::xml::CrossOverTextMessages(
-      data1, size1, data2, size2, out, max_out_size, seed);
-}
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  int options = 0;
-  std::string xml;
-  protobuf_mutator::xml::ParseTextMessage(data, size, &xml, &options);
+DEFINE_PROTO_FUZZER(const protobuf_mutator::xml::Input& message) {
+  std::string xml = MessageToXml(message.document());
+  int options = message.options();
 
   // Network requests are too slow.
   options |= XML_PARSE_NONET;
@@ -63,6 +50,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         MakeUnique(xmlSaveToBuffer(buf.get(), nullptr, 0), &xmlSaveClose);
     xmlSaveDoc(ctxt.get(), doc.get());
   }
-
-  return 0;
 }
