@@ -36,7 +36,7 @@
 #define DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, Proto)                    \
   extern "C" size_t LLVMFuzzerCustomMutator(                                   \
       uint8_t* data, size_t size, size_t max_size, unsigned int seed) {        \
-    using protobuf_mutator::libfuzzer::internal::CustomProtoMutator;           \
+    using protobuf_mutator::libfuzzer::CustomProtoMutator;                     \
     Proto input;                                                               \
     return CustomProtoMutator(use_binary, data, size, max_size, seed, &input); \
   }
@@ -45,7 +45,7 @@
   extern "C" size_t LLVMFuzzerCustomCrossOver(                                \
       const uint8_t* data1, size_t size1, const uint8_t* data2, size_t size2, \
       uint8_t* out, size_t max_out_size, unsigned int seed) {                 \
-    using protobuf_mutator::libfuzzer::internal::CustomProtoCrossOver;        \
+    using protobuf_mutator::libfuzzer::CustomProtoCrossOver;                  \
     Proto input1;                                                             \
     Proto input2;                                                             \
     return CustomProtoCrossOver(use_binary, data1, size1, data2, size2, out,  \
@@ -54,7 +54,7 @@
 
 #define DEFINE_TEST_ONE_PROTO_INPUT_IMPL(use_binary, Proto)                 \
   extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) { \
-    using protobuf_mutator::libfuzzer::internal::LoadProtoInput;            \
+    using protobuf_mutator::libfuzzer::LoadProtoInput;                      \
     Proto input;                                                            \
     if (LoadProtoInput(use_binary, data, size, &input))                     \
       TestOneProtoInput(input);                                             \
@@ -72,7 +72,6 @@
 
 namespace protobuf_mutator {
 namespace libfuzzer {
-namespace internal {
 
 size_t CustomProtoMutator(bool binary, uint8_t* data, size_t size,
                           size_t max_size, unsigned int seed,
@@ -85,7 +84,6 @@ size_t CustomProtoCrossOver(bool binary, const uint8_t* data1, size_t size1,
 bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                     protobuf::Message* input);
 
-}  // namespace internal
 }  // namespace libfuzzer
 }  // namespace protobuf_mutator
 
