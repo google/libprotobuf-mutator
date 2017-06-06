@@ -119,9 +119,9 @@ std::string XmlWriter::ToXml(const Document& doc) {
 
 }  // namespace
 
-std::string MessageToXml(const Document& doc) {
+std::string MessageToXml(const Document& document) {
   XmlWriter writer;
-  return writer.ToXml(doc);
+  return writer.ToXml(document);
 }
 
 }  // namespace xml
