@@ -12,23 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PORT_PROTOBUF_H_
-#define PORT_PROTOBUF_H_
+#ifndef SRC_UTF8_FIX_H_
+#define SRC_UTF8_FIX_H_
 
 #include <string>
 
-#include "google/protobuf/message.h"
-#include "google/protobuf/text_format.h"
-#include "google/protobuf/util/message_differencer.h"
-#include "google/protobuf/wire_format.h"
+#include "src/random.h"
 
 namespace protobuf_mutator {
 
-namespace protobuf = google::protobuf;
-
-// String type used by google::protobuf.
-using String = std::string;
+void FixUtf8String(std::string* str, RandomEngine* random);
 
 }  // namespace protobuf_mutator
 
-#endif  // PORT_PROTOBUF_H_
+#endif  // SRC_UTF8_FIX_H_
