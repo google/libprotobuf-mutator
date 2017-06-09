@@ -303,6 +303,12 @@ class FieldInstance : public ConstFieldInstance {
     if (value) mutable_message->CopyFrom(*value);
   }
 
+  bool EnforceUtf8() const {
+    return descriptor()->type() == protobuf::FieldDescriptor::TYPE_STRING &&
+           descriptor()->file()->syntax() ==
+               protobuf::FileDescriptor::SYNTAX_PROTO3;
+  }
+
  private:
   template <class T>
   void InsertRepeated(const T& value) const {
