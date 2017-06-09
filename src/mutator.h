@@ -81,6 +81,8 @@ class Mutator {
   void InitializeMessage(protobuf::Message* message, size_t max_depth);
   void CrossOverImpl(const protobuf::Message& message1,
                      protobuf::Message* message2);
+  std::string MutateUtf8String(const std::string& value,
+                               size_t size_increase_hint);
 
   bool keep_initialized_ = true;
   RandomEngine* random_;

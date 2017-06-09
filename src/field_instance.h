@@ -177,6 +177,12 @@ class ConstFieldInstance {
     return descriptor_->message_type();
   }
 
+  bool EnforceUtf8() const {
+    return descriptor_->type() == protobuf::FieldDescriptor::TYPE_STRING &&
+           descriptor()->file()->syntax() ==
+               protobuf::FileDescriptor::SYNTAX_PROTO3;
+  }
+
  protected:
   bool is_repeated() const { return descriptor_->is_repeated(); }
 
@@ -301,12 +307,6 @@ class FieldInstance : public ConstFieldInstance {
                       : reflection().MutableMessage(message_, descriptor());
     mutable_message->Clear();
     if (value) mutable_message->CopyFrom(*value);
-  }
-
-  bool EnforceUtf8() const {
-    return descriptor()->type() == protobuf::FieldDescriptor::TYPE_STRING &&
-           descriptor()->file()->syntax() ==
-               protobuf::FileDescriptor::SYNTAX_PROTO3;
   }
 
  private:
