@@ -15,9 +15,10 @@
 add_subdirectory(libfuzzer)
 
 add_library(protobuf-mutator
+            binary_format.cc
             mutator.cc
             text_format.cc
-            binary_format.cc)
+            utf8_fix.cc)
 target_link_libraries(protobuf-mutator
                       ${PROTOBUF_LIBRARY})
 set_property(TARGET protobuf-mutator
@@ -29,6 +30,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
 
 add_executable(mutator_test
                mutator_test.cc
+               utf8_fix_test.cc
                weighted_reservoir_sampler_test.cc
                ${PROTO_SRCS})
 target_link_libraries(mutator_test
