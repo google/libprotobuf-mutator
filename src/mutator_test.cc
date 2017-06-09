@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "port/gtest.h"
+#include "src/binary_format.h"
 #include "src/mutator_test_proto2.pb.h"
 #include "src/mutator_test_proto3.pb.h"
 #include "src/text_format.h"
@@ -574,6 +575,23 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
 
   // CrossOver may fail but very rare.
   EXPECT_LT(crossovers, 100);
+}
+
+TYPED_TEST(MutatorTypedTest, Serialization) {
+  TestMutator mutator(false);
+  for (int i = 0; i < 10000; ++i) {
+    typename TestFixture::Message message;
+    for (int j = 0; j < 5; ++j) {
+      mutator.Mutate(&message, 1000);
+      typename TestFixture::Message parsed;
+
+      EXPECT_TRUE(ParseTextMessage(SaveMessageAsText(message), &parsed));
+      EXPECT_TRUE(MessageDifferencer::Equals(parsed, message));
+
+      EXPECT_TRUE(ParseBinaryMessage(SaveMessageAsBinary(message), &parsed));
+      EXPECT_TRUE(MessageDifferencer::Equals(parsed, message));
+    }
+  }
 }
 
 class MutatorMessagesTest : public MutatorTest {};

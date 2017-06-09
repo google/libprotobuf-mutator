@@ -20,6 +20,7 @@
 #include <string>
 
 #include "src/field_instance.h"
+#include "src/utf8_fix.h"
 #include "src/weighted_reservoir_sampler.h"
 
 namespace protobuf_mutator {
@@ -310,12 +311,14 @@ class DataSourceSampler {
         if (int field_size = reflection->FieldSize(*message, field)) {
           ConstFieldInstance source(message, field,
                                     GetRandomIndex(random_, field_size));
+          if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
           if (!IsEqualValueField()(match_, source))
             sampler_.Try(field_size, source);
         }
       } else {
         if (reflection->HasField(*message, field)) {
           ConstFieldInstance source(message, field);
+          if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
           if (!IsEqualValueField()(match_, source)) sampler_.Try(1, source);
         }
       }
@@ -333,9 +336,10 @@ class DataSourceSampler {
 class FieldMutator {
  public:
   FieldMutator(size_t size_increase_hint, bool enforce_changes,
-               Mutator* mutator)
+               bool enforce_utf8_strings, Mutator* mutator)
       : size_increase_hint_(size_increase_hint),
         enforce_changes_(enforce_changes),
+        enforce_utf8_strings_(enforce_utf8_strings),
         mutator_(mutator) {}
 
   void Mutate(int32_t* value) const {
@@ -374,8 +378,13 @@ class FieldMutator {
   }
 
   void Mutate(std::string* value) const {
-    RepeatMutate(value, std::bind(&Mutator::MutateString, mutator_, _1,
-                                  size_increase_hint_));
+    if (enforce_utf8_strings_) {
+      RepeatMutate(value, std::bind(&Mutator::MutateUtf8String, mutator_, _1,
+                                    size_increase_hint_));
+    } else {
+      RepeatMutate(value, std::bind(&Mutator::MutateString, mutator_, _1,
+                                    size_increase_hint_));
+    }
   }
 
   void Mutate(std::unique_ptr<Message>* message) const {
@@ -402,6 +411,7 @@ class FieldMutator {
 
   size_t size_increase_hint_;
   size_t enforce_changes_;
+  bool enforce_utf8_strings_;
   Mutator* mutator_;
 };
 
@@ -413,7 +423,8 @@ struct MutateField : public FieldFunction<MutateField> {
                Mutator* mutator) const {
     T value;
     field.Load(&value);
-    FieldMutator(size_increase_hint, true, mutator).Mutate(&value);
+    FieldMutator(size_increase_hint, true, field.EnforceUtf8(), mutator)
+        .Mutate(&value);
     field.Store(value);
   }
 };
@@ -426,7 +437,8 @@ struct CreateField : public FieldFunction<CreateField> {
     T value;
     field.GetDefault(&value);
     FieldMutator field_mutator(size_increase_hint,
-                               false /* defaults could be useful */, mutator);
+                               false /* defaults could be useful */,
+                               field.EnforceUtf8(), mutator);
     field_mutator.Mutate(&value);
     field.Create(value);
   }
@@ -645,6 +657,13 @@ std::string Mutator::MutateString(const std::string& value,
   if (!result.empty())
     FlipBit(result.size(), reinterpret_cast<uint8_t*>(&result[0]), random_);
   return result;
+}
+
+std::string Mutator::MutateUtf8String(const std::string& value,
+                                      size_t size_increase_hint) {
+  std::string str = MutateString(value, size_increase_hint);
+  FixUtf8String(&str, random_);
+  return str;
 }
 
 }  // namespace protobuf_mutator
