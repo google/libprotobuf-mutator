@@ -24,7 +24,11 @@ bool ParseBinaryMessage(const uint8_t* data, size_t size, Message* output) {
 
 bool ParseBinaryMessage(const std::string& data, protobuf::Message* output) {
   output->Clear();
-  return output->ParsePartialFromString(data);
+  if (!output->ParsePartialFromString(data)) {
+    output->Clear();
+    return false;
+  }
+  return true;
 }
 
 size_t SaveMessageAsBinary(const Message& message, uint8_t* data,

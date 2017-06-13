@@ -28,7 +28,11 @@ bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
   output->Clear();
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
-  return parser.ParseFromString(data, output);
+  if (!parser.ParseFromString(data, output)) {
+    output->Clear();
+    return false;
+  }
+  return true;
 }
 
 size_t SaveMessageAsText(const Message& message, uint8_t* data,
