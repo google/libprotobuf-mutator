@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(EXPAT_CFLAGS "${CMAKE_C_FLAGS} ${FUZZING_FLAGS} -w")
-set(EXPAT_CXXFLAGS "${CMAKE_CXX_FLAGS} ${FUZZING_FLAGS} -w")
+set(EXPAT_CFLAGS "${CMAKE_C_FLAGS} ${FUZZING_FLAGS}")
+set(EXPAT_CXXFLAGS "${CMAKE_CXX_FLAGS} ${FUZZING_FLAGS}")
 include(expat)
 
 add_executable(expat_example
