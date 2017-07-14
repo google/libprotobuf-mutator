@@ -40,8 +40,8 @@ ExternalProject_Add(${EXPAT_TARGET}
                                                     --prefix=${EXPAT_INSTALL_DIR}
                                                     CC=${CMAKE_C_COMPILER}
                                                     CXX=${CMAKE_CXX_COMPILER}
-                                                    CFLAGS=${EXPAT_CFLAGS}
-                                                    CXXFLAGS=${EXPAT_CXXFLAGS}
+                                                    "CFLAGS=${EXPAT_CFLAGS} -w -DXML_POOR_ENTROPY"
+                                                    "CXXFLAGS=${EXPAT_CXXFLAGS} -w -DXML_POOR_ENTROPY"
     BUILD_COMMAND cd ${EXPAT_SRC_DIR} &&  make -j ${CPU_COUNT} all
     INSTALL_COMMAND cd ${EXPAT_SRC_DIR} &&  make install
     BUILD_BYPRODUCTS ${EXPAT_BUILD_BYPRODUCTS}
