@@ -55,7 +55,7 @@ before_script:
   - travis_retry wget --quiet -O - https://raw.githubusercontent.com/cpplint/cpplint/master/cpplint.py | python - --recursive src examples
   - mkdir -p build && cd build
   - rm -rf *
-  - cmake .. -GNinja -DLIB_PROTO_MUTATOR_WITH_ASAN=ON -DCMAKE_C_COMPILER=${CC_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  - cmake .. -GNinja -DLIB_PROTO_MUTATOR_WITH_ASAN=ON -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON -DCMAKE_C_COMPILER=${CC_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
 script:
   - ninja && ctest -V -j8

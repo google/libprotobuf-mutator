@@ -18,6 +18,8 @@ project(LibProtobufMutator CXX)
 enable_language(C)
 enable_language(CXX)
 
+option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
+       "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
 set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
@@ -101,7 +103,7 @@ if(CMAKE_USE_PTHREADS_INIT)
   set(PROTOBUF_CXXFLAGS "${PROTOBUF_CXXFLAGS} -pthread")
 endif()
 
-if (DOWNLOAD_PROTOBUF)
+if (LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF)
   include(protobuf)
 else()
   find_package(Protobuf REQUIRED)
