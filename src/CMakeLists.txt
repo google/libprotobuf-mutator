@@ -20,7 +20,7 @@ add_library(protobuf-mutator
             text_format.cc
             utf8_fix.cc)
 target_link_libraries(protobuf-mutator
-                      ${PROTOBUF_LIBRARY})
+                      ${PROTOBUF_LIBRARIES})
 set_property(TARGET protobuf-mutator
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
 

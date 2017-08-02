@@ -17,6 +17,6 @@ add_library(protobuf-mutator-libfuzzer
             libfuzzer_macro.cc)
 target_link_libraries(protobuf-mutator-libfuzzer
                       protobuf-mutator
-                      ${PROTOBUF_LIBRARY})
+                      ${PROTOBUF_LIBRARIES})
 set_property(TARGET protobuf-mutator-libfuzzer
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
