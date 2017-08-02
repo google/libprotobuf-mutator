@@ -7,7 +7,7 @@ language: cpp
 addons:
   apt:
     packages:
-      - clang
+      - clang-5.0
       - g++-4.8
       - gcc-4.8
       - ninja-build
