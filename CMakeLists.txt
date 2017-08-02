@@ -100,7 +100,14 @@ if(CMAKE_USE_PTHREADS_INIT)
   set(PROTOBUF_CFLAGS "${PROTOBUF_CFLAGS} -pthread")
   set(PROTOBUF_CXXFLAGS "${PROTOBUF_CXXFLAGS} -pthread")
 endif()
-include(protobuf)
+
+if (DOWNLOAD_PROTOBUF)
+  include(protobuf)
+else()
+  find_package(Protobuf REQUIRED)
+  include_directories(${PROTOBUF_INCLUDE_DIRS})
+  include_directories(${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 enable_testing()
 

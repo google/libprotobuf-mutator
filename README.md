@@ -24,7 +24,11 @@ cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_B
 ninja check
 ```
 
-Clang is only needed for libFuzzer integration.
+Clang is only needed for libFuzzer integration. <BR>
+By default, the system-installed version of
+[protobuf](https://github.com/google/protobuf) is used.  However, on some
+systems, the system version is too old.  You can pass `-DDOWNLOAD_PROTOBUF=1` to
+cmake to automatically download and build a working version of protobuf.
 
 ## Usage
 
