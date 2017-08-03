@@ -6,28 +6,44 @@ language: cpp
 
 addons:
   apt:
-    packages:
-      - clang-5.0
-      - g++-4.8
-      - gcc-4.8
+    packages: &common_packages
       - ninja-build
       - liblzma-dev
       - libz-dev
       - docbook2x
-    sources:
-      - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main'
-        key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
+    sources: &common_sources
       - ubuntu-toolchain-r-test
 
 env:
-  global:
-    - CLANG_VERSION=5.0
-    - GCC_VERSION=4.8
-  matrix:
-    - BUILD_TYPE=Release CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
-    - BUILD_TYPE=Debug CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
-    - BUILD_TYPE=Release CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
-    - BUILD_TYPE=Debug CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
+  global: CLANG_VERSION=5.0 GCC_VERSION=4.8
+
+matrix:
+  include:
+    - env: BUILD_TYPE=Release CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
+      addons: &clang
+        apt:
+          packages:
+            - *common_packages
+            - clang-5.0
+          sources:
+            - *common_sources
+            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main'
+              key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
+
+    - env: BUILD_TYPE=Debug CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
+      addons: *clang
+
+    - env: BUILD_TYPE=Release CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
+      addons: &gcc
+        apt:
+          packages:
+            - *common_packages
+            - g++-4.8
+            - gcc-4.8
+          sources:
+            - *common_sources
+    - env: BUILD_TYPE=Debug CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
+      addons: *gcc
 
 install:
   - mkdir -p deps && cd deps
@@ -36,7 +52,6 @@ install:
   - cd -
 
 before_script:
-  - apt-cache search clang
   - travis_retry wget --quiet -O - https://raw.githubusercontent.com/cpplint/cpplint/master/cpplint.py | python - --recursive src examples
   - mkdir -p build && cd build
   - rm -rf *
