@@ -10,7 +10,6 @@ addons:
       - ninja-build
       - liblzma-dev
       - libz-dev
-      - docbook2x
     sources: &common_sources
       - ubuntu-toolchain-r-test
 
