@@ -15,6 +15,7 @@
 #include "src/mutator.h"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <random>
 #include <string>
