@@ -38,11 +38,12 @@ ExternalProject_Add(${EXPAT_TARGET}
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND cd ${EXPAT_SRC_DIR} && ./buildconf.sh  && ./configure
                                                     --prefix=${EXPAT_INSTALL_DIR}
+                                                    --without-xmlwf
                                                     CC=${CMAKE_C_COMPILER}
                                                     CXX=${CMAKE_CXX_COMPILER}
                                                     "CFLAGS=${EXPAT_CFLAGS} -w -DXML_POOR_ENTROPY"
                                                     "CXXFLAGS=${EXPAT_CXXFLAGS} -w -DXML_POOR_ENTROPY"
-    BUILD_COMMAND cd ${EXPAT_SRC_DIR} &&  make -j ${CPU_COUNT} buildlib
-    INSTALL_COMMAND cd ${EXPAT_SRC_DIR} &&  make installlib
+    BUILD_COMMAND cd ${EXPAT_SRC_DIR} &&  make -j ${CPU_COUNT}
+    INSTALL_COMMAND cd ${EXPAT_SRC_DIR} &&  make install
     BUILD_BYPRODUCTS ${EXPAT_BUILD_BYPRODUCTS}
 )
