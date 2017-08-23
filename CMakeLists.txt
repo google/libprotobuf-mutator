@@ -127,6 +127,6 @@ if ("${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" AND
 endif()
 
 if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
-  add_subdirectory(examples)
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
