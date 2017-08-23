@@ -15,6 +15,7 @@
 #include "src/mutator.h"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <random>
 #include <string>
@@ -36,7 +37,7 @@ using std::placeholders::_1;
 
 namespace {
 
-const size_t kMaxInitializeDepth = 32;
+const size_t kMaxInitializeDepth = 100;
 const uint64_t kDefaultMutateWeight = 1000000;
 
 enum class Mutation {
@@ -582,9 +583,6 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
 
 void Mutator::InitializeMessage(Message* message, size_t max_depth) {
   assert(keep_initialized_);
-  // It's pointless but possible to have infinite recursion of required
-  // messages.
-  assert(max_depth);
   const Descriptor* descriptor = message->GetDescriptor();
   const Reflection* reflection = message->GetReflection();
   for (int i = 0; i < descriptor->field_count(); ++i) {
