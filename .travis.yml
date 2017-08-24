@@ -57,4 +57,5 @@ before_script:
   - cmake .. -GNinja -DLIB_PROTO_MUTATOR_WITH_ASAN=ON -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON -DCMAKE_C_COMPILER=${CC_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
 script:
-  - ninja && ninja check
+  - ninja 
+  - ninja -j8 check
