@@ -115,11 +115,11 @@ enable_testing()
 
 include(googletest)
 
-if (NOT CPU_COUNT)
-  ProcessorCount(CPU_COUNT)
+if (NOT LIB_PROTO_MUTATOR_CTEST_JOBS)
+  ProcessorCount(LIB_PROTO_MUTATOR_CTEST_JOBS)
 endif()
 add_custom_target(check
-                  COMMAND ${CMAKE_CTEST_COMMAND} -j${CPU_COUNT} --output-on-failure)
+                  COMMAND ${CMAKE_CTEST_COMMAND} -j${LIB_PROTO_MUTATOR_CTEST_JOBS} --output-on-failure)
 
 add_subdirectory(src)
 
