@@ -115,7 +115,9 @@ enable_testing()
 
 include(googletest)
 
-ProcessorCount(CPU_COUNT)
+if (NOT CPU_COUNT)
+  ProcessorCount(CPU_COUNT)
+endif()
 add_custom_target(check
                   COMMAND ${CMAKE_CTEST_COMMAND} -j${CPU_COUNT} --output-on-failure)
 
