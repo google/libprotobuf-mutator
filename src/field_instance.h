@@ -420,7 +420,7 @@ struct FieldFunction {
             ->template ForType<std::unique_ptr<protobuf::Message>>(field,
                                                                    args...);
     }
-    assert(!"Unknown type");
+    assert(false && "Unknown type");
     abort();
   }
 };
