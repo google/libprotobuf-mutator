@@ -62,7 +62,12 @@ set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-cmp")
 check_cxx_compiler_flag(-fsanitize-coverage=trace-cmp LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall -Wstring-conversion")
+check_cxx_compiler_flag(-Wstring-conversion LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
+
+set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+if (LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
+  set(EXTRA_FLAGS "${EXTRA_FLAGS} -Wstring-conversion")
+endif 
 
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
