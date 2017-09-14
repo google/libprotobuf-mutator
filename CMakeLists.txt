@@ -67,7 +67,7 @@ check_cxx_compiler_flag(-Wstring-conversion LIB_PROTO_MUTATOR_HAS_WSTRING_CONVER
 set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
 if (LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
   set(EXTRA_FLAGS "${EXTRA_FLAGS} -Wstring-conversion")
-endif 
+endif()
 
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
