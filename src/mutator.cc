@@ -37,7 +37,7 @@ using std::placeholders::_1;
 
 namespace {
 
-const size_t kMaxInitializeDepth = 100;
+const int kMaxInitializeDepth = 200;
 const uint64_t kDefaultMutateWeight = 1000000;
 
 enum class Mutation {
@@ -480,10 +480,8 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
     }
   } while (repeat);
 
-  if (keep_initialized_ && !message->IsInitialized()) {
-    InitializeMessage(message, kMaxInitializeDepth);
-    assert(message->IsInitialized());
-  }
+  InitializeAndTrim(message, kMaxInitializeDepth);
+  assert(!keep_initialized_ || message->IsInitialized());
 }
 
 void Mutator::CrossOver(const protobuf::Message& message1,
@@ -495,10 +493,8 @@ void Mutator::CrossOver(const protobuf::Message& message1,
 
   CrossOverImpl(message1, message2);
 
-  if (keep_initialized_ && !message2->IsInitialized()) {
-    InitializeMessage(message2, kMaxInitializeDepth);
-    assert(message2->IsInitialized());
-  }
+  InitializeAndTrim(message2, kMaxInitializeDepth);
+  assert(!keep_initialized_ || message2->IsInitialized());
 
   // Can't call mutate from crossover because of a bug in libFuzzer.
   return;
@@ -581,29 +577,36 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
   }
 }
 
-void Mutator::InitializeMessage(Message* message, size_t max_depth) {
-  assert(keep_initialized_);
+void Mutator::InitializeAndTrim(Message* message, int max_depth) {
   const Descriptor* descriptor = message->GetDescriptor();
   const Reflection* reflection = message->GetReflection();
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
-    if (field->is_required() && !reflection->HasField(*message, field))
+    if (keep_initialized_ && field->is_required() &&
+        !reflection->HasField(*message, field))
       CreateDefaultField()(FieldInstance(message, field));
 
-    if (max_depth > 0 &&
-        field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+    if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+      if (max_depth <= 0 && !field->is_required()) {
+        // Clear deep optional fields to avoid stack overflow.
+        reflection->ClearField(message, field);
+        if (field->is_repeated())
+          assert(!reflection->FieldSize(*message, field));
+        else
+          assert(!reflection->HasField(*message, field));
+        continue;
+      }
+
       if (field->is_repeated()) {
         const int field_size = reflection->FieldSize(*message, field);
         for (int j = 0; j < field_size; ++j) {
           Message* nested_message =
               reflection->MutableRepeatedMessage(message, field, j);
-          if (!nested_message->IsInitialized())
-            InitializeMessage(nested_message, max_depth - 1);
+          InitializeAndTrim(nested_message, max_depth - 1);
         }
       } else if (reflection->HasField(*message, field)) {
         Message* nested_message = reflection->MutableMessage(message, field);
-        if (!nested_message->IsInitialized())
-          InitializeMessage(nested_message, max_depth - 1);
+        InitializeAndTrim(nested_message, max_depth - 1);
       }
     }
   }
