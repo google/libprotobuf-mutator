@@ -21,7 +21,6 @@ enable_language(CXX)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
-set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/external)
@@ -50,16 +49,12 @@ check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=0")
-check_cxx_compiler_flag(-fsanitize-coverage= LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
+set(CMAKE_REQUIRED_FLAGS "-fsanitize=fuzzer-no-link")
+check_cxx_compiler_flag(-fsanitize=fuzzer-no-link LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
 unset(CMAKE_REQUIRED_FLAGS)
 
-set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-pc-guard")
-check_cxx_compiler_flag(-fsanitize-coverage=trace-pc-guard LIB_PROTO_MUTATOR_HAS_TRACE_PC)
-unset(CMAKE_REQUIRED_FLAGS)
-
-set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=trace-cmp")
-check_cxx_compiler_flag(-fsanitize-coverage=trace-cmp LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
+set(CMAKE_REQUIRED_FLAGS "-fno-sanitize=fuzzer")
+check_cxx_compiler_flag(-fno-sanitize=fuzzer LIB_PROTO_MUTATOR_HAS_NO_SANITIZE_FUZZER)
 unset(CMAKE_REQUIRED_FLAGS)
 
 check_cxx_compiler_flag(-Wstring-conversion LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
@@ -78,24 +73,12 @@ if (LIB_PROTO_MUTATOR_WITH_ASAN)
   endif()
 endif()
 
-if (LIB_PROTO_MUTATOR_HAS_TRACE_PC)
-  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-pc-guard)
+if (LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
+  set(FUZZING_FLAGS "-fsanitize=fuzzer-no-link")
+  set(FUZZING_FLAGS_BINARY "-fsanitize=fuzzer")
 endif()
-if (LIB_PROTO_MUTATOR_HAS_TRACE_CMP)
-  list(APPEND SANITIZE_COVERAGE_OPTIONS trace-cmp)
-endif()
-
-if (SANITIZE_COVERAGE_OPTIONS)
-  foreach(OPT ${SANITIZE_COVERAGE_OPTIONS})
-    set(FUZZING_FLAGS "${FUZZING_FLAGS},${OPT}")
-  endforeach()
-  string(SUBSTRING ${FUZZING_FLAGS} 1 -1 FUZZING_FLAGS)
-  set(FUZZING_FLAGS "-fsanitize-coverage=${FUZZING_FLAGS}")
-  set(NO_FUZZING_FLAGS "-fsanitize-coverage=0")
-endif()
-
-if (LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
-  set(NO_FUZZING_FLAGS "-fsanitize-coverage=0")
+if (LIB_PROTO_MUTATOR_HAS_SANITIZE_NO_FUZZER)
+  set(NO_FUZZING_FLAGS "-fno-sanitize=fuzzer")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")
@@ -128,12 +111,7 @@ add_custom_target(check
 
 add_subdirectory(src)
 
-if ("${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" AND
-    NOT "${FUZZING_FLAGS}" STREQUAL "")
-  include(libfuzzer)
-endif()
-
-if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
+if (NOT "${FUZZING_FLAGS}" STREQUAL "")
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 

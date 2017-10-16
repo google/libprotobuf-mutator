@@ -25,7 +25,7 @@ target_link_libraries(expat_example
 set_property(TARGET expat_example
              PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
 set_property(TARGET expat_example
-             PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+             PROPERTY LINK_FLAGS ${FUZZING_FLAGS_BINARY})
 
 add_executable(expat_example_test
                expat_example_test.cc)
