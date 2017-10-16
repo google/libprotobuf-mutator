@@ -14,7 +14,7 @@ addons:
       - ubuntu-toolchain-r-test
 
 env:
-  global: CLANG_VERSION=5.0 GCC_VERSION=4.8
+  global: CLANG_VERSION=6.0 GCC_VERSION=4.8
 
 matrix:
   include:
@@ -23,10 +23,10 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - clang-5.0
+            - clang-6.0
           sources:
             - *common_sources
-            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main'
+            - sourceline: 'deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie main'
               key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
 
     - env: BUILD_TYPE=Debug CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
