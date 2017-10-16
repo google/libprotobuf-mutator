@@ -38,6 +38,6 @@ foreach(fuzzer libfuzzer_example libfuzzer_bin_example)
   set_property(TARGET ${fuzzer}
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   set_property(TARGET ${fuzzer}
-               PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+               PROPERTY LINK_FLAGS ${FUZZING_FLAGS_BINARY})
   add_dependencies(libfuzzer_example_test ${fuzzer})
 endforeach(fuzzer)

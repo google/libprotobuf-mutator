@@ -26,7 +26,7 @@ target_link_libraries(libxml2_example
 set_property(TARGET libxml2_example
              PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
 set_property(TARGET libxml2_example
-             PROPERTY LINK_FLAGS ${FUZZING_FLAGS})
+             PROPERTY LINK_FLAGS ${FUZZING_FLAGS_BINARY})
 
 add_executable(libxml2_example_test
                libxml2_example_test.cc)
