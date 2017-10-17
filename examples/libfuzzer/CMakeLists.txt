@@ -33,7 +33,8 @@ foreach(fuzzer libfuzzer_example libfuzzer_bin_example)
   add_executable(${fuzzer} ${fuzzer}.cc)
   target_link_libraries(${fuzzer}
                         fuzzer-example-proto
-                        protobuf-mutator-libfuzzer)
+                        protobuf-mutator-libfuzzer
+                        ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES})
   set_property(TARGET ${fuzzer}
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   set_property(TARGET ${fuzzer}
