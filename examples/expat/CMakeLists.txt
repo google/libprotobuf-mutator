@@ -20,7 +20,6 @@ add_executable(expat_example
                expat_example.cc)
 target_link_libraries(expat_example
                       protobuf-mutator-xml
-                      ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}
                       ${EXPAT_LIBRARIES})
 set_property(TARGET expat_example
              PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
