@@ -49,6 +49,10 @@ check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
                         LIB_PROTO_MUTATOR_HAS_SANITIZE_SCOPE)
 unset(CMAKE_REQUIRED_FLAGS)
 
+set(CMAKE_REQUIRED_FLAGS "-fsanitize-coverage=0")
+check_cxx_compiler_flag(-fsanitize-coverage= LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
+unset(CMAKE_REQUIRED_FLAGS)
+
 set(CMAKE_REQUIRED_FLAGS "-fsanitize=fuzzer-no-link")
 check_cxx_compiler_flag(-fsanitize=fuzzer-no-link LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
 unset(CMAKE_REQUIRED_FLAGS)
@@ -79,6 +83,9 @@ if (LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
 endif()
 if (LIB_PROTO_MUTATOR_HAS_SANITIZE_NO_FUZZER)
   set(NO_FUZZING_FLAGS "-fno-sanitize=fuzzer")
+endif()
+if (LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
+  set(NO_FUZZING_FLAGS "${NO_FUZZING_FLAGS} -fsanitize-coverage=0")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_FLAGS}")

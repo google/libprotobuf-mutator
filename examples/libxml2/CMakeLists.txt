@@ -19,7 +19,6 @@ add_executable(libxml2_example
                libxml2_example.cc)
 target_link_libraries(libxml2_example
                       protobuf-mutator-xml
-                      ${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}
                       ${LIBXML2_LIBRARIES}
                       ${ZLIB_LIBRARIES}
                       ${LIBLZMA_LIBRARIES})
