@@ -21,6 +21,7 @@ enable_language(CXX)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
+set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/external)
@@ -77,12 +78,15 @@ if (LIB_PROTO_MUTATOR_WITH_ASAN)
   endif()
 endif()
 
-if (LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
-  set(FUZZING_FLAGS "-fsanitize=fuzzer-no-link")
-  set(FUZZING_FLAGS_BINARY "-fsanitize=fuzzer")
-endif()
-if (LIB_PROTO_MUTATOR_HAS_SANITIZE_NO_FUZZER)
-  set(NO_FUZZING_FLAGS "-fno-sanitize=fuzzer")
+# Assume CFLAGS has coverage options if LIB_PROTO_MUTATOR_FUZZER_LIBRARIES was set
+if ("${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "")
+  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_FUZZER)
+    set(FUZZING_FLAGS "-fsanitize=fuzzer-no-link")
+    set(FUZZING_FLAGS_BINARY "-fsanitize=fuzzer")
+  endif()
+  if (LIB_PROTO_MUTATOR_HAS_SANITIZE_NO_FUZZER)
+    set(NO_FUZZING_FLAGS "-fno-sanitize=fuzzer")
+  endif()
 endif()
 if (LIB_PROTO_MUTATOR_HAS_NO_COVERAGE)
   set(NO_FUZZING_FLAGS "${NO_FUZZING_FLAGS} -fsanitize-coverage=0")
@@ -118,7 +122,8 @@ add_custom_target(check
 
 add_subdirectory(src)
 
-if (NOT "${FUZZING_FLAGS}" STREQUAL "")
+if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
+    NOT "${FUZZING_FLAGS}" STREQUAL "")
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
