@@ -45,6 +45,7 @@ methods with more sophisticated logic, e.g.
 using [libFuzzer](http://libfuzzer.info)'s mutators.
 
 To apply one mutation to a protobuf object do the following:
+
 ```
 class MyProtobufMutator : public protobuf_mutator::Mutator {
  public:
@@ -73,3 +74,9 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
 ```
 
 Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as an example.
+
+## UTF-8 strings
+"proto2" and "proto3" handle invalid UTF-8 strings differently. In both cases
+string should be UTF-8, however only "proto3" enforces that. So if fuzzer is
+applied to "proto2" type libprotobuf-mutator will generate any strings including
+invalid UTF-8. If it's a "proto3" message type, only valid UTF-8 will be used.
