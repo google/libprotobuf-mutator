@@ -58,5 +58,6 @@ before_script:
 
 script:
   - export ASAN_OPTIONS=detect_leaks=0
+  - nproc
   - ninja
   - ninja check
