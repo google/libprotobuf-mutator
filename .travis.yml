@@ -41,8 +41,6 @@ matrix:
             - gcc-7
           sources:
             - *common_sources
-    - env: BUILD_TYPE=Debug CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
-      addons: *gcc
 
 install:
   - mkdir -p deps && cd deps
