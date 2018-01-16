@@ -521,7 +521,7 @@ TYPED_TEST(MutatorTypedTest, CrossOverRepeated) {
         {message.repeated_int32().begin(), message.repeated_int32().end()});
   }
 
-  EXPECT_EQ(1 << 6, sets.size());
+  EXPECT_EQ(1u << 6, sets.size());
 }
 
 TYPED_TEST(MutatorTypedTest, CrossOverRepeatedMessages) {
@@ -548,7 +548,7 @@ TYPED_TEST(MutatorTypedTest, CrossOverRepeatedMessages) {
       sets.insert({msg.repeated_int32().begin(), msg.repeated_int32().end()});
   }
 
-  EXPECT_EQ(1 << 6, sets.size());
+  EXPECT_EQ(1u << 6, sets.size());
 }
 
 TYPED_TEST(MutatorTypedTest, FailedMutations) {
@@ -574,7 +574,7 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
   }
 
   // CrossOver may fail but very rare.
-  EXPECT_LT(crossovers, 100);
+  EXPECT_LT(crossovers, 100u);
 }
 
 TYPED_TEST(MutatorTypedTest, Serialization) {
