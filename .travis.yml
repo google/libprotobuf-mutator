@@ -14,7 +14,7 @@ addons:
       - ubuntu-toolchain-r-test
 
 env:
-  global: CLANG_VERSION=6.0 GCC_VERSION=7
+  global: CLANG_VERSION=7 GCC_VERSION=7
 
 matrix:
   include:
@@ -23,7 +23,7 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - clang-6.0
+            - clang-7
           sources:
             - *common_sources
             - sourceline: 'deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie main'
