@@ -40,6 +40,7 @@ class FuzzerTest : public testing::Test {
   int RunFuzzer(const std::string& name, int max_len, int runs) {
     std::string cmd = "ASAN_OPTIONS=detect_leaks=0 ./" + name;
     cmd += " -detect_leaks=0";
+    cmd += " -len_control=0";
     cmd += " -max_len=" + std::to_string(max_len);
     cmd += " -runs=" + std::to_string(runs);
     cmd += " -artifact_prefix=" + dir_;
