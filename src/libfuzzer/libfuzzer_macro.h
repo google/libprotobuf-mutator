@@ -17,6 +17,7 @@
 
 #include <stddef.h>
 #include <cstdint>
+#include <functional>
 #include <type_traits>
 
 #include "port/protobuf.h"
