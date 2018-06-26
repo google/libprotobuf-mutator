@@ -34,8 +34,8 @@ build a working version of protobuf.
 ## Usage
 
 To use libprotobuf-mutator simply include
-[protobuf_mutator.h](/src/mutator.h) and
-[protobuf_mutator.cc](/src/mutator.cc) into your build files.
+[mutator.h](/src/mutator.h) and
+[mutator.cc](/src/mutator.cc) into your build files.
 
 The `ProtobufMutator` class implements mutations of the protobuf
 tree structure and mutations of individual fields.
@@ -59,7 +59,7 @@ void Mutate(MyMessage* message) {
 ```
 
 See also the `ProtobufMutatorMessagesTest.UsageExample` test from
-[protobuf_mutator_test.cc](/src/mutator_test.cc).
+[mutator_test.cc](/src/mutator_test.cc).
 
 ## Integrating with libFuzzer
 LibFuzzerProtobufMutator can help to integrate with libFuzzer. For example 
