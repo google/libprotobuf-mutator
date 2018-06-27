@@ -18,6 +18,7 @@ project(LibProtobufMutator CXX)
 enable_language(C)
 enable_language(CXX)
 
+option(TESTING "Enable test building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
@@ -110,15 +111,19 @@ else()
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-enable_testing()
+if (TESTING)
+  enable_testing()
+  find_package(GTest)
+  if (NOT GTEST_FOUND)
+    include(googletest)
+  endif()
 
-include(googletest)
-
-if (NOT LIB_PROTO_MUTATOR_CTEST_JOBS)
-  ProcessorCount(LIB_PROTO_MUTATOR_CTEST_JOBS)
+  if (NOT LIB_PROTO_MUTATOR_CTEST_JOBS)
+    ProcessorCount(LIB_PROTO_MUTATOR_CTEST_JOBS)
+  endif()
+  add_custom_target(check
+                    COMMAND ${CMAKE_CTEST_COMMAND} -j${LIB_PROTO_MUTATOR_CTEST_JOBS} --output-on-failure)
 endif()
-add_custom_target(check
-                  COMMAND ${CMAKE_CTEST_COMMAND} -j${LIB_PROTO_MUTATOR_CTEST_JOBS} --output-on-failure)
 
 add_subdirectory(src)
 
