@@ -112,6 +112,8 @@ endif()
 
 enable_testing()
 
+set(LIB_DIR "lib${LIB_SUFFIX}")
+
 include(googletest)
 
 if (NOT LIB_PROTO_MUTATOR_CTEST_JOBS)
@@ -127,3 +129,8 @@ if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
+configure_file("libprotobuf-mutator.pc.in" "libprotobuf-mutator.pc" @ONLY)
+install(FILES "${CMAKE_BINARY_DIR}/libprotobuf-mutator.pc"
+  DESTINATION share/pkgconfg)
+install(DIRECTORY ./port ./src DESTINATION include/libprotobuf-mutator
+  FILES_MATCHING PATTERN "*.h")

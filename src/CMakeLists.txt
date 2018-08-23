@@ -52,3 +52,5 @@ foreach(SHARD RANGE ${TEST_SHARDS_MAX})
 endforeach(SHARD)
 
 add_dependencies(check mutator_test)
+
+install(TARGETS protobuf-mutator ARCHIVE DESTINATION ${LIB_DIR})
