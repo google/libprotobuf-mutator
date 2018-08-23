@@ -33,7 +33,7 @@ endforeach(lib)
 include (ExternalProject)
 ExternalProject_Add(${LIBXML2_TARGET}
     PREFIX ${LIBXML2_TARGET}
-    GIT_REPOSITORY https://github.com/GNOME/libxml2.git
+    GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2
     GIT_TAG master
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${LIBXML2_SRC_DIR}/autogen.sh --without-python
