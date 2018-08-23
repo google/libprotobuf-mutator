@@ -20,3 +20,5 @@ target_link_libraries(protobuf-mutator-libfuzzer
                       ${PROTOBUF_LIBRARIES})
 set_property(TARGET protobuf-mutator-libfuzzer
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
+
+install(TARGETS protobuf-mutator-libfuzzer ARCHIVE DESTINATION ${LIB_DIR})
