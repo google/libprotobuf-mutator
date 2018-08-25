@@ -33,8 +33,8 @@ endforeach(lib)
 include (ExternalProject)
 ExternalProject_Add(${LIBXML2_TARGET}
     PREFIX ${LIBXML2_TARGET}
-    GIT_REPOSITORY https://gitlab.gnome.org/vitalybuka/libxml2
-    GIT_TAG patch-2
+    GIT_REPOSITORY GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2
+    GIT_TAG master
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${LIBXML2_SRC_DIR}/autogen.sh --without-python
                                                     --prefix=${LIBXML2_INSTALL_DIR}
