@@ -181,5 +181,11 @@ bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                 : ParseTextMessage(data, size, input);
 }
 
+void RegisterProtoFieldMutator(
+    const protobuf::FieldDescriptor* field,
+    std::function<void(protobuf::Message*)> callback) {
+  protobuf_mutator::Mutator::RegisterCustomMutation(field, callback);
+}
+
 }  // namespace libfuzzer
 }  // namespace protobuf_mutator

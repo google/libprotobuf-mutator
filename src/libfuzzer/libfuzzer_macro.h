@@ -33,6 +33,26 @@
 // significantly slower than mutator, so fuzzing rate may stay unchanged.
 #define DEFINE_BINARY_PROTO_FUZZER(arg) DEFINE_PROTO_FUZZER_IMPL(true, arg)
 
+// Registers the callback as a potential mutation performed on the parent
+// message of a field. This must be called inside an initialization code block.
+// libFuzzer suggests putting one-time-initialization in a function used to
+// initialize a static variable inside the fuzzer target. For example:
+//
+// static bool Callback(protobuf::Message* message) { ... }
+//
+// static bool OneTimeInitialization() {
+//   REGISTER_PROTO_FIELD_MUTATOR(SomeMessage, "name_of_the_field", Callback);
+//   ...
+// }
+//
+// DEFINE_PROTO_FUZZER(const SomeMessage& msg) {
+//   static bool initialized = OneTimeInitialization();
+//   ...
+// }
+#define REGISTER_PROTO_FIELD_MUTATOR(message_class, field_name, callback) \
+  protobuf_mutator::libfuzzer::RegisterProtoFieldMutator( \
+    message_class::descriptor()->FindFieldByName(#field_name), callback)
+
 // Implementation of macros above.
 #define DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, Proto)                    \
   extern "C" size_t LLVMFuzzerCustomMutator(                                   \
@@ -84,6 +104,9 @@ size_t CustomProtoCrossOver(bool binary, const uint8_t* data1, size_t size1,
                             protobuf::Message* input2);
 bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                     protobuf::Message* input);
+void RegisterProtoFieldMutator(
+    const protobuf::FieldDescriptor* field,
+    std::function<void(protobuf::Message*)> callback);
 
 }  // namespace libfuzzer
 }  // namespace protobuf_mutator

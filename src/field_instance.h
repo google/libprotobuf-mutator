@@ -183,14 +183,14 @@ class ConstFieldInstance {
                protobuf::FileDescriptor::SYNTAX_PROTO3;
   }
 
+  const protobuf::FieldDescriptor* descriptor() const { return descriptor_; }
+
  protected:
   bool is_repeated() const { return descriptor_->is_repeated(); }
 
   const protobuf::Reflection& reflection() const {
     return *message_->GetReflection();
   }
-
-  const protobuf::FieldDescriptor* descriptor() const { return descriptor_; }
 
   size_t index() const { return index_; }
 
