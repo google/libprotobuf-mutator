@@ -15,10 +15,10 @@
 #include "src/mutator.h"
 
 #include <algorithm>
-#include <functional>
 #include <map>
 #include <random>
 #include <string>
+#include <vector>
 
 #include "src/field_instance.h"
 #include "src/utf8_fix.h"
@@ -461,7 +461,9 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
         CreateField()(mutation.field(), size_increase_hint / 2, this);
         break;
       case Mutation::Mutate:
-        MutateField()(mutation.field(), size_increase_hint / 2, this);
+        if (!ApplyCustomMutations(message, mutation.field().descriptor())) {
+          MutateField()(mutation.field(), size_increase_hint / 2, this);
+        }
         break;
       case Mutation::Delete:
         DeleteField()(mutation.field());
@@ -577,6 +579,12 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
   }
 }
 
+void Mutator::RegisterCustomMutation(
+    const protobuf::FieldDescriptor* field,
+    std::function<void(protobuf::Message* message)> mutation) {
+  custom_mutations_[field].push_back(mutation);
+}
+
 void Mutator::InitializeAndTrim(Message* message, int max_depth) {
   const Descriptor* descriptor = message->GetDescriptor();
   const Reflection* reflection = message->GetReflection();
@@ -666,5 +674,27 @@ std::string Mutator::MutateUtf8String(const std::string& value,
   FixUtf8String(&str, random_);
   return str;
 }
+
+bool Mutator::ApplyCustomMutations(protobuf::Message* message,
+                                   const protobuf::FieldDescriptor* field) {
+  auto itr = custom_mutations_.find(field);
+  if (itr == custom_mutations_.end())
+    return false;
+
+  // Randomly select one of the registered mutators. The default behavior is
+  // performed for index 0.
+  size_t field_index = GetRandomIndex(random_, itr->second.size() + 1);
+  if (field_index == itr->second.size())
+    return false;
+
+  if (GetRandomBool(random_, 100))
+    itr->second[field_index](message);
+  return true;
+}
+
+std::unordered_map<
+    const protobuf::FieldDescriptor*,
+    std::vector<std::function<void(protobuf::Message* message)>>>
+    Mutator::custom_mutations_;
 
 }  // namespace protobuf_mutator
