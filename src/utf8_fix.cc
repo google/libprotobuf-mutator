@@ -60,7 +60,7 @@ char* FixCode(char* b, const char* e, RandomEngine* random) {
       if (c < 0x800 || (c >= 0xD800 && c < 0xE000)) {
         uint32_t halves = 0xE000 - 0xD800;
         c = std::uniform_int_distribution<int32_t>(0x800,
-						    0xFFFF - halves)(*random);
+                                                   0xFFFF - halves)(*random);
         if (c >= 0xD800) c += halves;
       }
       StoreCode(b, c, size, 0xE0);
