@@ -55,7 +55,9 @@ double Mutator::MutateDouble(double value) { return MutateValue(value); }
 std::string Mutator::MutateString(const std::string& value,
                                   size_t size_increase_hint) {
   // Randomly return empty strings as LLVMFuzzerMutate does not produce them.
-  if (!std::uniform_int_distribution<uint8_t>(0, 20)(*random())) return {};
+  // Use uint16_t because on Windows, uniform_int_distribution does not support
+  // any 8 bit types.
+  if (!std::uniform_int_distribution<uint16_t>(0, 20)(*random())) return {};
   std::string result = value;
   result.resize(value.size() + size_increase_hint);
   if (result.empty()) result.push_back(0);

@@ -47,7 +47,9 @@ char* FixCode(char* b, const char* e, RandomEngine* random) {
     case 2:
       c &= 0x7FF;
       if (c < 0x80) {
-        c = std::uniform_int_distribution<char32_t>(0x80, 0x7FF)(*random);
+        // Use int32_t because uniform_int_distribution does not support
+        // char32_t on Windows.
+        c = std::uniform_int_distribution<int32_t>(0x80, 0x7FF)(*random);
       }
       StoreCode(b, c, size, 0xC0);
       break;
@@ -57,8 +59,8 @@ char* FixCode(char* b, const char* e, RandomEngine* random) {
       // [0xD800, 0xE000) are reserved for UTF-16 surrogate halves.
       if (c < 0x800 || (c >= 0xD800 && c < 0xE000)) {
         uint32_t halves = 0xE000 - 0xD800;
-        c = std::uniform_int_distribution<char32_t>(0x800,
-                                                    0xFFFF - halves)(*random);
+        c = std::uniform_int_distribution<int32_t>(0x800,
+						    0xFFFF - halves)(*random);
         if (c >= 0xD800) c += halves;
       }
       StoreCode(b, c, size, 0xE0);
@@ -66,7 +68,7 @@ char* FixCode(char* b, const char* e, RandomEngine* random) {
     case 4:
       c &= 0x1FFFFF;
       if (c < 0x10000 || c > 0x10FFFF) {
-        c = std::uniform_int_distribution<char32_t>(0x10000, 0x10FFFF)(*random);
+        c = std::uniform_int_distribution<int32_t>(0x10000, 0x10FFFF)(*random);
       }
       StoreCode(b, c, size, 0xF0);
       break;
