@@ -113,10 +113,7 @@ endif()
 
 if (TESTING)
   enable_testing()
-  find_package(GTest)
-  if (NOT GTEST_FOUND)
-    include(googletest)
-  endif()
+  include(googletest)
 
   if (NOT LIB_PROTO_MUTATOR_CTEST_JOBS)
     ProcessorCount(LIB_PROTO_MUTATOR_CTEST_JOBS)
