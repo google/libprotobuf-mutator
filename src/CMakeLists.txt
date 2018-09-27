@@ -24,33 +24,35 @@ target_link_libraries(protobuf-mutator
 set_property(TARGET protobuf-mutator
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
-                      mutator_test_proto2.proto
-                      mutator_test_proto3.proto)
+if (TESTING)
+  protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+                        mutator_test_proto2.proto
+                        mutator_test_proto3.proto)
 
-add_executable(mutator_test
-               mutator_test.cc
-               utf8_fix_test.cc
-               weighted_reservoir_sampler_test.cc
-               ${PROTO_SRCS})
-target_link_libraries(mutator_test
-                      protobuf-mutator
-                      ${ZLIB_LIBRARIES}
-                      ${GTEST_BOTH_LIBRARIES}
-                      ${CMAKE_THREAD_LIBS_INIT})
+  add_executable(mutator_test
+                 mutator_test.cc
+                 utf8_fix_test.cc
+                 weighted_reservoir_sampler_test.cc
+                 ${PROTO_SRCS})
+  target_link_libraries(mutator_test
+                        protobuf-mutator
+                        ${ZLIB_LIBRARIES}
+                        ${GTEST_BOTH_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT})
 
-ProcessorCount(CPU_COUNT)
-math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
-math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
-foreach(SHARD RANGE ${TEST_SHARDS_MAX})
-  add_test(test.protobuf_mutator_test_${SHARD} mutator_test --gtest_color=yes AUTO)
-  set_property(
-      TEST test.protobuf_mutator_test_${SHARD}
-      APPEND PROPERTY ENVIRONMENT
-      GTEST_SHARD_INDEX=${SHARD}
-      GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
-endforeach(SHARD)
+  ProcessorCount(CPU_COUNT)
+  math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
+  math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
+  foreach(SHARD RANGE ${TEST_SHARDS_MAX})
+    add_test(test.protobuf_mutator_test_${SHARD} mutator_test --gtest_color=yes AUTO)
+    set_property(
+        TEST test.protobuf_mutator_test_${SHARD}
+        APPEND PROPERTY ENVIRONMENT
+        GTEST_SHARD_INDEX=${SHARD}
+        GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
+  endforeach(SHARD)
 
-add_dependencies(check mutator_test)
+  add_dependencies(check mutator_test)
+endif()
 
 install(TARGETS protobuf-mutator ARCHIVE DESTINATION ${LIB_DIR})
