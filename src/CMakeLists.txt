@@ -54,3 +54,5 @@ if (TESTING)
 
   add_dependencies(check mutator_test)
 endif()
+
+install(TARGETS protobuf-mutator ARCHIVE DESTINATION ${LIB_DIR})
