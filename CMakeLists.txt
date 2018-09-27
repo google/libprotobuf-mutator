@@ -18,7 +18,7 @@ project(LibProtobufMutator CXX)
 enable_language(C)
 enable_language(CXX)
 
-option(TESTING "Enable test building" ON)
+option(LIB_PROTO_MUTATOR_TESTING "Enable test building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
@@ -111,7 +111,7 @@ else()
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-if (TESTING)
+if (LIB_PROTO_MUTATOR_TESTING)
   enable_testing()
 
   set(LIB_DIR "lib${LIB_SUFFIX}")
