@@ -111,10 +111,10 @@ else()
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
+set(LIB_DIR "lib${LIB_SUFFIX}")
+
 if (LIB_PROTO_MUTATOR_TESTING)
   enable_testing()
-
-  set(LIB_DIR "lib${LIB_SUFFIX}")
 
   include(googletest)
 
