@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# We only need protobuf_generate_cpp from FindProtobuf, and we are going to
+# override the rest with ExternalProject version.
 include (FindProtobuf)
 
 set(PROTOBUF_TARGET external.protobuf)
@@ -38,10 +40,19 @@ endforeach(lib)
 
 set(PROTOBUF_PROTOC_EXECUTABLE ${PROTOBUF_INSTALL_DIR}/bin/protoc)
 list(APPEND PROTOBUF_BUILD_BYPRODUCTS ${PROTOBUF_PROTOC_EXECUTABLE})
-add_executable(protoc IMPORTED)
-set_property(TARGET protoc PROPERTY IMPORTED_LOCATION
+
+if(${CMAKE_VERSION} VERSION_LESS "3.10.0")
+  set(PROTOBUF_PROTOC_TARGET protoc)
+else()
+  set(PROTOBUF_PROTOC_TARGET protobuf::protoc)
+endif()
+
+if(NOT TARGET ${PROTOBUF_PROTOC_TARGET})
+  add_executable(${PROTOBUF_PROTOC_TARGET} IMPORTED)
+endif()
+set_property(TARGET ${PROTOBUF_PROTOC_TARGET} PROPERTY IMPORTED_LOCATION
              ${PROTOBUF_PROTOC_EXECUTABLE})
-add_dependencies(protoc ${PROTOBUF_TARGET})
+add_dependencies(${PROTOBUF_PROTOC_TARGET} ${PROTOBUF_TARGET})
 
 include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
