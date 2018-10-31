@@ -24,7 +24,7 @@ target_link_libraries(protobuf-mutator
 set_property(TARGET protobuf-mutator
              PROPERTY COMPILE_FLAGS "${NO_FUZZING_FLAGS}")
 
-if (TESTING)
+if (LIB_PROTO_MUTATOR_TESTING)
   protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
                         mutator_test_proto2.proto
                         mutator_test_proto3.proto)
