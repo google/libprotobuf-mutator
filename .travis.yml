@@ -47,7 +47,7 @@ matrix:
 
 install:
   - mkdir -p deps && cd deps
-  - travis_retry wget --no-check-certificate --quiet -O - https://cmake.org/files/v3.7/cmake-3.7.1-Linux-x86_64.tar.gz | tar --strip-components=1 -xz
+  - travis_retry wget --no-check-certificate --quiet -O - https://cmake.org/files/v3.12/cmake-3.12.3-Linux-x86_64.tar.gz | tar --strip-components=1 -xz
   - export PATH=${TRAVIS_BUILD_DIR}/deps/bin:${PATH}
   - cd -
 
