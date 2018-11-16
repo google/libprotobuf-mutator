@@ -35,4 +35,6 @@ target_link_libraries(libxml2_example_test
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 add_test(test.libxml2_example_test libxml2_example_test --gtest_color=yes AUTO)
-add_dependencies(check libxml2_example_test)
+if (LIB_PROTO_MUTATOR_TESTING)
+  add_dependencies(check libxml2_example_test)
+endif()

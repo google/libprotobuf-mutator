@@ -18,7 +18,9 @@ target_link_libraries(libfuzzer_example_test
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 add_test(test.libfuzzer_example_test libfuzzer_example_test --gtest_color=yes AUTO)
-add_dependencies(check libfuzzer_example_test)
+if(LIB_PROTO_MUTATOR_TESTING)
+  add_dependencies(check libfuzzer_example_test)
+endif()
 
 protobuf_generate_cpp(LIB_FUZZER_EXAMPLE_PROTO_SRCS
                       LIB_FUZZER_EXAMPLE_PROTO_HDRS
@@ -39,5 +41,7 @@ foreach(fuzzer libfuzzer_example libfuzzer_bin_example)
                PROPERTY COMPILE_FLAGS ${FUZZING_FLAGS})
   set_property(TARGET ${fuzzer}
                PROPERTY LINK_FLAGS ${FUZZING_FLAGS_BINARY})
-  add_dependencies(libfuzzer_example_test ${fuzzer})
+  if(LIB_PROTO_MUTATOR_TESTING)
+    add_dependencies(libfuzzer_example_test ${fuzzer})
+  endif()
 endforeach(fuzzer)

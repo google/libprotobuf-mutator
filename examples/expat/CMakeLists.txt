@@ -34,4 +34,6 @@ target_link_libraries(expat_example_test
                       ${GTEST_BOTH_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
 add_test(test.expat_example_test expat_example_test --gtest_color=yes AUTO)
-add_dependencies(check expat_example_test)
+if(LIB_PROTO_MUTATOR_TESTING)
+  add_dependencies(check expat_example_test)
+endif()
