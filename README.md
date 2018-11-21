@@ -31,6 +31,16 @@ systems, the system version is too old.  You can pass
 `LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON` to cmake to automatically download and
 build a working version of protobuf.
 
+Installation:
+
+```
+ninja
+sudo ninja install
+```
+
+This installs the headers, pkg-config, and static library.
+By default the headers are put in `/usr/local/include/libprotobuf-mutator`.
+
 ## Usage
 
 To use libprotobuf-mutator simply include
