@@ -107,3 +107,7 @@ invalid UTF-8. If it's a "proto3" message type, only valid UTF-8 will be used.
 * [Heap-use-after-free in Envoy::Upstream::SubsetLoadBalancer::updateFallbackSubset](https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=8028)
 * [Heap-use-after-free in Envoy::Secret::SecretManagerImpl](https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=11231)
 * [Heap-buffer-overflow in Envoy::Http::HeaderString](https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=10038)
+
+## Related materials
+* [Attacking Chrome IPC: Reliably finding bugs to escape the Chrome sandbox](https://media.ccc.de/v/35c3-9579-attacking_chrome_ipc)
+* [Structure-aware fuzzing for Clang and LLVM with libprotobuf-mutator](https://www.youtube.com/watch?v=U60hC16HEDY)
