@@ -120,15 +120,18 @@ struct AppendField : public FieldFunction<AppendField> {
   }
 };
 
-class CanCopyAndDifferentField : public FieldFunction<CanCopyAndDifferentField, bool> {
+class CanCopyAndDifferentField
+    : public FieldFunction<CanCopyAndDifferentField, bool> {
  public:
   template <class T>
-  bool ForType(const ConstFieldInstance& a, const ConstFieldInstance& b) const {
-    T aa;
-    a.Load(&aa);
-    T bb;
-    b.Load(&bb);
-    return !IsEqual(aa, bb);
+  bool ForType(const ConstFieldInstance& src,
+               const ConstFieldInstance& dst) const {
+    T s;
+    src.Load(&s);
+    if (!dst.CanStore(s)) return false;
+    T d;
+    dst.Load(&d);
+    return !IsEqual(s, d);
   }
 
  private:
@@ -312,15 +315,14 @@ class DataSourceSampler {
         if (int field_size = reflection->FieldSize(*message, field)) {
           ConstFieldInstance source(message, field,
                                     GetRandomIndex(random_, field_size));
-          if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
-          if (CanCopyAndDifferentField()(match_, source))
+          if (CanCopyAndDifferentField()(source, match_))
             sampler_.Try(field_size, source);
         }
       } else {
         if (reflection->HasField(*message, field)) {
           ConstFieldInstance source(message, field);
-          if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
-          if (CanCopyAndDifferentField()(match_, source)) sampler_.Try(1, source);
+          if (CanCopyAndDifferentField()(source, match_))
+            sampler_.Try(1, source);
         }
       }
     }

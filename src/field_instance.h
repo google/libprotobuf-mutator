@@ -163,6 +163,18 @@ class ConstFieldInstance {
     (*value)->CopyFrom(source);
   }
 
+  template <class T>
+  bool CanStore(const T& value) const {
+    return true;
+  }
+
+  bool CanStore(const std::string& value) const {
+    if (!EnforceUtf8()) return true;
+    using protobuf::internal::WireFormatLite;
+    return WireFormatLite::VerifyUtf8String(value.data(), value.length(),
+                                            WireFormatLite::PARSE, "");
+  }
+
   std::string name() const { return descriptor_->name(); }
 
   protobuf::FieldDescriptor::CppType cpp_type() const {
