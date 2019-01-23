@@ -120,7 +120,7 @@ struct AppendField : public FieldFunction<AppendField> {
   }
 };
 
-class IsEqualValueField : public FieldFunction<IsEqualValueField, bool> {
+class CanCopyAndDifferentField : public FieldFunction<CanCopyAndDifferentField, bool> {
  public:
   template <class T>
   bool ForType(const ConstFieldInstance& a, const ConstFieldInstance& b) const {
@@ -128,7 +128,7 @@ class IsEqualValueField : public FieldFunction<IsEqualValueField, bool> {
     a.Load(&aa);
     T bb;
     b.Load(&bb);
-    return IsEqual(aa, bb);
+    return !IsEqual(aa, bb);
   }
 
  private:
@@ -313,14 +313,14 @@ class DataSourceSampler {
           ConstFieldInstance source(message, field,
                                     GetRandomIndex(random_, field_size));
           if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
-          if (!IsEqualValueField()(match_, source))
+          if (CanCopyAndDifferentField()(match_, source))
             sampler_.Try(field_size, source);
         }
       } else {
         if (reflection->HasField(*message, field)) {
           ConstFieldInstance source(message, field);
           if (match_.EnforceUtf8() && !source.EnforceUtf8()) continue;
-          if (!IsEqualValueField()(match_, source)) sampler_.Try(1, source);
+          if (CanCopyAndDifferentField()(match_, source)) sampler_.Try(1, source);
         }
       }
     }
