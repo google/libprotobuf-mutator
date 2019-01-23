@@ -338,16 +338,16 @@ class MutatorTest : public TestWithParam<TestParams> {
     EXPECT_TRUE(ParseTextMessage(text_, message));
   }
 
-  bool LoadWithoutLine(protobuf::Message* message) {
+  void LoadWithoutLine(protobuf::Message* message) {
     std::ostringstream oss;
     auto lines = Split(text_);
     for (size_t i = 0; i != lines.size(); ++i) {
       if (i != line_) oss << lines[i] << '\n';
     }
-    return ParseTextMessage(oss.str(), message);
+    EXPECT_TRUE(ParseTextMessage(oss.str(), message));
   }
 
-  bool LoadWithChangedLine(protobuf::Message* message, int value) {
+  void LoadWithChangedLine(protobuf::Message* message, int value) {
     auto lines = Split(text_);
     std::ostringstream oss;
     for (size_t i = 0; i != lines.size(); ++i) {
@@ -369,7 +369,7 @@ class MutatorTest : public TestWithParam<TestParams> {
         oss << s << '\n';
       }
     }
-    return ParseTextMessage(oss.str(), message);
+    EXPECT_TRUE(ParseTextMessage(oss.str(), message));
   }
 
   std::string text_;
