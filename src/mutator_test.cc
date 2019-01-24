@@ -382,11 +382,11 @@ class MutatorTest : public TestWithParam<TestParams> {
 // insertion/deletion.
 
 class MutatorFieldInsDelTest : public MutatorTest {};
-INSTANTIATE_TEST_CASE_P(Proto2, MutatorFieldInsDelTest,
-                        ValuesIn(GetFieldTestParams<Msg>(
-                            {kRequiredFields, kOptionalFields, kRepeatedFields,
-                             kRequiredNestedFields, kOptionalNestedFields,
-                             kRepeatedNestedFields})));
+INSTANTIATE_TEST_SUITE_P(Proto2, MutatorFieldInsDelTest,
+                         ValuesIn(GetFieldTestParams<Msg>(
+                             {kRequiredFields, kOptionalFields, kRepeatedFields,
+                              kRequiredNestedFields, kOptionalNestedFields,
+                              kRepeatedNestedFields})));
 
 TEST_P(MutatorFieldInsDelTest, DeleteField) {
   LoadMessage(m1_.get());
@@ -405,15 +405,15 @@ class MutatorFieldTest : public MutatorTest {
   template <class Msg>
   void TestCopyField();
 };
-INSTANTIATE_TEST_CASE_P(Proto2, MutatorFieldTest,
-                        ValuesIn(GetFieldTestParams<Msg>(
-                            {kRequiredFields, kOptionalFields, kRepeatedFields,
-                             kRequiredNestedFields, kOptionalNestedFields,
-                             kRepeatedNestedFields})));
-INSTANTIATE_TEST_CASE_P(Proto3, MutatorFieldTest,
-                        ValuesIn(GetFieldTestParams<Msg3>(
-                            {kOptionalFields, kRepeatedFields,
-                             kOptionalNestedFields, kRepeatedNestedFields})));
+INSTANTIATE_TEST_SUITE_P(Proto2, MutatorFieldTest,
+                         ValuesIn(GetFieldTestParams<Msg>(
+                             {kRequiredFields, kOptionalFields, kRepeatedFields,
+                              kRequiredNestedFields, kOptionalNestedFields,
+                              kRepeatedNestedFields})));
+INSTANTIATE_TEST_SUITE_P(Proto3, MutatorFieldTest,
+                         ValuesIn(GetFieldTestParams<Msg3>(
+                             {kOptionalFields, kRepeatedFields,
+                              kOptionalNestedFields, kRepeatedNestedFields})));
 
 TEST_P(MutatorFieldTest, Initialized) {
   LoadWithoutLine(m1_.get());
@@ -457,15 +457,18 @@ TEST_P(MutatorFieldTest, CopyField) {
 }
 
 class MutatorSingleFieldTest : public MutatorTest {};
-INSTANTIATE_TEST_CASE_P(Proto2, MutatorSingleFieldTest,
-                        ValuesIn(GetFieldTestParams<Msg>({
-                            kRequiredFields, kOptionalFields,
-                            kRequiredNestedFields, kOptionalNestedFields,
-                        })));
-INSTANTIATE_TEST_CASE_P(Proto3, MutatorSingleFieldTest,
-                        ValuesIn(GetFieldTestParams<Msg3>({
-                            kOptionalFields, kOptionalNestedFields,
-                        })));
+INSTANTIATE_TEST_SUITE_P(Proto2, MutatorSingleFieldTest,
+                         ValuesIn(GetFieldTestParams<Msg>({
+                             kRequiredFields,
+                             kOptionalFields,
+                             kRequiredNestedFields,
+                             kOptionalNestedFields,
+                         })));
+INSTANTIATE_TEST_SUITE_P(Proto3, MutatorSingleFieldTest,
+                         ValuesIn(GetFieldTestParams<Msg3>({
+                             kOptionalFields,
+                             kOptionalNestedFields,
+                         })));
 
 TEST_P(MutatorSingleFieldTest, CrossOver) {
   LoadWithoutLine(m1_.get());
@@ -633,9 +636,9 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
 }
 
 class MutatorMessagesTest : public MutatorTest {};
-INSTANTIATE_TEST_CASE_P(Proto2, MutatorMessagesTest,
-                        ValuesIn(GetMessageTestParams<Msg>({kMessages})));
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(Proto2, MutatorMessagesTest,
+                         ValuesIn(GetMessageTestParams<Msg>({kMessages})));
+INSTANTIATE_TEST_SUITE_P(
     Proto3, MutatorMessagesTest,
     ValuesIn(GetMessageTestParams<Msg3>({kMessagesProto3})));
 
