@@ -32,8 +32,8 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - g++
-            - gcc
+            - g++-7
+            - gcc-7
           sources:
             - *common_sources
 
