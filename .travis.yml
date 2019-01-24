@@ -13,6 +13,9 @@ addons:
     sources: &common_sources
       - ubuntu-toolchain-r-test
 
+env:	env:
+  global: GCC_VERSION=7
+
 matrix:
   include:
     - env: BUILD_TYPE=Release CC_COMPILER=clang CXX_COMPILER=clang++
@@ -27,7 +30,7 @@ matrix:
     - env: BUILD_TYPE=Debug CC_COMPILER=clang CXX_COMPILER=clang++
       addons: *clang
 
-    - env: BUILD_TYPE=Release CC_COMPILER=gcc CXX_COMPILER=g++
+    - env: BUILD_TYPE=Release CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
       addons: &gcc
         apt:
           packages:
@@ -37,7 +40,7 @@ matrix:
           sources:
             - *common_sources
 
-    - env: BUILD_TYPE=Debug CC_COMPILER=gcc CXX_COMPILER=g++
+    - env: BUILD_TYPE=Debug CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
       addons: *gcc
 
 install:
