@@ -675,11 +675,21 @@ TEST(MutatorMessagesTest, EmptyMessage) {
   for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
 }
 
-
 TEST(MutatorMessagesTest, Regressions) {
   RegressionMessage message;
   TestMutator mutator(false);
   for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
+}
+
+TEST(MutatorMessagesTest, NeverCopyUnknownEnum) {
+  TestMutator mutator(false);
+  for (int j = 0; j < 10000; ++j) {
+    Msg3 message;
+    message.set_optional_enum(Msg3::ENUM_5);
+    message.add_repeated_enum(static_cast<Msg3::Enum>(100));
+    mutator.Mutate(&message, 100);
+    EXPECT_NE(message.optional_enum(), 100);
+  }
 }
 
 }  // namespace protobuf_mutator
