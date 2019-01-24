@@ -45,8 +45,8 @@ const std::vector<int> kTests[] = {
      52962, 10327, 80513, 49526, 18326, 83662, 49644, 70903, 4910,
      36309, 19196, 42982, 53316, 14773, 86607, 60835}};
 
-INSTANTIATE_TEST_CASE_P(AllTest, WeightedReservoirSamplerTest,
-                        Combine(Range(1, 10, 3), ValuesIn(kTests)));
+INSTANTIATE_TEST_SUITE_P(AllTest, WeightedReservoirSamplerTest,
+                         Combine(Range(1, 10, 3), ValuesIn(kTests)));
 
 TEST_P(WeightedReservoirSamplerTest, Test) {
   std::vector<int> weights = std::get<1>(GetParam());

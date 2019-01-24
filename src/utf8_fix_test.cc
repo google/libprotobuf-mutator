@@ -41,7 +41,7 @@ TEST_F(FixUtf8StringTest, IsStructurallyValid) {
   EXPECT_FALSE(IsStructurallyValid("\x3F\xBF"));
 }
 
-INSTANTIATE_TEST_CASE_P(Size, FixUtf8StringTest, ::testing::Range(0, 10));
+INSTANTIATE_TEST_SUITE_P(Size, FixUtf8StringTest, ::testing::Range(0, 10));
 
 TEST_P(FixUtf8StringTest, FixUtf8String) {
   RandomEngine random(GetParam());
