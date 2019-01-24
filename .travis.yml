@@ -18,7 +18,7 @@ env:
 
 matrix:
   include:
-    - env: BUILD_TYPE=Release CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
+    - env: BUILD_TYPE=Release CC_COMPILER=clang CXX_COMPILER=clang++
       addons: &clang
         apt:
           packages:
