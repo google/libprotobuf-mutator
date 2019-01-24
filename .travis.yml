@@ -23,13 +23,13 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - clang-8
+            - clang
           sources:
             - *common_sources
             - sourceline: 'deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
 
-    - env: BUILD_TYPE=Debug CC_COMPILER=clang-${CLANG_VERSION} CXX_COMPILER=clang++-${CLANG_VERSION}
+    - env: BUILD_TYPE=Debug CC_COMPILER=clang CXX_COMPILER=clang++
       addons: *clang
 
     - env: BUILD_TYPE=Release CC_COMPILER=gcc-${GCC_VERSION} CXX_COMPILER=g++-${GCC_VERSION}
