@@ -23,7 +23,7 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - clang-8
+            - clang
           sources:
             - *common_sources
             - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main'
