@@ -14,7 +14,7 @@ addons:
       - ubuntu-toolchain-r-test
 
 env:
-  global: CLANG_VERSION=8 GCC_VERSION=7
+  global: GCC_VERSION=7
 
 matrix:
   include:
@@ -26,14 +26,6 @@ matrix:
             - clang
           sources:
             - *common_sources
-            - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-            - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-            - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-            - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
 
     - env: BUILD_TYPE=Debug CC_COMPILER=clang CXX_COMPILER=clang++
       addons: *clang
