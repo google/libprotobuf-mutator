@@ -100,6 +100,7 @@ class Mutator {
   bool ApplyCustomMutations(protobuf::Message* message,
                             const protobuf::FieldDescriptor* field);
   bool keep_initialized_ = true;
+  size_t random_to_default_ratio_ = 100;
   RandomEngine* random_;
 };
 

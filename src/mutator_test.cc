@@ -216,7 +216,11 @@ const char kRepeatedNestedFields[] = R"(
 
 class TestMutator : public Mutator {
  public:
-  explicit TestMutator(bool keep_initialized) : Mutator(&random_), random_(17) {
+  explicit TestMutator(bool keep_initialized,
+                       size_t random_to_default_ratio = 0)
+      : Mutator(&random_), random_(17) {
+    if (random_to_default_ratio)
+      random_to_default_ratio_ = random_to_default_ratio;
     keep_initialized_ = keep_initialized;
     custom_mutations_.clear();
   }
@@ -233,7 +237,7 @@ class TestMutator : public Mutator {
 
 class ReducedTestMutator : public TestMutator {
  public:
-  ReducedTestMutator() : TestMutator(false) {
+  ReducedTestMutator() : TestMutator(false, 4) {
     for (float i = 1000; i > 0.1; i /= 7) {
       values_.push_back(i);
       values_.push_back(-i);
@@ -313,6 +317,7 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestMutator mutator;
   std::unique_ptr<protobuf::Message> message(from.New());
+  EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   for (int j = 0; j < 1000000; ++j) {
     message->CopyFrom(from);
     mutator.Mutate(message.get(), 1000);
@@ -558,7 +563,7 @@ TYPED_TEST(MutatorTypedTest, CrossOverRepeatedMessages) {
 TYPED_TEST(MutatorTypedTest, FailedMutations) {
   TestMutator mutator(false);
   size_t crossovers = 0;
-  for (int i = 0; i < 10000; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     typename TestFixture::Message messages[2];
     typename TestFixture::Message tmp;
     for (int j = 0; j < 20; ++j) {
@@ -578,7 +583,7 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
   }
 
   // CrossOver may fail but very rare.
-  EXPECT_LT(crossovers, 100u);
+  EXPECT_LT(crossovers, 10u);
 }
 
 TYPED_TEST(MutatorTypedTest, FieldMutator) {
