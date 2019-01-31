@@ -24,8 +24,22 @@ bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
   return ParseTextMessage({data, data + size}, output);
 }
 
+// TODO(vitalybuka): Add real check into protobuf::TextFormat and remove this.
+static bool IsNestingTooDeep(const std::string& data) {
+  int i = 101;
+  for (auto c : data) {
+    if (c == '{')
+      --i;
+    else if (c == '}')
+      ++i;
+    if (!i) return true;
+  }
+  return false;
+}
+
 bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
   output->Clear();
+  if (IsNestingTooDeep(data)) return false;
   TextFormat::Parser parser;
   parser.AllowPartialMessage(true);
   if (!parser.ParseFromString(data, output)) {

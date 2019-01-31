@@ -640,6 +640,20 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
   }
 }
 
+TYPED_TEST(MutatorTypedTest, DeepRecursion) {
+  typename TestFixture::Message message;
+  typename TestFixture::Message* last = &message;
+  for (int i = 0; i < 150; ++i) {
+    last = last->mutable_optional_msg();
+    std::string text = SaveMessageAsText(message);
+    std::string binary = SaveMessageAsBinary(message);
+    typename TestFixture::Message parsed;
+    EXPECT_EQ(i < 100, ParseTextMessage(SaveMessageAsText(message), &parsed));
+    EXPECT_EQ(i < 100,
+              ParseBinaryMessage(SaveMessageAsBinary(message), &parsed));
+  }
+}
+
 class MutatorMessagesTest : public MutatorTest {};
 INSTANTIATE_TEST_SUITE_P(Proto2, MutatorMessagesTest,
                          ValuesIn(GetMessageTestParams<Msg>({kMessages})));
