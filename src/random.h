@@ -19,7 +19,7 @@
 
 namespace protobuf_mutator {
 
-using RandomEngine = std::mt19937;
+using RandomEngine = std::minstd_rand;
 
 }  // namespace protobuf_mutator
 
