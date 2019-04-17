@@ -146,7 +146,7 @@ class ConstFieldInstance {
             : reflection().GetEnum(*message_, descriptor_);
     *value = {static_cast<size_t>(value_descriptor->index()),
               static_cast<size_t>(value_descriptor->type()->value_count())};
-    if (value->index < 0 || value->index >= value->count) GetDefault(value);
+    if (value->index >= value->count) GetDefault(value);
   }
 
   void Load(std::string* value) const {
