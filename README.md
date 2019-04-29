@@ -12,7 +12,7 @@ Install prerequisites:
 
 ```
 sudo apt-get update
-sudo apt-get install binutils cmake ninja-build liblzma-dev libz-dev pkg-config
+sudo apt-get install protobuf-compiler libprotobuf-dev binutils cmake ninja-build liblzma-dev libz-dev pkg-config
 ```
 
 Compile and test everything:
