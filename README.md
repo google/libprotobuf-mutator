@@ -13,7 +13,7 @@ Install prerequisites:
 ```
 sudo apt-get update
 sudo apt-get install protobuf-compiler libprotobuf-dev binutils cmake \
-  ninja-build liblzma-dev libz-dev pkg-config
+  ninja-build liblzma-dev libz-dev pkg-config autoconf libtool
 ```
 
 Compile and test everything:
