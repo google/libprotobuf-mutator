@@ -46,6 +46,21 @@ set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
+if (MSVC)
+  option(LIB_PROTO_MUTATOR_MSVC_STATIC_RUNTIME "Link static runtime libraries" ON)
+  if (LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF OR LIB_PROTO_MUTATOR_MSVC_STATIC_RUNTIME)
+    # This is the default for protobuf with MSVC
+    # http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_build_my_MSVC_application_with_a_static_runtime.3F
+    foreach(flag_var
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+      if(${flag_var} MATCHES "/MD")
+        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+      endif(${flag_var} MATCHES "/MD")
+    endforeach(flag_var)
+  endif (LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF OR LIB_PROTO_MUTATOR_MSVC_STATIC_RUNTIME)
+endif (MSVC)
+
 set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
 check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
@@ -66,10 +81,12 @@ unset(CMAKE_REQUIRED_FLAGS)
 
 check_cxx_compiler_flag(-Wstring-conversion LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
 
-set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
-if (LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
-  set(EXTRA_FLAGS "${EXTRA_FLAGS} -Wstring-conversion")
-endif()
+if (NOT MSVC)
+  set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+  if (LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
+    set(EXTRA_FLAGS "${EXTRA_FLAGS} -Wstring-conversion")
+  endif()
+endif(NOT MSVC)
 
 if (LIB_PROTO_MUTATOR_WITH_ASAN)
   if (LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
