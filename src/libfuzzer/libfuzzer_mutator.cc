@@ -22,8 +22,7 @@
 #include "port/protobuf.h"
 #include "src/mutator.h"
 
-extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
-    __attribute__((weak));
+extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
 
 namespace protobuf_mutator {
 namespace libfuzzer {
