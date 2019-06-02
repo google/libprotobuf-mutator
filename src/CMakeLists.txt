@@ -40,7 +40,16 @@ if (LIB_PROTO_MUTATOR_TESTING)
                         ${ZLIB_LIBRARIES}
                         ${GTEST_BOTH_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT})
+  add_executable(no_mutator_test
+                 no_mutator_test.cc
+                 ${PROTO_SRCS})
+  target_link_libraries(no_mutator_test
+                        protobuf-mutator
+                        protobuf-mutator-libfuzzer
+                        ${GTEST_BOTH_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT})
 
+  add_test(test.protobuf_no_mutator_test no_mutator_test --gtest_color=yes AUTO)
   ProcessorCount(CPU_COUNT)
   math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
   math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
