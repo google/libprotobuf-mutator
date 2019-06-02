@@ -30,11 +30,16 @@ ELSE()
 ENDIF()
 
 foreach(lib ${PROTOBUF_LIBRARIES})
-  list(APPEND PROTOBUF_BUILD_BYPRODUCTS ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.a)
+  if (MSVC)
+    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.lib)
+  else()
+    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.a)
+  endif()
+  list(APPEND PROTOBUF_BUILD_BYPRODUCTS ${LIB_PATH})
 
   add_library(${lib} STATIC IMPORTED)
   set_property(TARGET ${lib} PROPERTY IMPORTED_LOCATION
-               ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.a)
+               ${LIB_PATH})
   add_dependencies(${lib} ${PROTOBUF_TARGET})
 endforeach(lib)
 

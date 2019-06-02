@@ -22,7 +22,33 @@
 #include "port/protobuf.h"
 #include "src/mutator.h"
 
+#ifdef _MSC_VER
+
+// see compiler-rt/lib/sanitizer-common/sanitizer_internal_defs.h
+# if defined(_M_IX86) || defined(__i386__)
+#  define WIN_SYM_PREFIX "_"
+# else
+#  define WIN_SYM_PREFIX
+# endif
+
+# define STRINGIFY_(A) #A
+# define STRINGIFY(A) STRINGIFY_(A)
+
+# define WIN_WEAK_ALIAS(Name, Default)                                         \
+  __pragma(comment(linker, "/alternatename:" WIN_SYM_PREFIX STRINGIFY(Name) "="\
+                                             WIN_SYM_PREFIX STRINGIFY(Default)))
+
+WIN_WEAK_ALIAS(LLVMFuzzerMutate, LLVMFuzzerMutateDef)
+
+extern "C" size_t LLVMFuzzerMutateDef(uint8_t*, size_t, size_t) { exit(1); }
 extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
+
+#else
+
+extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
+  __attribute__((weak));
+
+#endif
 
 namespace protobuf_mutator {
 namespace libfuzzer {

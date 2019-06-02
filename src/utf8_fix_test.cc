@@ -45,7 +45,7 @@ INSTANTIATE_TEST_SUITE_P(Size, FixUtf8StringTest, ::testing::Range(0, 10));
 
 TEST_P(FixUtf8StringTest, FixUtf8String) {
   RandomEngine random(GetParam());
-  std::uniform_int_distribution<uint8_t> random8(0, 0xFF);
+  std::uniform_int_distribution<> random8(0, 0xFF);
 
   std::string str(random8(random), 0);
   for (uint32_t run = 0; run < 10000; ++run) {

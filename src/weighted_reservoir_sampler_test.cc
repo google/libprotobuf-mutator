@@ -14,6 +14,7 @@
 
 #include "src/weighted_reservoir_sampler.h"
 
+#include <numeric>
 #include <tuple>
 #include <vector>
 
