@@ -22,33 +22,37 @@
 #include "port/protobuf.h"
 #include "src/mutator.h"
 
+// see compiler-rt/lib/sanitizer-common/sanitizer_internal_defs.h; usage of
+// SANITIZER_INTERFACE_WEAK_DEF is the same with some functionality removed
 #ifdef _MSC_VER
-
-// see compiler-rt/lib/sanitizer-common/sanitizer_internal_defs.h
-# if defined(_M_IX86) || defined(__i386__)
-#  define WIN_SYM_PREFIX "_"
-# else
-#  define WIN_SYM_PREFIX
-# endif
-
-# define STRINGIFY_(A) #A
-# define STRINGIFY(A) STRINGIFY_(A)
-
-# define WIN_WEAK_ALIAS(Name, Default)                                         \
-  __pragma(comment(linker, "/alternatename:" WIN_SYM_PREFIX STRINGIFY(Name) "="\
-                                             WIN_SYM_PREFIX STRINGIFY(Default)))
-
-WIN_WEAK_ALIAS(LLVMFuzzerMutate, LLVMFuzzerMutateDef)
-
-extern "C" size_t LLVMFuzzerMutateDef(uint8_t*, size_t, size_t) { exit(1); }
-extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t);
-
+#if defined(_M_IX86) || defined(__i386__)
+#define WIN_SYM_PREFIX "_"
 #else
-
-extern "C" size_t LLVMFuzzerMutate(uint8_t*, size_t, size_t)
-  __attribute__((weak));
-
+#define WIN_SYM_PREFIX
 #endif
+
+#define STRINGIFY_(A) #A
+#define STRINGIFY(A) STRINGIFY_(A)
+
+#define WEAK_DEFAULT_NAME(Name) Name##__def
+
+// clang-format off
+#define SANITIZER_INTERFACE_WEAK_DEF(ReturnType, Name, ...)   \
+  __pragma(comment(linker, "/alternatename:"                  \
+           WIN_SYM_PREFIX STRINGIFY(Name) "="                 \
+           WIN_SYM_PREFIX STRINGIFY(WEAK_DEFAULT_NAME(Name))))\
+  extern "C" ReturnType Name(__VA_ARGS__);                    \
+  extern "C" ReturnType WEAK_DEFAULT_NAME(Name)(__VA_ARGS__)
+// clang-format on
+#else
+#define SANITIZER_INTERFACE_WEAK_DEF(ReturnType, Name, ...) \
+  extern "C" __attribute__((weak)) ReturnType Name(__VA_ARGS__)
+#endif
+
+SANITIZER_INTERFACE_WEAK_DEF(size_t, LLVMFuzzerMutate, uint8_t*, size_t,
+                             size_t) {
+  return 0;
+}
 
 namespace protobuf_mutator {
 namespace libfuzzer {
