@@ -22,8 +22,8 @@
 #include "port/protobuf.h"
 #include "src/mutator.h"
 
-// see compiler-rt/lib/sanitizer-common/sanitizer_internal_defs.h; usage of
-// SANITIZER_INTERFACE_WEAK_DEF is the same with some functionality removed
+// see compiler-rt/lib/sanitizer-common/sanitizer_internal_defs.h; usage same as
+// SANITIZER_INTERFACE_WEAK_DEF with some functionality removed
 #ifdef _MSC_VER
 #if defined(_M_IX86) || defined(__i386__)
 #define WIN_SYM_PREFIX "_"
@@ -37,7 +37,7 @@
 #define WEAK_DEFAULT_NAME(Name) Name##__def
 
 // clang-format off
-#define SANITIZER_INTERFACE_WEAK_DEF(ReturnType, Name, ...)   \
+#define LIB_PROTO_MUTATOR_WEAK_DEF(ReturnType, Name, ...)     \
   __pragma(comment(linker, "/alternatename:"                  \
            WIN_SYM_PREFIX STRINGIFY(Name) "="                 \
            WIN_SYM_PREFIX STRINGIFY(WEAK_DEFAULT_NAME(Name))))\
@@ -45,12 +45,11 @@
   extern "C" ReturnType WEAK_DEFAULT_NAME(Name)(__VA_ARGS__)
 // clang-format on
 #else
-#define SANITIZER_INTERFACE_WEAK_DEF(ReturnType, Name, ...) \
+#define LIB_PROTO_MUTATOR_WEAK_DEF(ReturnType, Name, ...) \
   extern "C" __attribute__((weak)) ReturnType Name(__VA_ARGS__)
 #endif
 
-SANITIZER_INTERFACE_WEAK_DEF(size_t, LLVMFuzzerMutate, uint8_t*, size_t,
-                             size_t) {
+LIB_PROTO_MUTATOR_WEAK_DEF(size_t, LLVMFuzzerMutate, uint8_t*, size_t, size_t) {
   return 0;
 }
 
