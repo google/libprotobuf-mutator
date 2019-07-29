@@ -93,10 +93,6 @@ message Msg {
     Msg oneof_msg = 68;
   }
 
-  // TODO(vitalybuka): Tests maps.
-  // map<string, uint64> map = 69;
-  // map<int32, bytes> map2 = 71;
-
   required group Group = 70 {
     required bool required_bool = 1;
     optional bool optional_bool = 2;
@@ -121,5 +117,11 @@ message Msg {
     optional bool opt_bool = 1;
     optional Enum opt_enum = 2;
   }
+
+  message MapMessage {
+    map<string, int32> map1 = 1;
+    map<int32, Msg> map2 = 2;
+  }
 }
+
 

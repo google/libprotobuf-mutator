@@ -89,4 +89,9 @@ message Msg3 {
     bool opt_bool = 1;
     Enum opt_enum = 2;
   }
+
+  message MapMessage {
+    map<string, int32> map1 = 1;
+    map<int32, Msg3> map2 = 2;
+  }
 }
