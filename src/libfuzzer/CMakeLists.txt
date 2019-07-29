@@ -25,3 +25,16 @@ set_target_properties(protobuf-mutator-libfuzzer PROPERTIES
 install(TARGETS protobuf-mutator-libfuzzer
         ARCHIVE DESTINATION ${LIB_DIR}
         LIBRARY DESTINATION ${LIB_DIR})
+
+if (LIB_PROTO_MUTATOR_TESTING)
+  add_executable(libfuzzer_test
+                 libfuzzer_test.cc)
+  target_link_libraries(libfuzzer_test
+                        protobuf-mutator
+                        protobuf-mutator-libfuzzer
+                        mutator-test-proto
+                        ${GTEST_BOTH_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT})
+  add_test(test.protobuf_libfuzzer_test libfuzzer_test --gtest_color=yes AUTO)
+  add_dependencies(check libfuzzer_test)
+endif()

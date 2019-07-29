@@ -22,7 +22,7 @@ DEFINE_PROTO_FUZZER(const protobuf_mutator::Msg::EmptyMessage& message) {
   reached = true;
 }
 
-TEST(NoMutatorTest, Basic) {
+TEST(LibFuzzerTest, Basic) {
   LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
   EXPECT_TRUE(reached);
 }
