@@ -70,4 +70,23 @@ message Msg3 {
     Enum oneof_enum = 67;
     Msg3 oneof_msg = 68;
   }
+
+  message EmptyMessage {}
+
+  message RegressionMessage {
+    enum SingleValueEnum { ENUM_0 = 0; }
+    SingleValueEnum enum = 2;
+  }
+
+  message SmallMessage {
+    enum Enum {
+      ENUM_0 = 0;
+      ENUM_1 = 1;
+      ENUM_2 = 2;
+      ENUM_3 = 3;
+    }
+
+    bool opt_bool = 1;
+    Enum opt_enum = 2;
+  }
 }

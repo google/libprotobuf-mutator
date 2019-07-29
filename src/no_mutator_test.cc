@@ -18,7 +18,7 @@
 
 static bool reached = false;
 
-DEFINE_PROTO_FUZZER(const protobuf_mutator::EmptyMessage& message) {
+DEFINE_PROTO_FUZZER(const protobuf_mutator::Msg::EmptyMessage& message) {
   reached = true;
 }
 
