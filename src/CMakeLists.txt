@@ -30,26 +30,20 @@ if (LIB_PROTO_MUTATOR_TESTING)
                         mutator_test_proto2.proto
                         mutator_test_proto3.proto)
 
+  add_library(mutator-test-proto
+              ${PROTO_SRCS})
+
   add_executable(mutator_test
                  mutator_test.cc
                  utf8_fix_test.cc
-                 weighted_reservoir_sampler_test.cc
-                 ${PROTO_SRCS})
+                 weighted_reservoir_sampler_test.cc)
   target_link_libraries(mutator_test
                         protobuf-mutator
+                        mutator-test-proto
                         ${ZLIB_LIBRARIES}
                         ${GTEST_BOTH_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT})
-  add_executable(no_mutator_test
-                 no_mutator_test.cc
-                 ${PROTO_SRCS})
-  target_link_libraries(no_mutator_test
-                        protobuf-mutator
-                        protobuf-mutator-libfuzzer
-                        ${GTEST_BOTH_LIBRARIES}
-                        ${CMAKE_THREAD_LIBS_INIT})
-
-  add_test(test.protobuf_no_mutator_test no_mutator_test --gtest_color=yes AUTO)
+  
   ProcessorCount(CPU_COUNT)
   math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
   math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
@@ -62,7 +56,7 @@ if (LIB_PROTO_MUTATOR_TESTING)
         GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
   endforeach(SHARD)
 
-  add_dependencies(check mutator_test no_mutator_test)
+  add_dependencies(check mutator_test)
 endif()
 
 install(TARGETS protobuf-mutator
