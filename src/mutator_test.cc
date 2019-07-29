@@ -654,6 +654,39 @@ TYPED_TEST(MutatorTypedTest, DeepRecursion) {
   }
 }
 
+TYPED_TEST(MutatorTypedTest, EmptyMessage) {
+  typename TestFixture::Message::EmptyMessage message;
+  TestMutator mutator(false);
+  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
+}
+
+TYPED_TEST(MutatorTypedTest, Regressions) {
+  typename TestFixture::Message::RegressionMessage message;
+  TestMutator mutator(false);
+  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
+}
+
+TYPED_TEST(MutatorTypedTest, UsageExample) {
+  typename TestFixture::Message::SmallMessage message;
+  TestMutator mutator(false);
+
+  // Test that we can generate all variation of the message.
+  std::set<std::string> mutations;
+  for (int j = 0; j < 1000; ++j) {
+    mutator.Mutate(&message, 1000);
+    std::string str = SaveMessageAsText(message);
+    mutations.insert(str);
+  }
+
+  if (std::is_same<typename TestFixture::Message, Msg>::value) {
+    // 3 states for boolean and 5 for enum, including missing fields.
+    EXPECT_EQ(3u * 5u, mutations.size());
+  } else {
+    // 2 states for boolean and 4 for enum.
+    EXPECT_EQ(2u * 4u, mutations.size());
+  }
+}
+
 class MutatorMessagesTest : public MutatorTest {};
 INSTANTIATE_TEST_SUITE_P(Proto2, MutatorMessagesTest,
                          ValuesIn(GetMessageTestParams<Msg>({kMessages})));
@@ -674,34 +707,6 @@ TEST_P(MutatorMessagesTest, InsertMessage) {
 }
 
 // TODO(vitalybuka): Special tests for oneof.
-
-TEST(MutatorMessagesTest, UsageExample) {
-  SmallMessage message;
-  TestMutator mutator(false);
-
-  // Test that we can generate all variation of the message.
-  std::set<std::string> mutations;
-  for (int j = 0; j < 1000; ++j) {
-    mutator.Mutate(&message, 1000);
-    std::string str = SaveMessageAsText(message);
-    mutations.insert(str);
-  }
-
-  // 3 states for boolean and 5 for enum, including missing fields.
-  EXPECT_EQ(3u * 5u, mutations.size());
-}
-
-TEST(MutatorMessagesTest, EmptyMessage) {
-  EmptyMessage message;
-  TestMutator mutator(false);
-  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
-}
-
-TEST(MutatorMessagesTest, Regressions) {
-  RegressionMessage message;
-  TestMutator mutator(false);
-  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
-}
 
 TEST(MutatorMessagesTest, NeverCopyUnknownEnum) {
   TestMutator mutator(false);

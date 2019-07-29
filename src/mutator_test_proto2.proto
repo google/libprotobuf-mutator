@@ -102,24 +102,24 @@ message Msg {
     optional bool optional_bool = 2;
     repeated bool repeated_bool = 3;
   }
-}
 
-message SmallMessage {
-  enum Enum {
-    ENUM_0 = 0;
-    ENUM_1 = 1;
-    ENUM_2 = 2;
-    ENUM_3 = 3;
+  message EmptyMessage {}
+
+  message RegressionMessage {
+    enum SingleValueEnum { ENUM_0 = 0; }
+    optional SingleValueEnum enum = 2;
   }
 
-  optional bool opt_bool = 1;
-  optional Enum opt_enum = 2;
+  message SmallMessage {
+    enum Enum {
+      ENUM_0 = 0;
+      ENUM_1 = 1;
+      ENUM_2 = 2;
+      ENUM_3 = 3;
+    }
+
+    optional bool opt_bool = 1;
+    optional Enum opt_enum = 2;
+  }
 }
 
-message RegressionMessage {
-  enum SingleValueEnum { ENUM_0 = 0; }
-  optional SingleValueEnum enum = 2;
-}
-
-message EmptyMessage {
-}
