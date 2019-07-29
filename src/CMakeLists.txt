@@ -62,7 +62,7 @@ if (LIB_PROTO_MUTATOR_TESTING)
         GTEST_TOTAL_SHARDS=${TEST_SHARDS_COUNT})
   endforeach(SHARD)
 
-  add_dependencies(check mutator_test)
+  add_dependencies(check mutator_test no_mutator_test)
 endif()
 
 install(TARGETS protobuf-mutator
