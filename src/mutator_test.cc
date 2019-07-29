@@ -687,6 +687,13 @@ TYPED_TEST(MutatorTypedTest, UsageExample) {
   }
 }
 
+TYPED_TEST(MutatorTypedTest, Maps) {
+  TestMutator mutator(true);
+
+  typename TestFixture::Message::MapMessage message;
+  for (int j = 0; j < 10000; ++j) mutator.Mutate(&message, 1000);
+}
+
 class MutatorMessagesTest : public MutatorTest {};
 INSTANTIATE_TEST_SUITE_P(Proto2, MutatorMessagesTest,
                          ValuesIn(GetMessageTestParams<Msg>({kMessages})));

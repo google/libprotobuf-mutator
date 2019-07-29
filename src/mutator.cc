@@ -591,9 +591,11 @@ void Mutator::InitializeAndTrim(Message* message, int max_depth) {
   const Reflection* reflection = message->GetReflection();
   for (int i = 0; i < descriptor->field_count(); ++i) {
     const FieldDescriptor* field = descriptor->field(i);
-    if (keep_initialized_ && field->is_required() &&
-        !reflection->HasField(*message, field))
+    if (keep_initialized_ &&
+        (field->is_required() || descriptor->options().map_entry()) &&
+        !reflection->HasField(*message, field)) {
       CreateDefaultField()(FieldInstance(message, field));
+    }
 
     if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
       if (max_depth <= 0 && !field->is_required()) {
