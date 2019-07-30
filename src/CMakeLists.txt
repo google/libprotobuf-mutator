@@ -43,7 +43,7 @@ if (LIB_PROTO_MUTATOR_TESTING)
                         ${ZLIB_LIBRARIES}
                         ${GTEST_BOTH_LIBRARIES}
                         ${CMAKE_THREAD_LIBS_INIT})
-  
+
   ProcessorCount(CPU_COUNT)
   math(EXPR TEST_SHARDS_COUNT 2*${CPU_COUNT})
   math(EXPR TEST_SHARDS_MAX ${TEST_SHARDS_COUNT}-1)
