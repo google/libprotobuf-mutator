@@ -72,6 +72,8 @@ class Mutator {
   // fields in some fuzzer specific way.
   void RegisterPostProcessor(PostProcess post_process);
 
+  static bool HasCustomMutations(const protobuf::FieldDescriptor* field);
+
  protected:
   // TODO(vitalybuka): Consider to replace with single mutate (uint8_t*, size).
   virtual int32_t MutateInt32(int32_t value);

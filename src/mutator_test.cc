@@ -611,8 +611,44 @@ TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
       regular_mutation = true;
     }
 
-    if (custom_mutation && regular_mutation)
-      break;
+    if (custom_mutation && regular_mutation) break;
+  }
+
+  EXPECT_TRUE(custom_mutation);
+  EXPECT_TRUE(regular_mutation);
+}
+
+TYPED_TEST(MutatorTypedTest, MessageMutator) {
+  constexpr char kInitialString[] = " ";
+  constexpr char kIndicatorString[] = "0123456789abcdef";
+  bool custom_mutation = false;
+  bool regular_mutation = false;
+
+  const protobuf::Descriptor* descriptor =
+      (typename TestFixture::Message()).GetDescriptor();
+  TestMutator mutator(false);
+  TestMutator::RegisterCustomMutation(
+      descriptor->FindFieldByName("optional_msg"),
+      [kIndicatorString](protobuf::Message* message) {
+        typename TestFixture::Message* test_message =
+            dynamic_cast<typename TestFixture::Message*>(message);
+        test_message->mutable_optional_msg()->set_optional_string(
+            kIndicatorString);
+      });
+
+  for (int j = 0; j < 100000; ++j) {
+    // Include this field to increase the probability of mutation.
+    typename TestFixture::Message message;
+    message.mutable_optional_msg()->set_optional_string(kInitialString);
+    mutator.Mutate(&message, 1000);
+
+    if (message.optional_msg().optional_string() == kIndicatorString) {
+      custom_mutation = true;
+    } else if (message.optional_msg().optional_string() != kInitialString) {
+      regular_mutation = true;
+    }
+
+    if (custom_mutation && regular_mutation) break;
   }
 
   EXPECT_TRUE(custom_mutation);

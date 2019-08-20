@@ -44,6 +44,7 @@ enum class Mutation {
   None,
   Add,     // Adds new field with default value.
   Mutate,  // Mutates field contents.
+  Custom,  // Applies a custom mutator to the field's contents.
   Delete,  // Deletes field.
   Copy,    // Copy values copied from another field.
 
@@ -196,6 +197,9 @@ class MutationSampler {
             if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
               sampler_.Try(kDefaultMutateWeight,
                            {{message, current_field}, Mutation::Mutate});
+            } else if (Mutator::HasCustomMutations(current_field)) {
+              sampler_.Try(kDefaultMutateWeight,
+                           {{message, current_field}, Mutation::Custom});
             }
             sampler_.Try(kDefaultMutateWeight,
                          {{message, current_field}, Mutation::Delete});
@@ -216,6 +220,9 @@ class MutationSampler {
             if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
               sampler_.Try(kDefaultMutateWeight,
                            {{message, field, random_index}, Mutation::Mutate});
+            } else if (Mutator::HasCustomMutations(field)) {
+              sampler_.Try(kDefaultMutateWeight,
+                           {{message, field}, Mutation::Custom});
             }
             sampler_.Try(kDefaultMutateWeight,
                          {{message, field, random_index}, Mutation::Delete});
@@ -465,6 +472,9 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
       case Mutation::Mutate:
         MutateField()(mutation.field(), size_increase_hint / 2, this);
         break;
+      case Mutation::Custom:
+        ApplyCustomMutations(message, mutation.field().descriptor());
+        break;
       case Mutation::Delete:
         DeleteField()(mutation.field());
         break;
@@ -585,6 +595,10 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
 void Mutator::RegisterPostProcessor(PostProcess post_process) {
   assert(!post_process_);
   post_process_ = post_process;
+}
+
+bool Mutator::HasCustomMutations(const protobuf::FieldDescriptor* field) {
+  return custom_mutations_.find(field) != custom_mutations_.end();
 }
 
 void Mutator::InitializeAndTrim(Message* message, int max_depth) {
