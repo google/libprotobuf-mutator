@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "port/protobuf.h"
+#include "src/field_instance.h"
 #include "src/random.h"
 
 namespace protobuf_mutator {
@@ -95,8 +96,7 @@ class Mutator {
                      protobuf::Message* message2);
   std::string MutateUtf8String(const std::string& value,
                                size_t size_increase_hint);
-  bool ApplyCustomMutations(protobuf::Message* message,
-                            const protobuf::FieldDescriptor* field);
+  bool ApplyCustomMutations(const FieldInstance& field);
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;

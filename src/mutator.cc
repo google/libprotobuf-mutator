@@ -20,7 +20,6 @@
 #include <string>
 #include <vector>
 
-#include "src/field_instance.h"
 #include "src/utf8_fix.h"
 #include "src/weighted_reservoir_sampler.h"
 

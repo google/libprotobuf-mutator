@@ -328,6 +328,8 @@ class FieldInstance : public ConstFieldInstance {
     if (value) mutable_message->CopyFrom(*value);
   }
 
+  protobuf::Message* message() const { return message_; }
+
  private:
   template <class T>
   void InsertRepeated(const T& value) const {
