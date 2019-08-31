@@ -45,8 +45,11 @@ namespace protobuf_mutator {
 class Mutator {
  public:
   // seed: value to initialize random number generator.
-  explicit Mutator(RandomEngine* random);
+  Mutator() = default;
   virtual ~Mutator() = default;
+
+  // Initialized internal random number generator.
+  void Seed(uint32_t value);
 
   // message: message to mutate.
   // size_increase_hint: approximate number of bytes which can be added to the
@@ -82,7 +85,7 @@ class Mutator {
   //   * Callbacks to recursive traversal.
   //   * Callbacks for particular proto level mutations.
 
-  RandomEngine* random() { return random_; }
+  RandomEngine* random() { return &random_; }
 
   static std::unordered_map<
       const protobuf::FieldDescriptor*,
@@ -101,7 +104,7 @@ class Mutator {
                             const protobuf::FieldDescriptor* field);
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
-  RandomEngine* random_;
+  RandomEngine random_;
 };
 
 }  // namespace protobuf_mutator
