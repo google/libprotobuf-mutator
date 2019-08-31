@@ -694,9 +694,4 @@ bool Mutator::ApplyCustomMutations(protobuf::Message* message,
   return true;
 }
 
-std::unordered_map<
-    const protobuf::FieldDescriptor*,
-    std::vector<std::function<void(protobuf::Message* message)>>>
-    Mutator::custom_mutations_;
-
 }  // namespace protobuf_mutator

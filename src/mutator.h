@@ -64,7 +64,7 @@ class Mutator {
 
   // field: Descriptor of the field to apply the mutation to.
   // mutation: callback function that applies the mutation.
-  static void RegisterCustomMutation(
+  void RegisterCustomMutation(
       const protobuf::FieldDescriptor* field,
       std::function<void(protobuf::Message* message)> mutation);
 
@@ -87,7 +87,7 @@ class Mutator {
 
   RandomEngine* random() { return &random_; }
 
-  static std::unordered_map<
+  std::unordered_map<
       const protobuf::FieldDescriptor*,
       std::vector<std::function<void(protobuf::Message* message)>>>
       custom_mutations_;
