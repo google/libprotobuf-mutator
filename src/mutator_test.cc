@@ -217,8 +217,8 @@ const char kRepeatedNestedFields[] = R"(
 class TestMutator : public Mutator {
  public:
   explicit TestMutator(bool keep_initialized,
-                       size_t random_to_default_ratio = 0)
-      : Mutator(&random_), random_(17) {
+                       size_t random_to_default_ratio = 0) {
+    Seed(17);
     if (random_to_default_ratio)
       random_to_default_ratio_ = random_to_default_ratio;
     keep_initialized_ = keep_initialized;
