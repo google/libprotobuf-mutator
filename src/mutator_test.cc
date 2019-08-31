@@ -222,7 +222,6 @@ class TestMutator : public Mutator {
     if (random_to_default_ratio)
       random_to_default_ratio_ = random_to_default_ratio;
     keep_initialized_ = keep_initialized;
-    custom_mutations_.clear();
   }
 
   // Avoids dedup logic for some tests.
@@ -595,9 +594,9 @@ TYPED_TEST(MutatorTypedTest, FieldMutator) {
   const protobuf::Descriptor* descriptor =
     (typename TestFixture::Message()).GetDescriptor();
   TestMutator mutator(false);
-  TestMutator::RegisterCustomMutation(
+  mutator.RegisterCustomMutation(
       descriptor->FindFieldByName("optional_string"),
-      [kIndicatorString](protobuf::Message* message){
+      [kIndicatorString](protobuf::Message* message) {
         typename TestFixture::Message* test_message =
             dynamic_cast<typename TestFixture::Message*>(message);
         test_message->set_optional_string(kIndicatorString);
