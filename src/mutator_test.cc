@@ -585,21 +585,18 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
   EXPECT_LT(crossovers, 10u);
 }
 
-TYPED_TEST(MutatorTypedTest, FieldMutator) {
+TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
   constexpr char kInitialString[] = " ";
   constexpr char kIndicatorString[] = "0123456789abcdef";
   bool custom_mutation = false;
   bool regular_mutation = false;
 
-  const protobuf::Descriptor* descriptor =
-    (typename TestFixture::Message()).GetDescriptor();
   TestMutator mutator(false);
-  mutator.RegisterCustomMutation(
-      descriptor->FindFieldByName("optional_string"),
-      [kIndicatorString](protobuf::Message* message) {
+  mutator.RegisterPostProcessor(
+      [kIndicatorString](protobuf::Message* message, uint32_t seed) {
         typename TestFixture::Message* test_message =
-            dynamic_cast<typename TestFixture::Message*>(message);
-        test_message->set_optional_string(kIndicatorString);
+            static_cast<typename TestFixture::Message*>(message);
+        if (seed % 2) test_message->set_optional_string(kIndicatorString);
       });
 
   for (int j = 0; j < 100000; ++j) {

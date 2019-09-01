@@ -225,9 +225,10 @@ class MutationSampler {
         } else {
           if (reflection->HasField(*message, field) ||
               IsProto3SimpleField(*field)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
               sampler_.Try(kDefaultMutateWeight,
                            {{message, field}, Mutation::Mutate});
+            }
             if (!IsProto3SimpleField(*field) &&
                 (!field->is_required() || !keep_initialized_)) {
               sampler_.Try(kDefaultMutateWeight,
@@ -462,9 +463,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
         CreateField()(mutation.field(), size_increase_hint / 2, this);
         break;
       case Mutation::Mutate:
-        if (!ApplyCustomMutations(message, mutation.field().descriptor())) {
-          MutateField()(mutation.field(), size_increase_hint / 2, this);
-        }
+        MutateField()(mutation.field(), size_increase_hint / 2, this);
         break;
       case Mutation::Delete:
         DeleteField()(mutation.field());
@@ -485,6 +484,8 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
 
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(!keep_initialized_ || message->IsInitialized());
+
+  if (post_process_) post_process_(message, random_());
 }
 
 void Mutator::CrossOver(const protobuf::Message& message1,
@@ -499,8 +500,9 @@ void Mutator::CrossOver(const protobuf::Message& message1,
   InitializeAndTrim(message2, kMaxInitializeDepth);
   assert(!keep_initialized_ || message2->IsInitialized());
 
+  if (post_process_) post_process_(message2, random_());
+
   // Can't call mutate from crossover because of a bug in libFuzzer.
-  return;
   // if (MessageDifferencer::Equals(*message2_copy, *message2) ||
   //     MessageDifferencer::Equals(message1, *message2)) {
   //   Mutate(message2, 0);
@@ -580,10 +582,9 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
   }
 }
 
-void Mutator::RegisterCustomMutation(
-    const protobuf::FieldDescriptor* field,
-    std::function<void(protobuf::Message* message)> mutation) {
-  custom_mutations_[field].push_back(mutation);
+void Mutator::RegisterPostProcessor(PostProcess post_process) {
+  assert(!post_process_);
+  post_process_ = post_process;
 }
 
 void Mutator::InitializeAndTrim(Message* message, int max_depth) {
@@ -676,22 +677,6 @@ std::string Mutator::MutateUtf8String(const std::string& value,
   std::string str = MutateString(value, size_increase_hint);
   FixUtf8String(&str, &random_);
   return str;
-}
-
-bool Mutator::ApplyCustomMutations(protobuf::Message* message,
-                                   const protobuf::FieldDescriptor* field) {
-  auto itr = custom_mutations_.find(field);
-  if (itr == custom_mutations_.end())
-    return false;
-
-  // Randomly select one of the registered mutators. The default behavior is
-  // performed for index 0.
-  size_t field_index = GetRandomIndex(&random_, itr->second.size() + 1);
-  if (field_index == itr->second.size())
-    return false;
-
-  if (GetRandomBool(&random_, 100)) itr->second[field_index](message);
-  return true;
 }
 
 }  // namespace protobuf_mutator

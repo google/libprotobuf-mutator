@@ -62,11 +62,15 @@ class Mutator {
   void CrossOver(const protobuf::Message& message1,
                  protobuf::Message* message2);
 
-  // field: Descriptor of the field to apply the mutation to.
-  // mutation: callback function that applies the mutation.
-  void RegisterCustomMutation(
-      const protobuf::FieldDescriptor* field,
-      std::function<void(protobuf::Message* message)> mutation);
+  // Callback to postprocess mutations.
+  // Implementation should use seed to initialize random number generators.
+  using PostProcess =
+      std::function<void(protobuf::Message* message, unsigned int seed)>;
+
+  // Register callback which will be called after every message mutation.
+  // In this callback fuzzer may adjust content of the message or mutate some
+  // fields in some fuzzer specific way.
+  void RegisterPostProcessor(PostProcess post_process);
 
  protected:
   // TODO(vitalybuka): Consider to replace with single mutate (uint8_t*, size).
@@ -81,16 +85,7 @@ class Mutator {
   virtual std::string MutateString(const std::string& value,
                                    size_t size_increase_hint);
 
-  // TODO(vitalybuka): Allow user to control proto level mutations:
-  //   * Callbacks to recursive traversal.
-  //   * Callbacks for particular proto level mutations.
-
   RandomEngine* random() { return &random_; }
-
-  std::unordered_map<
-      const protobuf::FieldDescriptor*,
-      std::vector<std::function<void(protobuf::Message* message)>>>
-      custom_mutations_;
 
  private:
   friend class FieldMutator;
@@ -105,6 +100,7 @@ class Mutator {
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;
+  PostProcess post_process_;
 };
 
 }  // namespace protobuf_mutator
