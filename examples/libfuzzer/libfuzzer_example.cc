@@ -21,11 +21,20 @@ protobuf_mutator::protobuf::LogSilencer log_silincer;
 
 DEFINE_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
   // Emulate a bug.
-  if (message.optional_string() == "FooBar" &&
-      message.optional_uint64() > 100 &&
+  if (message.optional_uint64() ==
+          std::hash<std::string>{}(message.optional_string()) &&
+      message.optional_string() == "abcdefghijklmnopqrstuvwxyz" &&
       !std::isnan(message.optional_float()) &&
       std::fabs(message.optional_float()) > 1000 &&
       std::fabs(message.optional_float()) < 1E10) {
     abort();
   }
 }
+
+static PostProcessorRegistration reg = {
+    [](libfuzzer_example::Msg* message, unsigned int seed) {
+      if (seed % 2) {
+        message->set_optional_uint64(
+            std::hash<std::string>{}(message->optional_string()));
+      }
+    }};
