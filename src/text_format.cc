@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/text_format.h"
+
 #include "port/protobuf.h"
 
 namespace protobuf_mutator {

@@ -20,10 +20,10 @@
 
 #include "port/gtest.h"
 
-using testing::TestWithParam;
-using testing::ValuesIn;
 using testing::Combine;
 using testing::Range;
+using testing::TestWithParam;
+using testing::ValuesIn;
 
 namespace protobuf_mutator {
 
