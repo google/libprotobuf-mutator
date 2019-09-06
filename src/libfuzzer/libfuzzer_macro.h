@@ -16,6 +16,7 @@
 #define SRC_LIBFUZZER_LIBFUZZER_MACRO_H_
 
 #include <stddef.h>
+
 #include <cstdint>
 #include <functional>
 #include <type_traits>

@@ -611,8 +611,7 @@ TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
       regular_mutation = true;
     }
 
-    if (custom_mutation && regular_mutation)
-      break;
+    if (custom_mutation && regular_mutation) break;
   }
 
   EXPECT_TRUE(custom_mutation);

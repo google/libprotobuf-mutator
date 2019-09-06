@@ -15,6 +15,7 @@
 #include "src/libfuzzer/libfuzzer_mutator.h"
 
 #include <string.h>
+
 #include <cassert>
 #include <memory>
 #include <string>
