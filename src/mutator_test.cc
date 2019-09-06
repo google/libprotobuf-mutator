@@ -505,7 +505,7 @@ class MutatorTypedTest : public ::testing::Test {
 };
 
 using MutatorTypedTestTypes = testing::Types<Msg, Msg3>;
-TYPED_TEST_CASE(MutatorTypedTest, MutatorTypedTestTypes);
+TYPED_TEST_SUITE(MutatorTypedTest, MutatorTypedTestTypes);
 
 TYPED_TEST(MutatorTypedTest, CrossOverRepeated) {
   typename TestFixture::Message m1;
