@@ -20,6 +20,14 @@
 protobuf_mutator::protobuf::LogSilencer log_silincer;
 
 DEFINE_BINARY_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
+  static PostProcessorRegistration reg = {
+      [](libfuzzer_example::Msg* message, unsigned int seed) {
+        if (seed % 2) {
+          message->set_optional_uint64(
+              std::hash<std::string>{}(message->optional_string()));
+        }
+      }};
+
   // Emulate a bug.
   if (message.optional_uint64() ==
           std::hash<std::string>{}(message.optional_string()) &&
@@ -30,11 +38,3 @@ DEFINE_BINARY_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
     abort();
   }
 }
-
-static PostProcessorRegistration reg = {
-    [](libfuzzer_example::Msg* message, unsigned int seed) {
-      if (seed % 2) {
-        message->set_optional_uint64(
-            std::hash<std::string>{}(message->optional_string()));
-      }
-    }};
