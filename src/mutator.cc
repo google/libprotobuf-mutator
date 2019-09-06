@@ -395,7 +395,7 @@ class FieldMutator {
     assert(*message);
     if (GetRandomBool(mutator_->random(), mutator_->random_to_default_ratio_))
       return;
-    mutator_->Mutate(message->get(), size_increase_hint_);
+    mutator_->MutateImpl(message->get(), size_increase_hint_);
   }
 
  private:
@@ -452,40 +452,40 @@ struct CreateField : public FieldFunction<CreateField> {
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Mutate(Message* message, size_t size_increase_hint) {
-  bool repeat;
-  do {
-    repeat = false;
-    MutationSampler mutation(keep_initialized_, &random_, message);
-    switch (mutation.mutation()) {
-      case Mutation::None:
-        break;
-      case Mutation::Add:
-        CreateField()(mutation.field(), size_increase_hint / 2, this);
-        break;
-      case Mutation::Mutate:
-        MutateField()(mutation.field(), size_increase_hint / 2, this);
-        break;
-      case Mutation::Delete:
-        DeleteField()(mutation.field());
-        break;
-      case Mutation::Copy: {
-        DataSourceSampler source(mutation.field(), &random_, message);
-        if (source.IsEmpty()) {
-          repeat = true;
-          break;
-        }
-        CopyField()(source.field(), mutation.field());
-        break;
-      }
-      default:
-        assert(false && "unexpected mutation");
-    }
-  } while (repeat);
+  MutateImpl(message, size_increase_hint);
 
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(!keep_initialized_ || message->IsInitialized());
 
   if (post_process_) post_process_(message, random_());
+}
+
+void Mutator::MutateImpl(Message* message, size_t size_increase_hint) {
+  for (;;) {
+    MutationSampler mutation(keep_initialized_, &random_, message);
+    switch (mutation.mutation()) {
+      case Mutation::None:
+        return;
+      case Mutation::Add:
+        CreateField()(mutation.field(), size_increase_hint / 2, this);
+        return;
+      case Mutation::Mutate:
+        MutateField()(mutation.field(), size_increase_hint / 2, this);
+        return;
+      case Mutation::Delete:
+        DeleteField()(mutation.field());
+        return;
+      case Mutation::Copy: {
+        DataSourceSampler source(mutation.field(), &random_, message);
+        if (source.IsEmpty()) break;
+        CopyField()(source.field(), mutation.field());
+        return;
+      }
+      default:
+        assert(false && "unexpected mutation");
+        return;
+    }
+  }
 }
 
 void Mutator::CrossOver(const protobuf::Message& message1,
