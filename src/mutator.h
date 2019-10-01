@@ -70,7 +70,8 @@ class Mutator {
   // Register callback which will be called after every message mutation.
   // In this callback fuzzer may adjust content of the message or mutate some
   // fields in some fuzzer specific way.
-  void RegisterPostProcessor(PostProcess post_process);
+  void RegisterPostProcessor(const protobuf::Descriptor* desc,
+                             PostProcess callback);
 
  protected:
   // TODO(vitalybuka): Consider to replace with single mutate (uint8_t*, size).
@@ -85,6 +86,8 @@ class Mutator {
   virtual std::string MutateString(const std::string& value,
                                    size_t size_increase_hint);
 
+  std::unordered_map<const protobuf::Descriptor*, PostProcess> post_processors_;
+
   RandomEngine* random() { return &random_; }
 
  private:
@@ -96,12 +99,10 @@ class Mutator {
                      protobuf::Message* message2);
   std::string MutateUtf8String(const std::string& value,
                                size_t size_increase_hint);
-  bool ApplyCustomMutations(protobuf::Message* message,
-                            const protobuf::FieldDescriptor* field);
+  void ApplyPostProcessing(protobuf::Message* message);
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;
-  PostProcess post_process_;
 };
 
 }  // namespace protobuf_mutator

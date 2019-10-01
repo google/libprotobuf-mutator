@@ -457,7 +457,43 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(!keep_initialized_ || message->IsInitialized());
 
-  if (post_process_) post_process_(message, random_());
+  if (!post_processors_.empty()) {
+    ApplyPostProcessing(message);
+  }
+}
+
+void Mutator::RegisterPostProcessor(const protobuf::Descriptor* desc,
+                                    PostProcess callback) {
+  post_processors_.emplace(desc, callback);
+}
+
+void Mutator::ApplyPostProcessing(Message* message) {
+  const Descriptor* descriptor = message->GetDescriptor();
+
+  auto it = post_processors_.find(descriptor);
+  if (it != post_processors_.end()) {
+    it->second(message, random_());
+  }
+
+  // Now recursively apply custom mutators.
+  const Reflection* reflection = message->GetReflection();
+  for (int i = 0; i < descriptor->field_count(); i++) {
+    const FieldDescriptor* field = descriptor->field(i);
+    if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
+      continue;
+    }
+    if (field->is_repeated()) {
+      const int field_size = reflection->FieldSize(*message, field);
+      for (int j = 0; j < field_size; ++j) {
+        Message* nested_message =
+            reflection->MutableRepeatedMessage(message, field, j);
+        ApplyPostProcessing(nested_message);
+      }
+    } else if (reflection->HasField(*message, field)) {
+      Message* nested_message = reflection->MutableMessage(message, field);
+      ApplyPostProcessing(nested_message);
+    }
+  }
 }
 
 void Mutator::MutateImpl(Message* message, size_t size_increase_hint) {
@@ -500,7 +536,7 @@ void Mutator::CrossOver(const protobuf::Message& message1,
   InitializeAndTrim(message2, kMaxInitializeDepth);
   assert(!keep_initialized_ || message2->IsInitialized());
 
-  if (post_process_) post_process_(message2, random_());
+  ApplyPostProcessing(message2);
 
   // Can't call mutate from crossover because of a bug in libFuzzer.
   // if (MessageDifferencer::Equals(*message2_copy, *message2) ||
@@ -580,11 +616,6 @@ void Mutator::CrossOverImpl(const protobuf::Message& message1,
       }
     }
   }
-}
-
-void Mutator::RegisterPostProcessor(PostProcess post_process) {
-  assert(!post_process_);
-  post_process_ = post_process;
 }
 
 void Mutator::InitializeAndTrim(Message* message, int max_depth) {
