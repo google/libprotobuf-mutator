@@ -184,10 +184,11 @@ bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                 : ParseTextMessage(data, size, input);
 }
 
-void RegisterPostProcessorImpl(
+void RegisterPostProcessor(
+    const protobuf::Descriptor* desc,
     std::function<void(protobuf::Message* message, unsigned int seed)>
         callback) {
-  GetMutator()->RegisterPostProcessor(callback);
+  GetMutator()->RegisterPostProcessor(desc, callback);
 }
 
 }  // namespace libfuzzer

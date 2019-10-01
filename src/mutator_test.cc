@@ -593,7 +593,8 @@ TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
 
   TestMutator mutator(false);
   mutator.RegisterPostProcessor(
-      [kIndicatorString](protobuf::Message* message, uint32_t seed) {
+      TestFixture::Message::descriptor(),
+      [kIndicatorString](protobuf::Message* message, unsigned int seed) {
         typename TestFixture::Message* test_message =
             static_cast<typename TestFixture::Message*>(message);
         if (seed % 2) test_message->set_optional_string(kIndicatorString);

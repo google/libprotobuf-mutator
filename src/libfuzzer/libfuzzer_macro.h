@@ -106,7 +106,8 @@ size_t CustomProtoCrossOver(bool binary, const uint8_t* data1, size_t size1,
 bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                     protobuf::Message* input);
 
-void RegisterPostProcessorImpl(
+void RegisterPostProcessor(
+    const protobuf::Descriptor* desc,
     std::function<void(protobuf::Message* message, unsigned int seed)>
         callback);
 
@@ -114,9 +115,9 @@ template <class Proto>
 struct PostProcessorRegistration {
   PostProcessorRegistration(
       const std::function<void(Proto* message, unsigned int seed)>& callback) {
-    protobuf_mutator::libfuzzer::RegisterPostProcessorImpl(
-        [callback](protobuf_mutator::protobuf::Message* message,
-                   unsigned int seed) {
+    RegisterPostProcessor(
+        Proto::descriptor(),
+        [callback](protobuf::Message* message, unsigned int seed) {
           callback(static_cast<Proto*>(message), seed);
         });
   }
