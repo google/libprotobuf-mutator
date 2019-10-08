@@ -536,7 +536,9 @@ void Mutator::CrossOver(const protobuf::Message& message1,
   InitializeAndTrim(message2, kMaxInitializeDepth);
   assert(!keep_initialized_ || message2->IsInitialized());
 
-  ApplyPostProcessing(message2);
+  if (!post_processors_.empty()) {
+    ApplyPostProcessing(message2);
+  }
 
   // Can't call mutate from crossover because of a bug in libFuzzer.
   // if (MessageDifferencer::Equals(*message2_copy, *message2) ||
