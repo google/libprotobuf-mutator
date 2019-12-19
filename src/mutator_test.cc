@@ -619,6 +619,57 @@ TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
   EXPECT_TRUE(regular_mutation);
 }
 
+TYPED_TEST(MutatorTypedTest, MultipleRegisterPostProcessor) {
+  constexpr char kInitialString[] = " ";
+  constexpr char kFirstIndicatorString[] = "0123456789abcdef";
+  constexpr char kSecondIndicatorString[] = "deadbeef";
+  bool first_custom_mutation = false;
+  bool second_custom_mutation = false;
+  bool regular_mutation = false;
+
+  TestMutator mutator(false);
+  mutator.RegisterPostProcessor(
+      TestFixture::Message::descriptor(),
+      [kFirstIndicatorString](protobuf::Message* message, unsigned int seed) {
+        typename TestFixture::Message* test_message =
+        static_cast<typename TestFixture::Message*>(message);
+        if (seed % 2) test_message->set_optional_string(kFirstIndicatorString);
+      });
+
+  mutator.RegisterPostProcessor(
+      TestFixture::Message::descriptor(),
+      [kSecondIndicatorString](protobuf::Message* message, unsigned int seed) {
+        typename TestFixture::Message* test_message =
+        static_cast<typename TestFixture::Message*>(message);
+        if (seed % 2) test_message->set_optional_string(kSecondIndicatorString);
+      });
+
+  for (int j = 0; j < 100000; ++j) {
+    // Include this field to increase the probability of mutation.
+    typename TestFixture::Message message;
+    message.set_optional_string(kInitialString);
+    mutator.Mutate(&message, 1000);
+
+    if (message.optional_string() == kFirstIndicatorString) {
+      first_custom_mutation = true;
+    } else if (message.optional_string() == kSecondIndicatorString) {
+      second_custom_mutation = true;
+    } else if (message.optional_string() != kInitialString) {
+      regular_mutation = true;
+    }
+
+    if (first_custom_mutation &&
+        second_custom_mutation &&
+        regular_mutation) {
+      break;
+    }
+  }
+
+  EXPECT_TRUE(first_custom_mutation);
+  EXPECT_TRUE(second_custom_mutation);
+  EXPECT_TRUE(regular_mutation);
+}
+
 TYPED_TEST(MutatorTypedTest, Serialization) {
   TestMutator mutator(false);
   for (int i = 0; i < 10000; ++i) {

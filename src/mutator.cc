@@ -470,9 +470,18 @@ void Mutator::RegisterPostProcessor(const protobuf::Descriptor* desc,
 void Mutator::ApplyPostProcessing(Message* message) {
   const Descriptor* descriptor = message->GetDescriptor();
 
-  auto it = post_processors_.find(descriptor);
-  if (it != post_processors_.end()) {
-    it->second(message, random_());
+  size_t num_callbacks = post_processors_.count(descriptor);
+  if (num_callbacks > 0) {
+    size_t chosen_callback_index = random_() % num_callbacks;
+    auto it = post_processors_.equal_range(descriptor);
+    size_t index = 0;
+    for (auto callback = it.first; callback != it.second; ++callback) {
+      if (index == chosen_callback_index) {
+        callback->second(message, random_());
+        break;
+      }
+      index++;
+    }
   }
 
   // Now recursively apply custom mutators.
