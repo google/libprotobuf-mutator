@@ -100,7 +100,7 @@ code. It registers callback which will be called for each message of particular 
 ```
 DEFINE_PROTO_FUZZER(const MyMessageType& input) {
   static PostProcessorRegistration reg = {
-      [](const MyMessageType* message, unsigned int seed) {
+      [](MyMessageType* message, unsigned int seed) {
         TweakMyMessageType(message, seed);
       }};
 
