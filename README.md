@@ -88,6 +88,29 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
 
 Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as an example.
 
+### Mutation post-processing (experimental)
+Sometimes it's neccecary to keep particular values in some fields whithout which the proto
+is going to be rejected by fuzzed code. E.g. code may expect consistency between some fields
+or it may use some fields as checksums. Such constrains are going to be significant bottleneck
+for fuzzer even if it's capabale to get acceptable values with time.
+
+PostProcessorRegistration can be used to avoid such issue and guide your fuzzer towards interesing
+code. It registers callback which will be called for each message of particular type after each mutation.
+
+```
+DEFINE_PROTO_FUZZER(const MyMessageType& input) {
+  static PostProcessorRegistration reg = {
+      [](const MyMessageType* message, unsigned int seed) {
+        TweakMyMessageType(message, seed);
+      }};
+
+  // Code which needs to be fuzzed.
+  ConsumeMyMessageType(input);
+}
+```
+
+Optional: Use seed if callback uses random numbers. It may help later with debuggin.
+
 ## UTF-8 strings
 "proto2" and "proto3" handle invalid UTF-8 strings differently. In both cases
 string should be UTF-8, however only "proto3" enforces that. So if fuzzer is
