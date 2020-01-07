@@ -92,7 +92,7 @@ Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as a
 Sometimes it's necessary to keep particular values in some fields without which the proto
 is going to be rejected by fuzzed code. E.g. code may expect consistency between some fields
 or it may use some fields as checksums. Such constraints are going to be significant bottleneck
-for fuzzer even if it's capabale to get acceptable values with time.
+for fuzzer even if it's capable of inserting acceptable values with time.
 
 PostProcessorRegistration can be used to avoid such issue and guide your fuzzer towards interesing
 code. It registers callback which will be called for each message of particular type after each mutation.
