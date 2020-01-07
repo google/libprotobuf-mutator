@@ -109,7 +109,7 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
 }
 ```
 
-Optional: Use seed if callback uses random numbers. It may help later with debuggin.
+Optional: Use seed if callback uses random numbers. It may help later with debugging.
 
 ## UTF-8 strings
 "proto2" and "proto3" handle invalid UTF-8 strings differently. In both cases
