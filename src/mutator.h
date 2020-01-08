@@ -86,7 +86,8 @@ class Mutator {
   virtual std::string MutateString(const std::string& value,
                                    size_t size_increase_hint);
 
-  std::unordered_map<const protobuf::Descriptor*, PostProcess> post_processors_;
+  std::unordered_multimap<const protobuf::Descriptor*, PostProcess>
+      post_processors_;
 
   RandomEngine* random() { return &random_; }
 

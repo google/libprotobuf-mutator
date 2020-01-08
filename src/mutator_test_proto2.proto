@@ -93,6 +93,8 @@ message Msg {
     Msg oneof_msg = 68;
   }
 
+  optional SubMsg sub_message = 69;
+
   required group Group = 70 {
     required bool required_bool = 1;
     optional bool optional_bool = 2;

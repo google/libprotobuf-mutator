@@ -586,36 +586,48 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
 }
 
 TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
-  constexpr char kInitialString[] = " ";
-  constexpr char kIndicatorString[] = "0123456789abcdef";
-  bool custom_mutation = false;
-  bool regular_mutation = false;
-
+  std::set<std::string> top_mutations = {"0123456789abcdef",
+                                         "abcdef0123456789"};
   TestMutator mutator(false);
-  mutator.RegisterPostProcessor(
-      TestFixture::Message::descriptor(),
-      [kIndicatorString](protobuf::Message* message, unsigned int seed) {
-        typename TestFixture::Message* test_message =
-            static_cast<typename TestFixture::Message*>(message);
-        if (seed % 2) test_message->set_optional_string(kIndicatorString);
-      });
+  for (auto& v : top_mutations) {
+    mutator.RegisterPostProcessor(
+        TestFixture::Message::descriptor(),
+        [=](protobuf::Message* message, unsigned int seed) {
+          auto test_message =
+              static_cast<typename TestFixture::Message*>(message);
+          if (seed % 2) test_message->set_optional_string(v);
+        });
+  }
+
+  std::set<int64_t> nested_mutations = {1234567, 567890};
+  for (auto& v : nested_mutations) {
+    mutator.RegisterPostProcessor(
+        TestFixture::Message::SubMsg::descriptor(),
+        [=](protobuf::Message* message, unsigned int seed) {
+          auto test_message =
+              static_cast<typename TestFixture::Message::SubMsg*>(message);
+          if (seed % 2) test_message->set_optional_int64(v);
+        });
+  }
+
+  bool regular_mutation = false;
 
   for (int j = 0; j < 100000; ++j) {
     // Include this field to increase the probability of mutation.
     typename TestFixture::Message message;
-    message.set_optional_string(kInitialString);
+    message.set_optional_string("a");
     mutator.Mutate(&message, 1000);
 
-    if (message.optional_string() == kIndicatorString) {
-      custom_mutation = true;
-    } else if (message.optional_string() != kInitialString) {
-      regular_mutation = true;
-    }
+    top_mutations.erase(message.optional_string());
+    nested_mutations.erase(message.mutable_sub_message()->optional_int64());
+    if (message.optional_string().empty()) regular_mutation = true;
 
-    if (custom_mutation && regular_mutation) break;
+    if (top_mutations.empty() && nested_mutations.empty() && regular_mutation)
+      break;
   }
 
-  EXPECT_TRUE(custom_mutation);
+  EXPECT_TRUE(top_mutations.empty());
+  EXPECT_TRUE(nested_mutations.empty());
   EXPECT_TRUE(regular_mutation);
 }
 

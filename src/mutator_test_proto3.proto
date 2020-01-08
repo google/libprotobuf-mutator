@@ -15,6 +15,10 @@ message Msg3 {
     ENUM_9 = 9;
   }
 
+  message SubMsg {
+    int64 optional_int64 = 1;
+  }
+
   double optional_double = 18;
   float optional_float = 19;
   int32 optional_int32 = 20;
@@ -70,6 +74,8 @@ message Msg3 {
     Enum oneof_enum = 67;
     Msg3 oneof_msg = 68;
   }
+
+  SubMsg sub_message = 69;
 
   message EmptyMessage {}
 
