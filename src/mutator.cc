@@ -447,6 +447,12 @@ struct CreateField : public FieldFunction<CreateField> {
   }
 };
 
+bool DumpIfNotInitialized(const Message& message) {
+  if (message.IsInitialized()) return true;
+  std::cerr << "Uninitialized: " << message.DebugString() << "\n";
+  return false;
+}
+
 }  // namespace
 
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
@@ -455,7 +461,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
   MutateImpl(message, size_increase_hint);
 
   InitializeAndTrim(message, kMaxInitializeDepth);
-  assert(!keep_initialized_ || message->IsInitialized());
+  assert(!keep_initialized_ || DumpIfNotInitialized(*message));
 
   if (!post_processors_.empty()) {
     ApplyPostProcessing(message);
@@ -533,7 +539,7 @@ void Mutator::CrossOver(const protobuf::Message& message1,
   CrossOverImpl(message1, message2);
 
   InitializeAndTrim(message2, kMaxInitializeDepth);
-  assert(!keep_initialized_ || message2->IsInitialized());
+  assert(!keep_initialized_ || DumpIfNotInitialized(*message2));
 
   if (!post_processors_.empty()) {
     ApplyPostProcessing(message2);
