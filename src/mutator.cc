@@ -455,7 +455,7 @@ void Mutator::Mutate(Message* message, size_t size_increase_hint) {
   MutateImpl(message, size_increase_hint);
 
   InitializeAndTrim(message, kMaxInitializeDepth);
-  assert(!keep_initialized_ || message->IsInitialized());
+  assert(IsInitialized(*message));
 
   if (!post_processors_.empty()) {
     ApplyPostProcessing(message);
@@ -533,7 +533,7 @@ void Mutator::CrossOver(const protobuf::Message& message1,
   CrossOverImpl(message1, message2);
 
   InitializeAndTrim(message2, kMaxInitializeDepth);
-  assert(!keep_initialized_ || message2->IsInitialized());
+  assert(IsInitialized(*message2));
 
   if (!post_processors_.empty()) {
     ApplyPostProcessing(message2);
@@ -709,6 +709,12 @@ std::string Mutator::MutateUtf8String(const std::string& value,
   std::string str = MutateString(value, size_increase_hint);
   FixUtf8String(&str, &random_);
   return str;
+}
+
+bool Mutator::IsInitialized(const Message& message) const {
+  if (!keep_initialized_ || message.IsInitialized()) return true;
+  std::cerr << "Uninitialized: " << message.DebugString() << "\n";
+  return false;
 }
 
 }  // namespace protobuf_mutator

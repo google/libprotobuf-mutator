@@ -101,6 +101,7 @@ class Mutator {
   std::string MutateUtf8String(const std::string& value,
                                size_t size_increase_hint);
   void ApplyPostProcessing(protobuf::Message* message);
+  bool IsInitialized(const protobuf::Message& message) const;
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;
