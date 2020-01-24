@@ -273,7 +273,7 @@ class MutationSampler {
 class DataSourceSampler {
  public:
   DataSourceSampler(const ConstFieldInstance& match, RandomEngine* random,
-                    Message* message)
+                    const Message& message)
       : match_(match), random_(random), sampler_(random) {
     Sample(message);
   }
@@ -287,21 +287,21 @@ class DataSourceSampler {
   bool IsEmpty() const { return sampler_.IsEmpty(); }
 
  private:
-  void Sample(Message* message) {
-    const Descriptor* descriptor = message->GetDescriptor();
-    const Reflection* reflection = message->GetReflection();
+  void Sample(const Message& message) {
+    const Descriptor* descriptor = message.GetDescriptor();
+    const Reflection* reflection = message.GetReflection();
 
     int field_count = descriptor->field_count();
     for (int i = 0; i < field_count; ++i) {
       const FieldDescriptor* field = descriptor->field(i);
       if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
         if (field->is_repeated()) {
-          const int field_size = reflection->FieldSize(*message, field);
+          const int field_size = reflection->FieldSize(message, field);
           for (int j = 0; j < field_size; ++j) {
-            Sample(reflection->MutableRepeatedMessage(message, field, j));
+            Sample(reflection->GetRepeatedMessage(message, field, j));
           }
-        } else if (reflection->HasField(*message, field)) {
-          Sample(reflection->MutableMessage(message, field));
+        } else if (reflection->HasField(message, field)) {
+          Sample(reflection->GetMessage(message, field));
         }
       }
 
@@ -313,15 +313,15 @@ class DataSourceSampler {
       }
 
       if (field->is_repeated()) {
-        if (int field_size = reflection->FieldSize(*message, field)) {
-          ConstFieldInstance source(message, field,
+        if (int field_size = reflection->FieldSize(message, field)) {
+          ConstFieldInstance source(&message, field,
                                     GetRandomIndex(random_, field_size));
           if (CanCopyAndDifferentField()(source, match_))
             sampler_.Try(field_size, source);
         }
       } else {
-        if (reflection->HasField(*message, field)) {
-          ConstFieldInstance source(message, field);
+        if (reflection->HasField(message, field)) {
+          ConstFieldInstance source(&message, field);
           if (CanCopyAndDifferentField()(source, match_))
             sampler_.Try(1, source);
         }
@@ -340,10 +340,12 @@ class DataSourceSampler {
 class FieldMutator {
  public:
   FieldMutator(size_t size_increase_hint, bool enforce_changes,
-               bool enforce_utf8_strings, Mutator* mutator)
+               bool enforce_utf8_strings, const protobuf::Message& source,
+               Mutator* mutator)
       : size_increase_hint_(size_increase_hint),
         enforce_changes_(enforce_changes),
         enforce_utf8_strings_(enforce_utf8_strings),
+        source_(source),
         mutator_(mutator) {}
 
   void Mutate(int32_t* value) const {
@@ -395,7 +397,7 @@ class FieldMutator {
     assert(*message);
     if (GetRandomBool(mutator_->random(), mutator_->random_to_default_ratio_))
       return;
-    mutator_->MutateImpl(message->get(), size_increase_hint_);
+    mutator_->MutateImpl(source_, message->get(), size_increase_hint_);
   }
 
  private:
@@ -415,6 +417,7 @@ class FieldMutator {
   size_t size_increase_hint_;
   size_t enforce_changes_;
   bool enforce_utf8_strings_;
+  const protobuf::Message& source_;
   Mutator* mutator_;
 };
 
@@ -423,10 +426,10 @@ namespace {
 struct MutateField : public FieldFunction<MutateField> {
   template <class T>
   void ForType(const FieldInstance& field, size_t size_increase_hint,
-               Mutator* mutator) const {
+               const protobuf::Message& source, Mutator* mutator) const {
     T value;
     field.Load(&value);
-    FieldMutator(size_increase_hint, true, field.EnforceUtf8(), mutator)
+    FieldMutator(size_increase_hint, true, field.EnforceUtf8(), source, mutator)
         .Mutate(&value);
     field.Store(value);
   }
@@ -436,12 +439,12 @@ struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
   void ForType(const FieldInstance& field, size_t size_increase_hint,
-               Mutator* mutator) const {
+               const protobuf::Message& source, Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
     FieldMutator field_mutator(size_increase_hint,
                                false /* defaults could be useful */,
-                               field.EnforceUtf8(), mutator);
+                               field.EnforceUtf8(), source, mutator);
     field_mutator.Mutate(&value);
     field.Create(value);
   }
@@ -452,7 +455,7 @@ struct CreateField : public FieldFunction<CreateField> {
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Mutate(Message* message, size_t size_increase_hint) {
-  MutateImpl(message, size_increase_hint);
+  MutateImpl(*message, message, size_increase_hint);
 
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(IsInitialized(*message));
@@ -495,25 +498,26 @@ void Mutator::ApplyPostProcessing(Message* message) {
   }
 }
 
-void Mutator::MutateImpl(Message* message, size_t size_increase_hint) {
+void Mutator::MutateImpl(const Message& source, Message* message,
+                         size_t size_increase_hint) {
   for (;;) {
     MutationSampler mutation(keep_initialized_, &random_, message);
     switch (mutation.mutation()) {
       case Mutation::None:
         return;
       case Mutation::Add:
-        CreateField()(mutation.field(), size_increase_hint / 2, this);
+        CreateField()(mutation.field(), size_increase_hint / 2, source, this);
         return;
       case Mutation::Mutate:
-        MutateField()(mutation.field(), size_increase_hint / 2, this);
+        MutateField()(mutation.field(), size_increase_hint / 2, source, this);
         return;
       case Mutation::Delete:
         DeleteField()(mutation.field());
         return;
       case Mutation::Copy: {
-        DataSourceSampler source(mutation.field(), &random_, message);
-        if (source.IsEmpty()) break;
-        CopyField()(source.field(), mutation.field());
+        DataSourceSampler source_sampler(mutation.field(), &random_, source);
+        if (source_sampler.IsEmpty()) break;
+        CopyField()(source_sampler.field(), mutation.field());
         return;
       }
       default:
