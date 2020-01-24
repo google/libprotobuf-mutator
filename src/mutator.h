@@ -95,7 +95,8 @@ class Mutator {
   friend class FieldMutator;
   friend class TestMutator;
   void InitializeAndTrim(protobuf::Message* message, int max_depth);
-  void MutateImpl(protobuf::Message* message, size_t size_increase_hint);
+  void MutateImpl(const protobuf::Message& source, protobuf::Message* message,
+                  size_t size_increase_hint);
   void CrossOverImpl(const protobuf::Message& message1,
                      protobuf::Message* message2);
   std::string MutateUtf8String(const std::string& value,
