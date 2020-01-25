@@ -155,10 +155,14 @@ class CanCopyAndDifferentField
 // Selects random field and mutation from the given proto message.
 class MutationSampler {
  public:
-  MutationSampler(bool keep_initialized, RandomEngine* random, Message* message)
-      : keep_initialized_(keep_initialized), random_(random), sampler_(random) {
+  MutationSampler(bool keep_initialized, bool can_grow, RandomEngine* random,
+                  Message* message)
+      : keep_initialized_(keep_initialized),
+        can_grow_(can_grow),
+        random_(random),
+        sampler_(random) {
     Sample(message);
-    assert(mutation() != Mutation::None ||
+    assert(mutation() != Mutation::None || !can_grow ||
            message->GetDescriptor()->field_count() == 0);
   }
 
@@ -186,59 +190,43 @@ class MutationSampler {
             const FieldDescriptor* add_field =
                 oneof->field(GetRandomIndex(random_, oneof->field_count()));
             if (add_field != current_field) {
-              sampler_.Try(kDefaultMutateWeight,
-                           {{message, add_field}, Mutation::Add});
+              Try({message, add_field}, Mutation::Add);
               break;
             }
             if (oneof->field_count() < 2) break;
           }
           if (current_field) {
-            if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
-              sampler_.Try(kDefaultMutateWeight,
-                           {{message, current_field}, Mutation::Mutate});
-            }
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, current_field}, Mutation::Delete});
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, current_field}, Mutation::Copy});
+            if (current_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              Try({message, current_field}, Mutation::Mutate);
+            Try({message, current_field}, Mutation::Delete);
+            Try({message, current_field}, Mutation::Copy);
           }
         }
       } else {
         if (field->is_repeated()) {
           int field_size = reflection->FieldSize(*message, field);
-          sampler_.Try(
-              kDefaultMutateWeight,
-              {{message, field, GetRandomIndex(random_, field_size + 1)},
-               Mutation::Add});
+          Try({message, field, GetRandomIndex(random_, field_size + 1)},
+              Mutation::Add);
 
           if (field_size) {
             size_t random_index = GetRandomIndex(random_, field_size);
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
-              sampler_.Try(kDefaultMutateWeight,
-                           {{message, field, random_index}, Mutation::Mutate});
-            }
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, field, random_index}, Mutation::Delete});
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, field, random_index}, Mutation::Copy});
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              Try({message, field, random_index}, Mutation::Mutate);
+            Try({message, field, random_index}, Mutation::Delete);
+            Try({message, field, random_index}, Mutation::Copy);
           }
         } else {
           if (reflection->HasField(*message, field) ||
               IsProto3SimpleField(*field)) {
-            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
-              sampler_.Try(kDefaultMutateWeight,
-                           {{message, field}, Mutation::Mutate});
-            }
+            if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE)
+              Try({message, field}, Mutation::Mutate);
             if (!IsProto3SimpleField(*field) &&
                 (!field->is_required() || !keep_initialized_)) {
-              sampler_.Try(kDefaultMutateWeight,
-                           {{message, field}, Mutation::Delete});
+              Try({message, field}, Mutation::Delete);
             }
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, field}, Mutation::Copy});
+            Try({message, field}, Mutation::Copy);
           } else {
-            sampler_.Try(kDefaultMutateWeight,
-                         {{message, field}, Mutation::Add});
+            Try({message, field}, Mutation::Add);
           }
         }
       }
@@ -255,7 +243,14 @@ class MutationSampler {
     }
   }
 
+  void Try(const FieldInstance& field, Mutation mutation) {
+    assert(mutation != Mutation::None);
+    if (!can_grow_ && mutation != Mutation::Delete) return;
+    sampler_.Try(kDefaultMutateWeight, {field, mutation});
+  }
+
   bool keep_initialized_ = false;
+  bool can_grow_ = false;
 
   RandomEngine* random_;
 
@@ -500,16 +495,18 @@ void Mutator::ApplyPostProcessing(Message* message) {
 
 void Mutator::MutateImpl(const Message& source, Message* message,
                          size_t size_increase_hint) {
+  size_increase_hint /= 2;
   for (;;) {
-    MutationSampler mutation(keep_initialized_, &random_, message);
+    MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
+                             message);
     switch (mutation.mutation()) {
       case Mutation::None:
         return;
       case Mutation::Add:
-        CreateField()(mutation.field(), size_increase_hint / 2, source, this);
+        CreateField()(mutation.field(), size_increase_hint, source, this);
         return;
       case Mutation::Mutate:
-        MutateField()(mutation.field(), size_increase_hint / 2, source, this);
+        MutateField()(mutation.field(), size_increase_hint, source, this);
         return;
       case Mutation::Delete:
         DeleteField()(mutation.field());
