@@ -86,9 +86,6 @@ class Mutator {
   virtual std::string MutateString(const std::string& value,
                                    size_t size_increase_hint);
 
-  std::unordered_multimap<const protobuf::Descriptor*, PostProcess>
-      post_processors_;
-
   RandomEngine* random() { return &random_; }
 
  private:
@@ -106,6 +103,8 @@ class Mutator {
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;
+  std::unordered_multimap<const protobuf::Descriptor*, PostProcess>
+      post_processors_;
 };
 
 }  // namespace protobuf_mutator
