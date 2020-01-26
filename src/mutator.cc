@@ -124,14 +124,14 @@ class CanCopyAndDifferentField
     : public FieldFunction<CanCopyAndDifferentField, bool> {
  public:
   template <class T>
-  bool ForType(const ConstFieldInstance& src,
-               const ConstFieldInstance& dst) const {
+  bool ForType(const ConstFieldInstance& src, const ConstFieldInstance& dst,
+               int size_increase_hint) const {
     T s;
     src.Load(&s);
     if (!dst.CanStore(s)) return false;
     T d;
     dst.Load(&d);
-    return !IsEqual(s, d);
+    return SizeDiff(s, d) <= size_increase_hint && !IsEqual(s, d);
   }
 
  private:
@@ -149,6 +149,20 @@ class CanCopyAndDifferentField
   template <class T>
   bool IsEqual(const T& a, const T& b) const {
     return a == b;
+  }
+
+  int64_t SizeDiff(const std::unique_ptr<protobuf::Message>& src,
+                   const std::unique_ptr<protobuf::Message>& dst) const {
+    return src->ByteSizeLong() - dst->ByteSizeLong();
+  }
+
+  int64_t SizeDiff(const std::string& src, const std::string& dst) const {
+    return src.size() - dst.size();
+  }
+
+  template <class T>
+  int64_t SizeDiff(const T&, const T&) const {
+    return 0;
   }
 };
 
@@ -268,8 +282,11 @@ class MutationSampler {
 class DataSourceSampler {
  public:
   DataSourceSampler(const ConstFieldInstance& match, RandomEngine* random,
-                    const Message& message)
-      : match_(match), random_(random), sampler_(random) {
+                    int size_increase_hint, const Message& message)
+      : match_(match),
+        random_(random),
+        size_increase_hint_(size_increase_hint),
+        sampler_(random) {
     Sample(message);
   }
 
@@ -311,13 +328,13 @@ class DataSourceSampler {
         if (int field_size = reflection->FieldSize(message, field)) {
           ConstFieldInstance source(&message, field,
                                     GetRandomIndex(random_, field_size));
-          if (CanCopyAndDifferentField()(source, match_))
+          if (CanCopyAndDifferentField()(source, match_, size_increase_hint_))
             sampler_.Try(field_size, source);
         }
       } else {
         if (reflection->HasField(message, field)) {
           ConstFieldInstance source(&message, field);
-          if (CanCopyAndDifferentField()(source, match_))
+          if (CanCopyAndDifferentField()(source, match_, size_increase_hint_))
             sampler_.Try(1, source);
         }
       }
@@ -326,6 +343,7 @@ class DataSourceSampler {
 
   ConstFieldInstance match_;
   RandomEngine* random_;
+  int size_increase_hint_;
 
   WeightedReservoirSampler<ConstFieldInstance, RandomEngine> sampler_;
 };
@@ -499,7 +517,7 @@ void Mutator::MutateImpl(const Message& source, Message* message,
                          int size_increase_hint) {
   if (size_increase_hint > 0) size_increase_hint /= 2;
   for (;;) {
-    MutationSampler mutation(keep_initialized_, size_increase_hint > 0,
+    MutationSampler mutation(keep_initialized_, size_increase_hint > 16,
                              &random_, message);
     switch (mutation.mutation()) {
       case Mutation::None:
@@ -514,7 +532,8 @@ void Mutator::MutateImpl(const Message& source, Message* message,
         DeleteField()(mutation.field());
         return;
       case Mutation::Copy: {
-        DataSourceSampler source_sampler(mutation.field(), &random_, source);
+        DataSourceSampler source_sampler(mutation.field(), &random_,
+                                         size_increase_hint, source);
         if (source_sampler.IsEmpty()) break;
         CopyField()(source_sampler.field(), mutation.field());
         return;
