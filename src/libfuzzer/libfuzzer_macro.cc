@@ -14,6 +14,8 @@
 
 #include "src/libfuzzer/libfuzzer_macro.h"
 
+#include <algorithm>
+
 #include "src/binary_format.h"
 #include "src/libfuzzer/libfuzzer_mutator.h"
 #include "src/text_format.h"
