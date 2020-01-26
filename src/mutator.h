@@ -52,12 +52,10 @@ class Mutator {
   void Seed(uint32_t value);
 
   // message: message to mutate.
-  // size_increase_hint: approximate number of bytes which can be added to the
-  // message. Method does not guarantee that real result size increase will be
-  // less than the value. It only changes probabilities of mutations which can
-  // cause size increase. Caller could repeat mutation if result was larger than
-  // requested.
-  void Mutate(protobuf::Message* message, size_t size_increase_hint);
+  // max_size_hint: approximate max ByteSize() of resulting message. Method does
+  // not guarantee that real result will be strictly smaller than value. Caller
+  // could repeat mutation if result was larger than expected.
+  void Mutate(protobuf::Message* message, size_t max_size_hint);
 
   void CrossOver(const protobuf::Message& message1,
                  protobuf::Message* message2);
