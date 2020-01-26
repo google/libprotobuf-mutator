@@ -449,8 +449,9 @@ struct CreateField : public FieldFunction<CreateField> {
 
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
-void Mutator::Mutate(Message* message, size_t size_increase_hint) {
-  MutateImpl(*message, message, size_increase_hint);
+void Mutator::Mutate(Message* message, size_t max_size_hint) {
+  MutateImpl(*message, message,
+             max_size_hint - std::min(max_size_hint, message->ByteSizeLong()));
 
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(IsInitialized(*message));

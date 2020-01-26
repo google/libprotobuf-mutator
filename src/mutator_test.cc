@@ -721,6 +721,25 @@ TEST_P(MutatorMessagesTest, InsertMessage) {
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
+class MutatorMessagesSizeTest :  public TestWithParam<size_t> {};
+
+static const size_t kMaxSizes[] = {100, 256, 777, 10101};
+INSTANTIATE_TEST_SUITE_P(Proto, MutatorMessagesSizeTest, ValuesIn(kMaxSizes));
+
+TEST_P(MutatorMessagesSizeTest, MaxSize2) {
+  TestMutator mutator(false);
+  size_t over_sized_count = 0;
+  Msg message;
+  const size_t kMaxSize = GetParam();
+  const int kIterations = 10000;
+  for (int i = 0; i < kIterations; ++i) {
+    mutator.Mutate(&message, kMaxSize);
+    if (message.ByteSizeLong() > kMaxSize) ++over_sized_count;
+    EXPECT_LT(message.ByteSizeLong(), 1.5 * kMaxSize);
+  }
+  EXPECT_LT(over_sized_count, kIterations * .2);
+}
+
 // TODO(vitalybuka): Special tests for oneof.
 
 TEST(MutatorMessagesTest, NeverCopyUnknownEnum) {

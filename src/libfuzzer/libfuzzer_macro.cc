@@ -98,9 +98,9 @@ size_t MutateMessage(unsigned int seed, const InputReader& input,
                      OutputWriter* output, protobuf::Message* message) {
   GetMutator()->Seed(seed);
   input.Read(message);
-  GetMutator()->Mutate(message, output->size() > input.size()
-                                    ? (output->size() - input.size())
-                                    : 0);
+  size_t max_size = message->ByteSizeLong() + output->size();
+  max_size -= std::min(max_size, input.size());
+  GetMutator()->Mutate(message, max_size);
   if (size_t new_size = output->Write(*message)) {
     assert(new_size <= output->size());
     return new_size;
