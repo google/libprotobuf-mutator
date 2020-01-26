@@ -721,7 +721,7 @@ TEST_P(MutatorMessagesTest, InsertMessage) {
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
-class MutatorMessagesSizeTest :  public TestWithParam<size_t> {};
+class MutatorMessagesSizeTest : public TestWithParam<size_t> {};
 
 static const size_t kMaxSizes[] = {100, 256, 777, 10101};
 INSTANTIATE_TEST_SUITE_P(Proto, MutatorMessagesSizeTest, ValuesIn(kMaxSizes));
