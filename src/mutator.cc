@@ -46,9 +46,7 @@ enum class Mutation {
   Mutate,  // Mutates field contents.
   Delete,  // Deletes field.
   Copy,    // Copy values copied from another field.
-
-  // TODO(vitalybuka):
-  // Clone,  // Adds new field with value copied from another field.
+  Clone,   // Create new field with value copied from another.
 };
 
 // Return random integer from [0, count)
@@ -205,6 +203,7 @@ class MutationSampler {
                 oneof->field(GetRandomIndex(random_, oneof->field_count()));
             if (add_field != current_field) {
               Try({message, add_field}, Mutation::Add);
+              Try({message, add_field}, Mutation::Clone);
               break;
             }
             if (oneof->field_count() < 2) break;
@@ -219,8 +218,9 @@ class MutationSampler {
       } else {
         if (field->is_repeated()) {
           int field_size = reflection->FieldSize(*message, field);
-          Try({message, field, GetRandomIndex(random_, field_size + 1)},
-              Mutation::Add);
+          size_t random_index = GetRandomIndex(random_, field_size + 1);
+          Try({message, field, random_index}, Mutation::Add);
+          Try({message, field, random_index}, Mutation::Clone);
 
           if (field_size) {
             size_t random_index = GetRandomIndex(random_, field_size);
@@ -241,6 +241,7 @@ class MutationSampler {
             Try({message, field}, Mutation::Copy);
           } else {
             Try({message, field}, Mutation::Add);
+            Try({message, field}, Mutation::Clone);
           }
         }
       }
@@ -531,6 +532,14 @@ void Mutator::MutateImpl(const Message& source, Message* message,
       case Mutation::Delete:
         DeleteField()(mutation.field());
         return;
+      case Mutation::Clone: {
+        CreateField()(mutation.field(), size_increase_hint, source, this);
+        DataSourceSampler source_sampler(mutation.field(), &random_,
+                                         size_increase_hint, source);
+        if (source_sampler.IsEmpty()) return;  // CreateField is enough.
+        CopyField()(source_sampler.field(), mutation.field());
+        return;
+      }
       case Mutation::Copy: {
         DataSourceSampler source_sampler(mutation.field(), &random_,
                                          size_increase_hint, source);
