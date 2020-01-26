@@ -82,7 +82,7 @@ class Mutator {
   virtual bool MutateBool(bool value);
   virtual size_t MutateEnum(size_t index, size_t item_count);
   virtual std::string MutateString(const std::string& value,
-                                   size_t size_increase_hint);
+                                   int size_increase_hint);
 
   RandomEngine* random() { return &random_; }
 
@@ -91,11 +91,11 @@ class Mutator {
   friend class TestMutator;
   void InitializeAndTrim(protobuf::Message* message, int max_depth);
   void MutateImpl(const protobuf::Message& source, protobuf::Message* message,
-                  size_t size_increase_hint);
+                  int size_increase_hint);
   void CrossOverImpl(const protobuf::Message& message1,
                      protobuf::Message* message2);
   std::string MutateUtf8String(const std::string& value,
-                               size_t size_increase_hint);
+                               int size_increase_hint);
   void ApplyPostProcessing(protobuf::Message* message);
   bool IsInitialized(const protobuf::Message& message) const;
   bool keep_initialized_ = true;

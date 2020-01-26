@@ -334,7 +334,7 @@ class DataSourceSampler {
 
 class FieldMutator {
  public:
-  FieldMutator(size_t size_increase_hint, bool enforce_changes,
+  FieldMutator(int size_increase_hint, bool enforce_changes,
                bool enforce_utf8_strings, const protobuf::Message& source,
                Mutator* mutator)
       : size_increase_hint_(size_increase_hint),
@@ -409,7 +409,7 @@ class FieldMutator {
     }
   }
 
-  size_t size_increase_hint_;
+  int size_increase_hint_;
   size_t enforce_changes_;
   bool enforce_utf8_strings_;
   const protobuf::Message& source_;
@@ -420,7 +420,7 @@ namespace {
 
 struct MutateField : public FieldFunction<MutateField> {
   template <class T>
-  void ForType(const FieldInstance& field, size_t size_increase_hint,
+  void ForType(const FieldInstance& field, int size_increase_hint,
                const protobuf::Message& source, Mutator* mutator) const {
     T value;
     field.Load(&value);
@@ -433,7 +433,7 @@ struct MutateField : public FieldFunction<MutateField> {
 struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
-  void ForType(const FieldInstance& field, size_t size_increase_hint,
+  void ForType(const FieldInstance& field, int size_increase_hint,
                const protobuf::Message& source, Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
@@ -451,7 +451,8 @@ void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Mutate(Message* message, size_t max_size_hint) {
   MutateImpl(*message, message,
-             max_size_hint - std::min(max_size_hint, message->ByteSizeLong()));
+             static_cast<int>(max_size_hint) -
+                 static_cast<int>(message->ByteSizeLong()));
 
   InitializeAndTrim(message, kMaxInitializeDepth);
   assert(IsInitialized(*message));
@@ -495,11 +496,11 @@ void Mutator::ApplyPostProcessing(Message* message) {
 }
 
 void Mutator::MutateImpl(const Message& source, Message* message,
-                         size_t size_increase_hint) {
-  size_increase_hint /= 2;
+                         int size_increase_hint) {
+  if (size_increase_hint > 0) size_increase_hint /= 2;
   for (;;) {
-    MutationSampler mutation(keep_initialized_, size_increase_hint, &random_,
-                             message);
+    MutationSampler mutation(keep_initialized_, size_increase_hint > 0,
+                             &random_, message);
     switch (mutation.mutation()) {
       case Mutation::None:
         return;
@@ -682,14 +683,16 @@ size_t Mutator::MutateEnum(size_t index, size_t item_count) {
 }
 
 std::string Mutator::MutateString(const std::string& value,
-                                  size_t size_increase_hint) {
+                                  int size_increase_hint) {
   std::string result = value;
 
   while (!result.empty() && GetRandomBool(&random_)) {
     result.erase(GetRandomIndex(&random_, result.size()), 1);
   }
 
-  while (result.size() < size_increase_hint && GetRandomBool(&random_)) {
+  while (size_increase_hint > 0 &&
+         result.size() < static_cast<size_t>(size_increase_hint) &&
+         GetRandomBool(&random_)) {
     size_t index = GetRandomIndex(&random_, result.size() + 1);
     result.insert(result.begin() + index, GetRandomIndex(&random_, 1 << 8));
   }
@@ -707,7 +710,7 @@ std::string Mutator::MutateString(const std::string& value,
 }
 
 std::string Mutator::MutateUtf8String(const std::string& value,
-                                      size_t size_increase_hint) {
+                                      int size_increase_hint) {
   std::string str = MutateString(value, size_increase_hint);
   FixUtf8String(&str, &random_);
   return str;

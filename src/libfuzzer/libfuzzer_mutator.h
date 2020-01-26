@@ -37,7 +37,7 @@ class Mutator : public protobuf_mutator::Mutator {
   float MutateFloat(float value) override;
   double MutateDouble(double value) override;
   std::string MutateString(const std::string& value,
-                           size_t size_increase_hint) override;
+                           int size_increase_hint) override;
 };
 
 }  // namespace libfuzzer

@@ -258,7 +258,7 @@ class ReducedTestMutator : public TestMutator {
   float MutateFloat(float value) override { return GetRandomValue(); }
   double MutateDouble(double value) override { return GetRandomValue(); }
   std::string MutateString(const std::string& value,
-                           size_t size_increase_hint) override {
+                           int size_increase_hint) override {
     return strings_[std::uniform_int_distribution<>(
         0, strings_.size() - 1)(*random())];
   }
