@@ -57,8 +57,8 @@ class Mutator {
   // could repeat mutation if result was larger than expected.
   void Mutate(protobuf::Message* message, size_t max_size_hint);
 
-  void CrossOver(const protobuf::Message& message1,
-                 protobuf::Message* message2);
+  void CrossOver(const protobuf::Message& message1, protobuf::Message* message2,
+                 size_t max_size_hint);
 
   // Callback to postprocess mutations.
   // Implementation should use seed to initialize random number generators.
@@ -90,10 +90,8 @@ class Mutator {
   friend class FieldMutator;
   friend class TestMutator;
   void InitializeAndTrim(protobuf::Message* message, int max_depth);
-  void MutateImpl(const protobuf::Message& source, protobuf::Message* message,
-                  int size_increase_hint);
-  void CrossOverImpl(const protobuf::Message& message1,
-                     protobuf::Message* message2);
+  bool MutateImpl(const protobuf::Message& source, protobuf::Message* message,
+                  bool copy_clone_only, int size_increase_hint);
   std::string MutateUtf8String(const std::string& value,
                                int size_increase_hint);
   void ApplyPostProcessing(protobuf::Message* message);

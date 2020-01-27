@@ -123,7 +123,8 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
   GetMutator()->Seed(seed);
   input1.Read(message1);
   input2.Read(message2);
-  GetMutator()->CrossOver(*message2, message1);
+  size_t max_size = GetMaxSize(input1, *output, *message1);
+  GetMutator()->CrossOver(*message2, message1, max_size);
   if (size_t new_size = output->Write(*message1)) {
     assert(new_size <= output->size());
     return new_size;

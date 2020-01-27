@@ -224,12 +224,6 @@ class TestMutator : public Mutator {
     keep_initialized_ = keep_initialized;
   }
 
-  // Avoids dedup logic for some tests.
-  void NoDeDupCrossOver(const protobuf::Message& message1,
-                        protobuf::Message* message2) {
-    CrossOverImpl(message1, message2);
-  }
-
  private:
   RandomEngine random_;
 };
@@ -326,6 +320,20 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
   ADD_FAILURE() << "Failed to get from:\n"
                 << SaveMessageAsText(from) << "\nto:\n"
                 << SaveMessageAsText(to);
+  return false;
+}
+
+bool CrossOver(const protobuf::Message& from, const protobuf::Message& with,
+               const protobuf::Message& to) {
+  EXPECT_FALSE(MessageDifferencer::Equals(from, to));
+  ReducedTestMutator mutator;
+  std::unique_ptr<protobuf::Message> message(from.New());
+  EXPECT_FALSE(MessageDifferencer::Equals(from, to));
+  for (int j = 0; j < 1000000; ++j) {
+    message->CopyFrom(from);
+    mutator.CrossOver(with, message.get(), 1000);
+    if (MessageDifferencer::Equals(*message, to)) return true;
+  }
   return false;
 }
 
@@ -433,6 +441,16 @@ TEST_P(MutatorFieldTest, ChangeField) {
   EXPECT_TRUE(Mutate(*m2_, *m1_));
 }
 
+TEST_P(MutatorFieldTest, CrossOver) {
+  LoadWithoutLine(m1_.get());
+  LoadMessage(m2_.get());
+
+  EXPECT_FALSE(MessageDifferencer::Equals(*m1_, *m2_));
+  TestMutator mutator(false);
+
+  EXPECT_TRUE(CrossOver(*m1_, *m2_, *m2_));
+}
+
 template <class Msg>
 void MutatorFieldTest::TestCopyField() {
   LoadWithChangedLine(m1_.get(), 7);
@@ -461,43 +479,6 @@ TEST_P(MutatorFieldTest, CopyField) {
 }
 
 class MutatorSingleFieldTest : public MutatorTest {};
-INSTANTIATE_TEST_SUITE_P(Proto2, MutatorSingleFieldTest,
-                         ValuesIn(GetFieldTestParams<Msg>({
-                             kRequiredFields,
-                             kOptionalFields,
-                             kRequiredNestedFields,
-                             kOptionalNestedFields,
-                         })));
-INSTANTIATE_TEST_SUITE_P(Proto3, MutatorSingleFieldTest,
-                         ValuesIn(GetFieldTestParams<Msg3>({
-                             kOptionalFields,
-                             kOptionalNestedFields,
-                         })));
-
-TEST_P(MutatorSingleFieldTest, CrossOver) {
-  LoadWithoutLine(m1_.get());
-  LoadMessage(m2_.get());
-
-  EXPECT_FALSE(MessageDifferencer::Equals(*m1_, *m2_));
-  TestMutator mutator(false);
-
-  int match_m1_ = 0;
-  int match_m2_ = 0;
-  int iterations = 1000;
-  std::unique_ptr<protobuf::Message> message(m1_->New());
-  for (int j = 0; j < iterations; ++j) {
-    message->CopyFrom(*m1_);
-    mutator.NoDeDupCrossOver(*m2_, message.get());
-    if (MessageDifferencer::Equals(*message, *m2_)) ++match_m2_;
-    if (MessageDifferencer::Equals(*message, *m1_)) ++match_m1_;
-  }
-
-  EXPECT_LT(iterations * .4, match_m1_);
-  EXPECT_GE(iterations * .6, match_m1_);
-  EXPECT_LT(iterations * .4, match_m2_);
-  EXPECT_GE(iterations * .6, match_m2_);
-}
-
 template <typename T>
 class MutatorTypedTest : public ::testing::Test {
  public:
@@ -506,58 +487,6 @@ class MutatorTypedTest : public ::testing::Test {
 
 using MutatorTypedTestTypes = testing::Types<Msg, Msg3>;
 TYPED_TEST_SUITE(MutatorTypedTest, MutatorTypedTestTypes);
-
-TYPED_TEST(MutatorTypedTest, CrossOverRepeated) {
-  typename TestFixture::Message m1;
-  m1.add_repeated_int32(1);
-  m1.add_repeated_int32(2);
-  m1.add_repeated_int32(3);
-
-  typename TestFixture::Message m2;
-  m2.add_repeated_int32(4);
-  m2.add_repeated_int32(5);
-  m2.add_repeated_int32(6);
-
-  int iterations = 10000;
-  std::set<std::set<int>> sets;
-  TestMutator mutator(false);
-  for (int j = 0; j < iterations; ++j) {
-    typename TestFixture::Message message;
-    message.CopyFrom(m1);
-    mutator.NoDeDupCrossOver(m2, &message);
-    sets.insert(
-        {message.repeated_int32().begin(), message.repeated_int32().end()});
-  }
-
-  EXPECT_EQ(1u << 6, sets.size());
-}
-
-TYPED_TEST(MutatorTypedTest, CrossOverRepeatedMessages) {
-  typename TestFixture::Message m1;
-  auto* rm1 = m1.add_repeated_msg();
-  rm1->add_repeated_int32(1);
-  rm1->add_repeated_int32(2);
-
-  typename TestFixture::Message m2;
-  auto* rm2 = m2.add_repeated_msg();
-  rm2->add_repeated_int32(3);
-  rm2->add_repeated_int32(4);
-  rm2->add_repeated_int32(5);
-  rm2->add_repeated_int32(6);
-
-  int iterations = 10000;
-  std::set<std::set<int>> sets;
-  TestMutator mutator(false);
-  for (int j = 0; j < iterations; ++j) {
-    typename TestFixture::Message message;
-    message.CopyFrom(m1);
-    mutator.NoDeDupCrossOver(m2, &message);
-    for (const auto& msg : message.repeated_msg())
-      sets.insert({msg.repeated_int32().begin(), msg.repeated_int32().end()});
-  }
-
-  EXPECT_EQ(1u << 6, sets.size());
-}
 
 TYPED_TEST(MutatorTypedTest, FailedMutations) {
   TestMutator mutator(false);
@@ -575,7 +504,7 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
     }
 
     tmp.CopyFrom(messages[1]);
-    mutator.CrossOver(messages[0], &tmp);
+    mutator.CrossOver(messages[0], &tmp, 1000);
     if (MessageDifferencer::Equals(tmp, messages[1]) ||
         MessageDifferencer::Equals(tmp, messages[0]))
       ++crossovers;
