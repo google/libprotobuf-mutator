@@ -417,7 +417,7 @@ class FieldMutator {
     assert(*message);
     if (GetRandomBool(mutator_->random(), mutator_->random_to_default_ratio_))
       return;
-    mutator_->MutateImpl(source_, message->get(), size_increase_hint_);
+    mutator_->MutateImpl(source_, message->get(), false, size_increase_hint_);
   }
 
  private:
@@ -475,7 +475,7 @@ struct CreateField : public FieldFunction<CreateField> {
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Mutate(Message* message, size_t max_size_hint) {
-  MutateImpl(*message, message,
+  MutateImpl(*message, message, false,
              static_cast<int>(max_size_hint) -
                  static_cast<int>(message->ByteSizeLong()));
 
@@ -520,144 +520,69 @@ void Mutator::ApplyPostProcessing(Message* message) {
   }
 }
 
-void Mutator::MutateImpl(const Message& source, Message* message,
-                         int size_increase_hint) {
+bool Mutator::MutateImpl(const Message& source, Message* message,
+                         bool copy_clone_only, int size_increase_hint) {
   if (size_increase_hint > 0) size_increase_hint /= 2;
   MutationBitset mutations;
-  if (size_increase_hint <= 16) {
+  if (copy_clone_only) {
+    mutations[static_cast<size_t>(Mutation::Copy)] = true;
+    mutations[static_cast<size_t>(Mutation::Clone)] = true;
+  } else if (size_increase_hint <= 16) {
     mutations[static_cast<size_t>(Mutation::Delete)] = true;
   } else {
     mutations.set();
   }
-  for (;;) {
+  while (mutations.any()) {
     MutationSampler mutation(keep_initialized_, mutations, &random_, message);
+    // Don't try same mutation next time.
+    mutations[static_cast<size_t>(mutation.mutation())] = false;
     switch (mutation.mutation()) {
       case Mutation::None:
-        return;
+        return true;
       case Mutation::Add:
         CreateField()(mutation.field(), size_increase_hint, source, this);
-        return;
+        return true;
       case Mutation::Mutate:
         MutateField()(mutation.field(), size_increase_hint, source, this);
-        return;
+        return true;
       case Mutation::Delete:
         DeleteField()(mutation.field());
-        return;
+        return true;
       case Mutation::Clone: {
-        CreateField()(mutation.field(), size_increase_hint, source, this);
+        CreateDefaultField()(mutation.field());
         DataSourceSampler source_sampler(mutation.field(), &random_,
                                          size_increase_hint, source);
-        if (source_sampler.IsEmpty()) return;  // CreateField is enough.
+        if (source_sampler.IsEmpty()) return true;  // CreateField is enough.
         CopyField()(source_sampler.field(), mutation.field());
-        return;
+        return true;
       }
       case Mutation::Copy: {
         DataSourceSampler source_sampler(mutation.field(), &random_,
                                          size_increase_hint, source);
         if (source_sampler.IsEmpty()) break;
         CopyField()(source_sampler.field(), mutation.field());
-        return;
+        return true;
       }
       default:
         assert(false && "unexpected mutation");
-        return;
+        return false;
     }
   }
+  return false;
 }
 
-void Mutator::CrossOver(const protobuf::Message& message1,
-                        protobuf::Message* message2) {
-  // CrossOver can produce result which still equals to inputs. So we backup
-  // message2 to later comparison. message1 is already constant.
-  std::unique_ptr<protobuf::Message> message2_copy(message2->New());
-  message2_copy->CopyFrom(*message2);
-
-  CrossOverImpl(message1, message2);
+void Mutator::CrossOver(const Message& message1, Message* message2,
+                        size_t max_size_hint) {
+  int size_increase_hint = static_cast<int>(max_size_hint) -
+                           static_cast<int>(message2->ByteSizeLong());
+  MutateImpl(message1, message2, true, size_increase_hint) ||
+      MutateImpl(*message2, message2, true, size_increase_hint);
 
   InitializeAndTrim(message2, kMaxInitializeDepth);
   assert(IsInitialized(*message2));
 
   if (!post_processors_.empty()) {
     ApplyPostProcessing(message2);
-  }
-
-  // Can't call mutate from crossover because of a bug in libFuzzer.
-  // if (MessageDifferencer::Equals(*message2_copy, *message2) ||
-  //     MessageDifferencer::Equals(message1, *message2)) {
-  //   Mutate(message2, 0);
-  // }
-}
-
-void Mutator::CrossOverImpl(const protobuf::Message& message1,
-                            protobuf::Message* message2) {
-  const Descriptor* descriptor = message2->GetDescriptor();
-  const Reflection* reflection = message2->GetReflection();
-  assert(message1.GetDescriptor() == descriptor);
-  assert(message1.GetReflection() == reflection);
-
-  for (int i = 0; i < descriptor->field_count(); ++i) {
-    const FieldDescriptor* field = descriptor->field(i);
-
-    if (field->is_repeated()) {
-      const int field_size1 = reflection->FieldSize(message1, field);
-      int field_size2 = reflection->FieldSize(*message2, field);
-      for (int j = 0; j < field_size1; ++j) {
-        ConstFieldInstance source(&message1, field, j);
-        FieldInstance destination(message2, field, field_size2++);
-        AppendField()(source, destination);
-      }
-
-      assert(field_size2 == reflection->FieldSize(*message2, field));
-
-      // Shuffle
-      for (int j = 0; j < field_size2; ++j) {
-        if (int k = GetRandomIndex(&random_, field_size2 - j)) {
-          reflection->SwapElements(message2, field, j, j + k);
-        }
-      }
-
-      int keep = GetRandomIndex(&random_, field_size2 + 1);
-
-      if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
-        int remove = field_size2 - keep;
-        // Cross some message to keep with messages to remove.
-        int cross = GetRandomIndex(&random_, std::min(keep, remove) + 1);
-        for (int j = 0; j < cross; ++j) {
-          int k = GetRandomIndex(&random_, keep);
-          int r = keep + GetRandomIndex(&random_, remove);
-          assert(k != r);
-          CrossOverImpl(reflection->GetRepeatedMessage(*message2, field, r),
-                        reflection->MutableRepeatedMessage(message2, field, k));
-        }
-      }
-
-      for (int j = keep; j < field_size2; ++j)
-        reflection->RemoveLast(message2, field);
-      assert(keep == reflection->FieldSize(*message2, field));
-
-    } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
-      if (!reflection->HasField(message1, field)) {
-        if (GetRandomBool(&random_))
-          DeleteField()(FieldInstance(message2, field));
-      } else if (!reflection->HasField(*message2, field)) {
-        if (GetRandomBool(&random_)) {
-          ConstFieldInstance source(&message1, field);
-          CopyField()(source, FieldInstance(message2, field));
-        }
-      } else {
-        CrossOverImpl(reflection->GetMessage(message1, field),
-                      reflection->MutableMessage(message2, field));
-      }
-    } else {
-      if (GetRandomBool(&random_)) {
-        if (reflection->HasField(message1, field)) {
-          ConstFieldInstance source(&message1, field);
-          CopyField()(source, FieldInstance(message2, field));
-        } else {
-          DeleteField()(FieldInstance(message2, field));
-        }
-      }
-    }
   }
 }
 
