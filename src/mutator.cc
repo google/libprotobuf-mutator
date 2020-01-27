@@ -144,8 +144,8 @@ class CanCopyAndDifferentField
     return a.index == b.index;
   }
 
-  bool IsEqual(const std::unique_ptr<protobuf::Message>& a,
-               const std::unique_ptr<protobuf::Message>& b) const {
+  bool IsEqual(const std::unique_ptr<Message>& a,
+               const std::unique_ptr<Message>& b) const {
     return MessageDifferencer::Equals(*a, *b);
   }
 
@@ -154,8 +154,8 @@ class CanCopyAndDifferentField
     return a == b;
   }
 
-  int64_t SizeDiff(const std::unique_ptr<protobuf::Message>& src,
-                   const std::unique_ptr<protobuf::Message>& dst) const {
+  int64_t SizeDiff(const std::unique_ptr<Message>& src,
+                   const std::unique_ptr<Message>& dst) const {
     return src->ByteSizeLong() - dst->ByteSizeLong();
   }
 
@@ -360,7 +360,7 @@ class DataSourceSampler {
 class FieldMutator {
  public:
   FieldMutator(int size_increase_hint, bool enforce_changes,
-               bool enforce_utf8_strings, const protobuf::Message& source,
+               bool enforce_utf8_strings, const Message& source,
                Mutator* mutator)
       : size_increase_hint_(size_increase_hint),
         enforce_changes_(enforce_changes),
@@ -437,7 +437,7 @@ class FieldMutator {
   int size_increase_hint_;
   size_t enforce_changes_;
   bool enforce_utf8_strings_;
-  const protobuf::Message& source_;
+  const Message& source_;
   Mutator* mutator_;
 };
 
@@ -446,7 +446,7 @@ namespace {
 struct MutateField : public FieldFunction<MutateField> {
   template <class T>
   void ForType(const FieldInstance& field, int size_increase_hint,
-               const protobuf::Message& source, Mutator* mutator) const {
+               const Message& source, Mutator* mutator) const {
     T value;
     field.Load(&value);
     FieldMutator(size_increase_hint, true, field.EnforceUtf8(), source, mutator)
@@ -459,7 +459,7 @@ struct CreateField : public FieldFunction<CreateField> {
  public:
   template <class T>
   void ForType(const FieldInstance& field, int size_increase_hint,
-               const protobuf::Message& source, Mutator* mutator) const {
+               const Message& source, Mutator* mutator) const {
     T value;
     field.GetDefault(&value);
     FieldMutator field_mutator(size_increase_hint,
@@ -487,7 +487,7 @@ void Mutator::Mutate(Message* message, size_t max_size_hint) {
   }
 }
 
-void Mutator::RegisterPostProcessor(const protobuf::Descriptor* desc,
+void Mutator::RegisterPostProcessor(const Descriptor* desc,
                                     PostProcess callback) {
   post_processors_.emplace(desc, callback);
 }
