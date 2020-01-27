@@ -96,12 +96,18 @@ Mutator* GetMutator() {
   return &mutator;
 }
 
+size_t GetMaxSize(const InputReader& input, const OutputWriter& output,
+                  const protobuf::Message& message) {
+  size_t max_size = message.ByteSizeLong() + output.size();
+  max_size -= std::min(max_size, input.size());
+  return max_size;
+}
+
 size_t MutateMessage(unsigned int seed, const InputReader& input,
                      OutputWriter* output, protobuf::Message* message) {
   GetMutator()->Seed(seed);
   input.Read(message);
-  size_t max_size = message->ByteSizeLong() + output->size();
-  max_size -= std::min(max_size, input.size());
+  size_t max_size = GetMaxSize(input, *output, *message);
   GetMutator()->Mutate(message, max_size);
   if (size_t new_size = output->Write(*message)) {
     assert(new_size <= output->size());
