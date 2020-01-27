@@ -15,6 +15,7 @@
 #include "src/mutator.h"
 
 #include <algorithm>
+#include <bitset>
 #include <map>
 #include <random>
 #include <string>
@@ -40,14 +41,18 @@ namespace {
 const int kMaxInitializeDepth = 200;
 const uint64_t kDefaultMutateWeight = 1000000;
 
-enum class Mutation {
+enum class Mutation : uint8_t {
   None,
   Add,     // Adds new field with default value.
   Mutate,  // Mutates field contents.
   Delete,  // Deletes field.
   Copy,    // Copy values copied from another field.
   Clone,   // Create new field with value copied from another.
+
+  Last = Clone,
 };
+
+using MutationBitset = std::bitset<static_cast<size_t>(Mutation::Last)>;
 
 // Return random integer from [0, count)
 size_t GetRandomIndex(RandomEngine* random, size_t count) {
@@ -167,14 +172,15 @@ class CanCopyAndDifferentField
 // Selects random field and mutation from the given proto message.
 class MutationSampler {
  public:
-  MutationSampler(bool keep_initialized, bool can_grow, RandomEngine* random,
-                  Message* message)
+  MutationSampler(bool keep_initialized, MutationBitset allowed_mutations,
+                  RandomEngine* random, Message* message)
       : keep_initialized_(keep_initialized),
-        can_grow_(can_grow),
+        allowed_mutations_(allowed_mutations),
         random_(random),
         sampler_(random) {
     Sample(message);
-    assert(mutation() != Mutation::None || !can_grow ||
+    assert(mutation() != Mutation::None ||
+           !allowed_mutations_[static_cast<size_t>(Mutation::Mutate)] ||
            message->GetDescriptor()->field_count() == 0);
   }
 
@@ -260,12 +266,12 @@ class MutationSampler {
 
   void Try(const FieldInstance& field, Mutation mutation) {
     assert(mutation != Mutation::None);
-    if (!can_grow_ && mutation != Mutation::Delete) return;
+    if (!allowed_mutations_[static_cast<size_t>(mutation)]) return;
     sampler_.Try(kDefaultMutateWeight, {field, mutation});
   }
 
   bool keep_initialized_ = false;
-  bool can_grow_ = false;
+  MutationBitset allowed_mutations_;
 
   RandomEngine* random_;
 
@@ -517,9 +523,14 @@ void Mutator::ApplyPostProcessing(Message* message) {
 void Mutator::MutateImpl(const Message& source, Message* message,
                          int size_increase_hint) {
   if (size_increase_hint > 0) size_increase_hint /= 2;
+  MutationBitset mutations;
+  if (size_increase_hint <= 16) {
+    mutations[static_cast<size_t>(Mutation::Delete)] = true;
+  } else {
+    mutations.set();
+  }
   for (;;) {
-    MutationSampler mutation(keep_initialized_, size_increase_hint > 16,
-                             &random_, message);
+    MutationSampler mutation(keep_initialized_, mutations, &random_, message);
     switch (mutation.mutation()) {
       case Mutation::None:
         return;
