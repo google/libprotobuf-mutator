@@ -309,12 +309,13 @@ std::vector<TestParams> GetMessageTestParams(
   return results;
 }
 
-bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
+bool Mutate(const protobuf::Message& from, const protobuf::Message& to,
+            int iterations = 10000) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestMutator mutator;
   std::unique_ptr<protobuf::Message> message(from.New());
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
-  for (int j = 0; j < 1000000; ++j) {
+  for (int j = 0; j < iterations; ++j) {
     message->CopyFrom(from);
     mutator.Mutate(message.get(), 1000);
     if (MessageDifferencer::Equals(*message, to)) return true;
@@ -327,12 +328,12 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to) {
 }
 
 bool CrossOver(const protobuf::Message& from, const protobuf::Message& with,
-               const protobuf::Message& to) {
+               const protobuf::Message& to, int iterations = 10000) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestMutator mutator;
   std::unique_ptr<protobuf::Message> message(from.New());
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
-  for (int j = 0; j < 1000000; ++j) {
+  for (int j = 0; j < iterations; ++j) {
     message->CopyFrom(from);
     mutator.CrossOver(with, message.get(), 1000);
     if (MessageDifferencer::Equals(*message, to)) return true;
@@ -440,8 +441,8 @@ TEST_P(MutatorFieldTest, Initialized) {
 TEST_P(MutatorFieldTest, ChangeField) {
   LoadWithChangedLine(m1_.get(), 0);
   LoadWithChangedLine(m2_.get(), 1);
-  EXPECT_TRUE(Mutate(*m1_, *m2_));
-  EXPECT_TRUE(Mutate(*m2_, *m1_));
+  EXPECT_TRUE(Mutate(*m1_, *m2_, 1000000));
+  EXPECT_TRUE(Mutate(*m2_, *m1_, 1000000));
 }
 
 TEST_P(MutatorFieldTest, CrossOver) {
