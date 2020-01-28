@@ -276,7 +276,8 @@ std::vector<std::string> Split(const std::string& str) {
   return result;
 }
 
-using TestParams = std::tuple<const protobuf::Message*, const char*, size_t>;
+using TestParams =
+    std::tuple<const protobuf::Message*, const char*, size_t, std::string>;
 
 template <class T>
 std::vector<TestParams> GetFieldTestParams(
@@ -286,7 +287,8 @@ std::vector<TestParams> GetFieldTestParams(
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
       if (lines[i].find(':') != std::string::npos)
-        results.push_back(std::make_tuple(&T::default_instance(), t, i));
+        results.push_back(
+            std::make_tuple(&T::default_instance(), t, i, lines[i]));
     }
   }
   return results;
@@ -300,7 +302,8 @@ std::vector<TestParams> GetMessageTestParams(
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
       if (lines[i].find("{}") != std::string::npos)
-        results.push_back(std::make_tuple(&T::default_instance(), t, i));
+        results.push_back(
+            std::make_tuple(&T::default_instance(), t, i, lines[i]));
     }
   }
   return results;
