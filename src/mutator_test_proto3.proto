@@ -1,6 +1,8 @@
 syntax = "proto3";
 package protobuf_mutator;
 
+import "google/protobuf/any.proto";
+
 message Msg3 {
   enum Enum {
     ENUM_0 = 0;
@@ -100,4 +102,6 @@ message Msg3 {
     map<string, int32> map1 = 1;
     map<int32, Msg3> map2 = 2;
   }
+
+  google.protobuf.Any any = 90;
 }
