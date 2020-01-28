@@ -46,6 +46,17 @@ const char kMessages[] = R"(
     repeated_msg { required_int32: 67 }
     repeated_msg {}
   }
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      optional_msg {}
+      repeated_msg {}
+      any {
+        [type.googleapis.com/protobuf_mutator.Msg3.SubMsg] {
+          optional_int64: -5
+        }
+      }
+    }
+  }
 )";
 
 const char kMessagesProto3[] = R"(
@@ -58,6 +69,17 @@ const char kMessagesProto3[] = R"(
     repeated_msg {}
     repeated_msg { optional_int32: 67 }
     repeated_msg {}
+  }
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      optional_msg {}
+      repeated_msg {}
+      any {
+        [type.googleapis.com/protobuf_mutator.Msg3.SubMsg] {
+          optional_int64: -5
+        }
+      }
+    }
   }
 )";
 
@@ -154,6 +176,18 @@ const char kRequiredNestedFields[] = R"(
   }
 )";
 
+const char kRequiredInAnyFields[] = R"(
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      required_uint32: 14486213
+      required_uint64: 520229415
+      required_sint64: -6057486163525532641
+      required_string: "qwert"
+      required_bytes: "asdf"
+    }
+  }
+)";
+
 const char kOptionalNestedFields[] = R"(
   optional_int32: 123
   optional_msg {
@@ -173,6 +207,18 @@ const char kOptionalNestedFields[] = R"(
     optional_string: "QWERT"
     optional_bytes: "ASDF"
     optional_enum: ENUM_5
+  }
+)";
+
+const char kOptionalInAnyFields[] = R"(
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      optional_uint32: 440
+      optional_uint64: 1559
+      optional_sint32: 440615
+      optional_string: "XYZ"
+      optional_enum: ENUM_4
+    }
   }
 )";
 
@@ -211,6 +257,39 @@ const char kRepeatedNestedFields[] = R"(
     repeated_bytes: "asdf"
     repeated_enum: ENUM_5
     repeated_enum: ENUM_4
+  }
+)";
+
+const char kRepeatedInAnyFields[] = R"(
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      repeated_double: 1.931778501556e-31
+      repeated_double: 1.26685288449177e-31
+      repeated_float: 4.739759e-41
+      repeated_float: 5.98038e-39
+      repeated_int32: 400201
+      repeated_int32: 673
+      repeated_int64: 104
+      repeated_int64: 52850685
+    }
+  }
+)";
+
+const char kOptionalInDeepAnyFields[] = R"(
+  any {
+    [type.googleapis.com/protobuf_mutator.Msg] {
+      any {
+        [type.googleapis.com/protobuf_mutator.Msg] {
+          any {
+            [type.googleapis.com/protobuf_mutator.Msg] {
+              optional_double: 1.9317850152856e-314
+              optional_sint64: 1743625000076
+              optional_string: "XYZ"
+            }
+          }
+        }
+      }
+    }
   }
 )";
 
@@ -286,6 +365,7 @@ std::vector<TestParams> GetFieldTestParams(
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
+      if (lines[i].find("any {") != std::string::npos) break;
       if (lines[i].find(':') != std::string::npos)
         results.push_back(
             std::make_tuple(&T::default_instance(), t, i, lines[i]));
@@ -301,6 +381,7 @@ std::vector<TestParams> GetMessageTestParams(
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
+      if (lines[i].find("any {") != std::string::npos) break;
       if (lines[i].find("{}") != std::string::npos)
         results.push_back(
             std::make_tuple(&T::default_instance(), t, i, lines[i]));
@@ -310,7 +391,7 @@ std::vector<TestParams> GetMessageTestParams(
 }
 
 bool Mutate(const protobuf::Message& from, const protobuf::Message& to,
-            int iterations = 10000) {
+            int iterations = 100000) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestMutator mutator;
   std::unique_ptr<protobuf::Message> message(from.New());
@@ -322,13 +403,13 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to,
   }
 
   ADD_FAILURE() << "Failed to get from:\n"
-                << SaveMessageAsText(from) << "\nto:\n"
-                << SaveMessageAsText(to);
+                << from.DebugString() << "\nto:\n"
+                << to.DebugString();
   return false;
 }
 
 bool CrossOver(const protobuf::Message& from, const protobuf::Message& with,
-               const protobuf::Message& to, int iterations = 10000) {
+               const protobuf::Message& to, int iterations = 100000) {
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   ReducedTestMutator mutator;
   std::unique_ptr<protobuf::Message> message(from.New());
@@ -401,8 +482,10 @@ class MutatorFieldInsDelTest : public MutatorTest {};
 INSTANTIATE_TEST_SUITE_P(Proto2, MutatorFieldInsDelTest,
                          ValuesIn(GetFieldTestParams<Msg>(
                              {kRequiredFields, kOptionalFields, kRepeatedFields,
-                              kRequiredNestedFields, kOptionalNestedFields,
-                              kRepeatedNestedFields})));
+                              kRequiredNestedFields, kRequiredInAnyFields,
+                              kOptionalNestedFields, kOptionalInAnyFields,
+                              kRepeatedNestedFields, kRepeatedInAnyFields,
+                              kOptionalInDeepAnyFields})));
 
 TEST_P(MutatorFieldInsDelTest, DeleteField) {
   LoadMessage(m1_.get());
@@ -424,12 +507,16 @@ class MutatorFieldTest : public MutatorTest {
 INSTANTIATE_TEST_SUITE_P(Proto2, MutatorFieldTest,
                          ValuesIn(GetFieldTestParams<Msg>(
                              {kRequiredFields, kOptionalFields, kRepeatedFields,
-                              kRequiredNestedFields, kOptionalNestedFields,
-                              kRepeatedNestedFields})));
+                              kRequiredNestedFields, kRequiredInAnyFields,
+                              kOptionalNestedFields, kOptionalInAnyFields,
+                              kRepeatedNestedFields, kRepeatedInAnyFields,
+                              kOptionalInDeepAnyFields})));
 INSTANTIATE_TEST_SUITE_P(Proto3, MutatorFieldTest,
                          ValuesIn(GetFieldTestParams<Msg3>(
                              {kOptionalFields, kRepeatedFields,
-                              kOptionalNestedFields, kRepeatedNestedFields})));
+                              kOptionalNestedFields, kOptionalInAnyFields,
+                              kRepeatedNestedFields, kRepeatedInAnyFields,
+                              kOptionalInDeepAnyFields})));
 
 TEST_P(MutatorFieldTest, Initialized) {
   LoadWithoutLine(m1_.get());
