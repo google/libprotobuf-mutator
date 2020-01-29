@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <bitset>
 #include <map>
+#include <memory>
 #include <random>
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@
 
 namespace protobuf_mutator {
 
+using protobuf::Any;
 using protobuf::Descriptor;
 using protobuf::FieldDescriptor;
 using protobuf::FileDescriptor;
@@ -360,15 +362,76 @@ class DataSourceSampler {
   WeightedReservoirSampler<ConstFieldInstance, RandomEngine> sampler_;
 };
 
+using UnpackedAny =
+    std::unordered_map<const Message*, std::unique_ptr<Message>>;
+
+const Descriptor* GetAnyTypeDescriptor(const Any& any) {
+  std::string type_name;
+  if (!Any::ParseAnyTypeUrl(any.type_url(), &type_name)) return nullptr;
+  return any.descriptor()->file()->pool()->FindMessageTypeByName(type_name);
+}
+
+std::unique_ptr<Message> UnpackAny(const Any& any) {
+  const Descriptor* desc = GetAnyTypeDescriptor(any);
+  if (!desc) return {};
+  std::unique_ptr<Message> message(
+      any.GetReflection()->GetMessageFactory()->GetPrototype(desc)->New());
+  message->ParsePartialFromString(any.value());
+  return message;
+}
+
+const Any* CastToAny(const Message* message) {
+  return Any::GetDescriptor() == message->GetDescriptor()
+             ? static_cast<const Any*>(message)
+             : nullptr;
+}
+
+Any* CastToAny(Message* message) {
+  return Any::GetDescriptor() == message->GetDescriptor()
+             ? static_cast<Any*>(message)
+             : nullptr;
+}
+
+std::unique_ptr<Message> UnpackIfAny(const Message& message) {
+  if (const Any* any = CastToAny(&message)) return UnpackAny(*any);
+  return {};
+}
+
+void UnpackAny(const Message& message, UnpackedAny* result) {
+  if (std::unique_ptr<Message> any = UnpackIfAny(message)) {
+    UnpackAny(*any, result);
+    result->emplace(&message, std::move(any));
+    return;
+  }
+
+  const Descriptor* descriptor = message.GetDescriptor();
+  const Reflection* reflection = message.GetReflection();
+
+  for (int i = 0; i < descriptor->field_count(); ++i) {
+    const FieldDescriptor* field = descriptor->field(i);
+    if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
+      if (field->is_repeated()) {
+        const int field_size = reflection->FieldSize(message, field);
+        for (int j = 0; j < field_size; ++j) {
+          UnpackAny(reflection->GetRepeatedMessage(message, field, j), result);
+        }
+      } else if (reflection->HasField(message, field)) {
+        UnpackAny(reflection->GetMessage(message, field), result);
+      }
+    }
+  }
+}
+
 class PostProcessing {
  public:
   using PostProcessors =
       std::unordered_multimap<const Descriptor*, Mutator::PostProcess>;
 
   PostProcessing(bool keep_initialized, const PostProcessors& post_processors,
-                 RandomEngine* random)
+                 UnpackedAny& any, RandomEngine* random)
       : keep_initialized_(keep_initialized),
         post_processors_(post_processors),
+        any_(any),
         random_(random) {}
 
   void Run(Message* message, int max_depth) {
@@ -410,6 +473,22 @@ class PostProcessing {
       }
     }
 
+    if (Any* any = CastToAny(message)) {
+      if (max_depth < 0) {
+        // Clear deep Any fields to avoid stack overflow.
+        any->Clear();
+      } else {
+        auto It = any_.find(message);
+        if (It != any_.end()) {
+          Run(It->second.get(), max_depth);
+          // assert(GetAnyTypeDescriptor(*any) == It->second->GetDescriptor());
+          // if (GetAnyTypeDescriptor(*any) != It->second->GetDescriptor()) {}
+          It->second->SerializePartialToString(any->mutable_value());
+        }
+      }
+    }
+
+    // Call user callback after message trimmed, initialized and packed.
     auto range = post_processors_.equal_range(descriptor);
     for (auto it = range.first; it != range.second; ++it)
       it->second(message, (*random_)());
@@ -418,6 +497,7 @@ class PostProcessing {
  private:
   bool keep_initialized_;
   const PostProcessors& post_processors_;
+  UnpackedAny& any_;
   RandomEngine* random_;
 };
 
@@ -543,30 +623,47 @@ struct CreateField : public FieldFunction<CreateField> {
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Mutate(Message* message, size_t max_size_hint) {
+  UnpackedAny any;
+  UnpackAny(*message, &any);
+
   Messages messages;
+  messages.reserve(any.size() + 1);
   messages.push_back(message);
+  for (const auto& kv : any) messages.push_back(kv.second.get());
+
   ConstMessages sources(messages.begin(), messages.end());
   MutateImpl(sources, messages, false,
              static_cast<int>(max_size_hint) -
                  static_cast<int>(message->ByteSizeLong()));
 
-  PostProcessing(keep_initialized_, post_processors_, &random_)
+  PostProcessing(keep_initialized_, post_processors_, any, &random_)
       .Run(message, kMaxInitializeDepth);
   assert(IsInitialized(*message));
 }
 
 void Mutator::CrossOver(const Message& message1, Message* message2,
                         size_t max_size_hint) {
+  UnpackedAny any;
+  UnpackAny(*message2, &any);
+
   Messages messages;
+  messages.reserve(any.size() + 1);
   messages.push_back(message2);
+  for (auto& kv : any) messages.push_back(kv.second.get());
+
+  UnpackAny(message1, &any);
+
   ConstMessages sources;
+  sources.reserve(any.size() + 2);
   sources.push_back(&message1);
   sources.push_back(message2);
-  int size_increase_hint = static_cast<int>(max_size_hint) -
-                           static_cast<int>(message2->ByteSizeLong());
-  MutateImpl(sources, messages, true, size_increase_hint);
+  for (const auto& kv : any) sources.push_back(kv.second.get());
 
-  PostProcessing(keep_initialized_, post_processors_, &random_)
+  MutateImpl(sources, messages, true,
+             static_cast<int>(max_size_hint) -
+                 static_cast<int>(message2->ByteSizeLong()));
+
+  PostProcessing(keep_initialized_, post_processors_, any, &random_)
       .Run(message2, kMaxInitializeDepth);
   assert(IsInitialized(*message2));
 }
