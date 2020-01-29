@@ -89,7 +89,8 @@ class Mutator {
  private:
   friend class FieldMutator;
   friend class TestMutator;
-  bool MutateImpl(const protobuf::Message& source, protobuf::Message* message,
+  bool MutateImpl(const std::vector<const protobuf::Message*>& sources,
+                  const std::vector<protobuf::Message*>& messages,
                   bool copy_clone_only, int size_increase_hint);
   std::string MutateUtf8String(const std::string& value,
                                int size_increase_hint);
