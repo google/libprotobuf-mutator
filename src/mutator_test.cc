@@ -493,12 +493,6 @@ TEST_P(MutatorFieldInsDelTest, DeleteField) {
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
-TEST_P(MutatorFieldInsDelTest, InsertField) {
-  LoadWithoutLine(m1_.get());
-  LoadWithChangedLine(m2_.get(), 0);
-  EXPECT_TRUE(Mutate(*m1_, *m2_));
-}
-
 class MutatorFieldTest : public MutatorTest {
  public:
   template <class Msg>
@@ -523,6 +517,12 @@ TEST_P(MutatorFieldTest, Initialized) {
   TestMutator mutator(true);
   mutator.Mutate(m1_.get(), 1000);
   EXPECT_TRUE(m1_->IsInitialized());
+}
+
+TEST_P(MutatorFieldTest, InsertField) {
+  LoadWithoutLine(m1_.get());
+  LoadWithChangedLine(m2_.get(), 1);
+  EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
 TEST_P(MutatorFieldTest, ChangeField) {
