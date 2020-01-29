@@ -89,18 +89,17 @@ class Mutator {
  private:
   friend class FieldMutator;
   friend class TestMutator;
-  void InitializeAndTrim(protobuf::Message* message, int max_depth);
   bool MutateImpl(const protobuf::Message& source, protobuf::Message* message,
                   bool copy_clone_only, int size_increase_hint);
   std::string MutateUtf8String(const std::string& value,
                                int size_increase_hint);
-  void ApplyPostProcessing(protobuf::Message* message);
   bool IsInitialized(const protobuf::Message& message) const;
   bool keep_initialized_ = true;
   size_t random_to_default_ratio_ = 100;
   RandomEngine random_;
-  std::unordered_multimap<const protobuf::Descriptor*, PostProcess>
-      post_processors_;
+  using PostProcessors =
+      std::unordered_multimap<const protobuf::Descriptor*, PostProcess>;
+  PostProcessors post_processors_;
 };
 
 }  // namespace protobuf_mutator

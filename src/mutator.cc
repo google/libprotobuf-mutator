@@ -355,6 +355,67 @@ class DataSourceSampler {
   WeightedReservoirSampler<ConstFieldInstance, RandomEngine> sampler_;
 };
 
+class PostProcessing {
+ public:
+  using PostProcessors = std::unordered_multimap<const protobuf::Descriptor*,
+                                                 Mutator::PostProcess>;
+
+  PostProcessing(bool keep_initialized, const PostProcessors& post_processors,
+                 RandomEngine* random)
+      : keep_initialized_(keep_initialized),
+        post_processors_(post_processors),
+        random_(random) {}
+
+  void Run(Message* message, int max_depth) {
+    --max_depth;
+    const Descriptor* descriptor = message->GetDescriptor();
+
+    // Apply custom mutators in nested messages before packing any.
+    const Reflection* reflection = message->GetReflection();
+    for (int i = 0; i < descriptor->field_count(); i++) {
+      const FieldDescriptor* field = descriptor->field(i);
+      if (keep_initialized_ &&
+          (field->is_required() || descriptor->options().map_entry()) &&
+          !reflection->HasField(*message, field)) {
+        CreateDefaultField()(FieldInstance(message, field));
+      }
+
+      if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) continue;
+
+      if (max_depth < 0 && !field->is_required()) {
+        // Clear deep optional fields to avoid stack overflow.
+        reflection->ClearField(message, field);
+        if (field->is_repeated())
+          assert(!reflection->FieldSize(*message, field));
+        else
+          assert(!reflection->HasField(*message, field));
+        continue;
+      }
+
+      if (field->is_repeated()) {
+        const int field_size = reflection->FieldSize(*message, field);
+        for (int j = 0; j < field_size; ++j) {
+          Message* nested_message =
+              reflection->MutableRepeatedMessage(message, field, j);
+          Run(nested_message, max_depth);
+        }
+      } else if (reflection->HasField(*message, field)) {
+        Message* nested_message = reflection->MutableMessage(message, field);
+        Run(nested_message, max_depth);
+      }
+    }
+
+    auto range = post_processors_.equal_range(descriptor);
+    for (auto it = range.first; it != range.second; ++it)
+      it->second(message, (*random_)());
+  }
+
+ private:
+  bool keep_initialized_;
+  const PostProcessors& post_processors_;
+  RandomEngine* random_;
+};
+
 }  // namespace
 
 class FieldMutator {
@@ -479,45 +540,14 @@ void Mutator::Mutate(Message* message, size_t max_size_hint) {
              static_cast<int>(max_size_hint) -
                  static_cast<int>(message->ByteSizeLong()));
 
-  InitializeAndTrim(message, kMaxInitializeDepth);
+  PostProcessing(keep_initialized_, post_processors_, &random_)
+      .Run(message, kMaxInitializeDepth);
   assert(IsInitialized(*message));
-
-  if (!post_processors_.empty()) {
-    ApplyPostProcessing(message);
-  }
 }
 
 void Mutator::RegisterPostProcessor(const Descriptor* desc,
                                     PostProcess callback) {
   post_processors_.emplace(desc, callback);
-}
-
-void Mutator::ApplyPostProcessing(Message* message) {
-  const Descriptor* descriptor = message->GetDescriptor();
-
-  auto range = post_processors_.equal_range(descriptor);
-  for (auto it = range.first; it != range.second; ++it)
-    it->second(message, random_());
-
-  // Now recursively apply custom mutators.
-  const Reflection* reflection = message->GetReflection();
-  for (int i = 0; i < descriptor->field_count(); i++) {
-    const FieldDescriptor* field = descriptor->field(i);
-    if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
-      continue;
-    }
-    if (field->is_repeated()) {
-      const int field_size = reflection->FieldSize(*message, field);
-      for (int j = 0; j < field_size; ++j) {
-        Message* nested_message =
-            reflection->MutableRepeatedMessage(message, field, j);
-        ApplyPostProcessing(nested_message);
-      }
-    } else if (reflection->HasField(*message, field)) {
-      Message* nested_message = reflection->MutableMessage(message, field);
-      ApplyPostProcessing(nested_message);
-    }
-  }
 }
 
 bool Mutator::MutateImpl(const Message& source, Message* message,
@@ -578,49 +608,9 @@ void Mutator::CrossOver(const Message& message1, Message* message2,
   MutateImpl(message1, message2, true, size_increase_hint) ||
       MutateImpl(*message2, message2, true, size_increase_hint);
 
-  InitializeAndTrim(message2, kMaxInitializeDepth);
+  PostProcessing(keep_initialized_, post_processors_, &random_)
+      .Run(message2, kMaxInitializeDepth);
   assert(IsInitialized(*message2));
-
-  if (!post_processors_.empty()) {
-    ApplyPostProcessing(message2);
-  }
-}
-
-void Mutator::InitializeAndTrim(Message* message, int max_depth) {
-  const Descriptor* descriptor = message->GetDescriptor();
-  const Reflection* reflection = message->GetReflection();
-  for (int i = 0; i < descriptor->field_count(); ++i) {
-    const FieldDescriptor* field = descriptor->field(i);
-    if (keep_initialized_ &&
-        (field->is_required() || descriptor->options().map_entry()) &&
-        !reflection->HasField(*message, field)) {
-      CreateDefaultField()(FieldInstance(message, field));
-    }
-
-    if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
-      if (max_depth <= 0 && !field->is_required()) {
-        // Clear deep optional fields to avoid stack overflow.
-        reflection->ClearField(message, field);
-        if (field->is_repeated())
-          assert(!reflection->FieldSize(*message, field));
-        else
-          assert(!reflection->HasField(*message, field));
-        continue;
-      }
-
-      if (field->is_repeated()) {
-        const int field_size = reflection->FieldSize(*message, field);
-        for (int j = 0; j < field_size; ++j) {
-          Message* nested_message =
-              reflection->MutableRepeatedMessage(message, field, j);
-          InitializeAndTrim(nested_message, max_depth - 1);
-        }
-      } else if (reflection->HasField(*message, field)) {
-        Message* nested_message = reflection->MutableMessage(message, field);
-        InitializeAndTrim(nested_message, max_depth - 1);
-      }
-    }
-  }
 }
 
 int32_t Mutator::MutateInt32(int32_t value) { return FlipBit(value, &random_); }
