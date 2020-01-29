@@ -365,7 +365,6 @@ std::vector<TestParams> GetFieldTestParams(
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
-      if (lines[i].find("any {") != std::string::npos) break;
       if (lines[i].find(':') != std::string::npos)
         results.push_back(
             std::make_tuple(&T::default_instance(), t, i, lines[i]));
@@ -381,7 +380,6 @@ std::vector<TestParams> GetMessageTestParams(
   for (auto t : tests) {
     auto lines = Split(t);
     for (size_t i = 0; i != lines.size(); ++i) {
-      if (lines[i].find("any {") != std::string::npos) break;
       if (lines[i].find("{}") != std::string::npos)
         results.push_back(
             std::make_tuple(&T::default_instance(), t, i, lines[i]));
@@ -398,7 +396,7 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to,
   EXPECT_FALSE(MessageDifferencer::Equals(from, to));
   for (int j = 0; j < iterations; ++j) {
     message->CopyFrom(from);
-    mutator.Mutate(message.get(), 1000);
+    mutator.Mutate(message.get(), 1500);
     if (MessageDifferencer::Equals(*message, to)) return true;
   }
 

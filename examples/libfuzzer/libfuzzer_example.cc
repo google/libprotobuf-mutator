@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include "examples/libfuzzer/libfuzzer_example.pb.h"
+#include "port/protobuf.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 
 protobuf_mutator::protobuf::LogSilencer log_silincer;
@@ -26,7 +27,26 @@ DEFINE_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
           message->set_optional_uint64(
               std::hash<std::string>{}(message->optional_string()));
         }
+
+        if (message->has_any()) {
+          auto* any = message->mutable_any();
+
+          // Guide mutator to usefull 'Any' types.
+          static const char* const expected_types[] = {
+              "type.googleapis.com/google.protobuf.DescriptorProto",
+              "type.googleapis.com/google.protobuf.FileDescriptorProto",
+          };
+
+          if (!std::count(std::begin(expected_types), std::end(expected_types),
+                          any->type_url())) {
+            const size_t num =
+                (std::end(expected_types) - std::begin(expected_types));
+            any->set_type_url(expected_types[seed % num]);
+          }
+        }
       }};
+
+  protobuf_mutator::protobuf::FileDescriptorProto file;
 
   // Emulate a bug.
   if (message.optional_uint64() ==
@@ -34,7 +54,8 @@ DEFINE_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
       message.optional_string() == "abcdefghijklmnopqrstuvwxyz" &&
       !std::isnan(message.optional_float()) &&
       std::fabs(message.optional_float()) > 1000 &&
-      std::fabs(message.optional_float()) < 1E10) {
+      message.any().UnpackTo(&file) && !file.name().empty()) {
+    std::cerr << message.DebugString() << "\n";
     abort();
   }
 }
