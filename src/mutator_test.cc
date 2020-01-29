@@ -547,19 +547,18 @@ void MutatorFieldTest::TestCopyField() {
   LoadWithChangedLine(m1_.get(), 7);
   LoadWithChangedLine(m2_.get(), 0);
 
-  Msg from;
-  from.add_repeated_msg()->CopyFrom(*m1_);
-  from.add_repeated_msg()->CopyFrom(*m2_);
+  for (int i = 0; i < 2; ++i, m1_.swap(m2_)) {
+    Msg from;
+    from.add_repeated_msg()->CopyFrom(*m1_);
+    from.add_repeated_msg()->CopyFrom(*m2_);
+    from.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
 
-  Msg to;
-  to.add_repeated_msg()->CopyFrom(*m1_);
-  to.add_repeated_msg()->CopyFrom(*m1_);
-  EXPECT_TRUE(Mutate(from, to));
-
-  to.Clear();
-  to.add_repeated_msg()->CopyFrom(*m2_);
-  to.add_repeated_msg()->CopyFrom(*m2_);
-  EXPECT_TRUE(Mutate(from, to));
+    Msg to;
+    to.add_repeated_msg()->CopyFrom(*m1_);
+    to.add_repeated_msg()->CopyFrom(*m1_);
+    to.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
+    EXPECT_TRUE(Mutate(from, to));
+  }
 }
 
 TEST_P(MutatorFieldTest, CopyField) {
