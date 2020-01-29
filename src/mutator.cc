@@ -675,7 +675,6 @@ void Mutator::RegisterPostProcessor(const Descriptor* desc,
 
 bool Mutator::MutateImpl(const ConstMessages& sources, const Messages& messages,
                          bool copy_clone_only, int size_increase_hint) {
-  if (size_increase_hint > 0) size_increase_hint /= 2;
   MutationBitset mutations;
   if (copy_clone_only) {
     mutations[static_cast<size_t>(Mutation::Copy)] = true;
