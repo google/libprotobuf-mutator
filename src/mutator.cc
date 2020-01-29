@@ -545,6 +545,18 @@ void Mutator::Mutate(Message* message, size_t max_size_hint) {
   assert(IsInitialized(*message));
 }
 
+void Mutator::CrossOver(const Message& message1, Message* message2,
+                        size_t max_size_hint) {
+  int size_increase_hint = static_cast<int>(max_size_hint) -
+                           static_cast<int>(message2->ByteSizeLong());
+  MutateImpl(message1, message2, true, size_increase_hint) ||
+      MutateImpl(*message2, message2, true, size_increase_hint);
+
+  PostProcessing(keep_initialized_, post_processors_, &random_)
+      .Run(message2, kMaxInitializeDepth);
+  assert(IsInitialized(*message2));
+}
+
 void Mutator::RegisterPostProcessor(const Descriptor* desc,
                                     PostProcess callback) {
   post_processors_.emplace(desc, callback);
@@ -599,18 +611,6 @@ bool Mutator::MutateImpl(const Message& source, Message* message,
     }
   }
   return false;
-}
-
-void Mutator::CrossOver(const Message& message1, Message* message2,
-                        size_t max_size_hint) {
-  int size_increase_hint = static_cast<int>(max_size_hint) -
-                           static_cast<int>(message2->ByteSizeLong());
-  MutateImpl(message1, message2, true, size_increase_hint) ||
-      MutateImpl(*message2, message2, true, size_increase_hint);
-
-  PostProcessing(keep_initialized_, post_processors_, &random_)
-      .Run(message2, kMaxInitializeDepth);
-  assert(IsInitialized(*message2));
 }
 
 int32_t Mutator::MutateInt32(int32_t value) { return FlipBit(value, &random_); }
