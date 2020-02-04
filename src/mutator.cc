@@ -28,7 +28,7 @@
 
 namespace protobuf_mutator {
 
-using protobuf::Any;
+using google::protobuf::Any;
 using protobuf::Descriptor;
 using protobuf::FieldDescriptor;
 using protobuf::FileDescriptor;
@@ -367,7 +367,8 @@ using UnpackedAny =
 
 const Descriptor* GetAnyTypeDescriptor(const Any& any) {
   std::string type_name;
-  if (!Any::ParseAnyTypeUrl(any.type_url(), &type_name)) return nullptr;
+  if (!Any::ParseAnyTypeUrl(std::string(any.type_url()), &type_name))
+    return nullptr;
   return any.descriptor()->file()->pool()->FindMessageTypeByName(type_name);
 }
 
@@ -376,7 +377,7 @@ std::unique_ptr<Message> UnpackAny(const Any& any) {
   if (!desc) return {};
   std::unique_ptr<Message> message(
       any.GetReflection()->GetMessageFactory()->GetPrototype(desc)->New());
-  message->ParsePartialFromString(any.value());
+  message->ParsePartialFromString(std::string(any.value()));
   return message;
 }
 
@@ -481,9 +482,9 @@ class PostProcessing {
         auto It = any_.find(message);
         if (It != any_.end()) {
           Run(It->second.get(), max_depth);
-          // assert(GetAnyTypeDescriptor(*any) == It->second->GetDescriptor());
-          // if (GetAnyTypeDescriptor(*any) != It->second->GetDescriptor()) {}
-          It->second->SerializePartialToString(any->mutable_value());
+          std::string value;
+          It->second->SerializePartialToString(&value);
+          *any->mutable_value() = value;
         }
       }
     }

@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package protobuf_mutator;
 
 import "google/protobuf/any.proto";
