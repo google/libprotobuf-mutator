@@ -555,7 +555,7 @@ void MutatorFieldTest::TestCopyField() {
     to.add_repeated_msg()->CopyFrom(*m1_);
     to.add_repeated_msg()->CopyFrom(*m1_);
     to.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
-    EXPECT_TRUE(Mutate(from, to));
+    EXPECT_TRUE(CrossOver(from, from, to));
   }
 }
 
