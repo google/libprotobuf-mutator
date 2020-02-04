@@ -601,7 +601,7 @@ TYPED_TEST(MutatorTypedTest, FailedMutations) {
   }
 
   // CrossOver may fail but very rare.
-  EXPECT_LT(crossovers, 10u);
+  EXPECT_LT(crossovers, 100u);
 }
 
 TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
