@@ -684,6 +684,8 @@ bool Mutator::MutateImpl(const ConstMessages& sources, const Messages& messages,
     mutations[static_cast<size_t>(Mutation::Delete)] = true;
   } else {
     mutations.set();
+    mutations[static_cast<size_t>(Mutation::Copy)] = false;
+    mutations[static_cast<size_t>(Mutation::Clone)] = false;
   }
   while (mutations.any()) {
     MutationSampler mutation(keep_initialized_, mutations, &random_);
