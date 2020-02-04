@@ -491,46 +491,41 @@ TEST_P(MutatorFieldInsDelTest, DeleteField) {
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
-class MutatorFieldTest : public MutatorTest {
- public:
-  template <class Msg>
-  void TestCopyField();
-};
-INSTANTIATE_TEST_SUITE_P(Proto2, MutatorFieldTest,
+INSTANTIATE_TEST_SUITE_P(Proto2, MutatorTest,
                          ValuesIn(GetFieldTestParams<Msg>(
                              {kRequiredFields, kOptionalFields, kRepeatedFields,
                               kRequiredNestedFields, kRequiredInAnyFields,
                               kOptionalNestedFields, kOptionalInAnyFields,
                               kRepeatedNestedFields, kRepeatedInAnyFields,
                               kOptionalInDeepAnyFields})));
-INSTANTIATE_TEST_SUITE_P(Proto3, MutatorFieldTest,
+INSTANTIATE_TEST_SUITE_P(Proto3, MutatorTest,
                          ValuesIn(GetFieldTestParams<Msg3>(
                              {kOptionalFields, kRepeatedFields,
                               kOptionalNestedFields, kOptionalInAnyFields,
                               kRepeatedNestedFields, kRepeatedInAnyFields,
                               kOptionalInDeepAnyFields})));
 
-TEST_P(MutatorFieldTest, Initialized) {
+TEST_P(MutatorTest, Initialized) {
   LoadWithoutLine(m1_.get());
   TestMutator mutator(true);
   mutator.Mutate(m1_.get(), 1000);
   EXPECT_TRUE(m1_->IsInitialized());
 }
 
-TEST_P(MutatorFieldTest, InsertField) {
+TEST_P(MutatorTest, InsertField) {
   LoadWithoutLine(m1_.get());
   LoadWithChangedLine(m2_.get(), 1);
   EXPECT_TRUE(Mutate(*m1_, *m2_));
 }
 
-TEST_P(MutatorFieldTest, ChangeField) {
+TEST_P(MutatorTest, ChangeField) {
   LoadWithChangedLine(m1_.get(), 0);
   LoadWithChangedLine(m2_.get(), 1);
   EXPECT_TRUE(Mutate(*m1_, *m2_, 1000000));
   EXPECT_TRUE(Mutate(*m2_, *m1_, 1000000));
 }
 
-TEST_P(MutatorFieldTest, CrossOver) {
+TEST_P(MutatorTest, CrossOver) {
   LoadWithoutLine(m1_.get());
   LoadMessage(m2_.get());
 
@@ -541,29 +536,37 @@ TEST_P(MutatorFieldTest, CrossOver) {
 }
 
 template <class Msg>
-void MutatorFieldTest::TestCopyField() {
+void RunCrossOver(const protobuf::Message& m1, const protobuf::Message& m2) {
+  Msg from;
+  from.add_repeated_msg()->CopyFrom(m1);
+  from.add_repeated_msg()->CopyFrom(m2);
+  from.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
+
+  Msg to;
+  to.add_repeated_msg()->CopyFrom(m1);
+  to.add_repeated_msg()->CopyFrom(m1);
+  to.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
+  EXPECT_TRUE(CrossOver(from, from, to));
+}
+
+TEST_P(MutatorTest, CopyField) {
   LoadWithChangedLine(m1_.get(), 7);
   LoadWithChangedLine(m2_.get(), 0);
 
-  for (int i = 0; i < 2; ++i, m1_.swap(m2_)) {
-    Msg from;
-    from.add_repeated_msg()->CopyFrom(*m1_);
-    from.add_repeated_msg()->CopyFrom(*m2_);
-    from.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
-
-    Msg to;
-    to.add_repeated_msg()->CopyFrom(*m1_);
-    to.add_repeated_msg()->CopyFrom(*m1_);
-    to.mutable_repeated_msg(1)->add_repeated_string("repeated_string");
-    EXPECT_TRUE(CrossOver(from, from, to));
-  }
+  if (m1_->GetDescriptor() == Msg::descriptor())
+    RunCrossOver<Msg>(*m1_, *m2_);
+  else
+    RunCrossOver<Msg3>(*m1_, *m2_);
 }
 
-TEST_P(MutatorFieldTest, CopyField) {
+TEST_P(MutatorTest, CloneField) {
+  LoadWithChangedLine(m1_.get(), 7);
+  LoadWithoutLine(m2_.get());
+
   if (m1_->GetDescriptor() == Msg::descriptor())
-    TestCopyField<Msg>();
+    RunCrossOver<Msg>(*m1_, *m2_);
   else
-    TestCopyField<Msg3>();
+    RunCrossOver<Msg3>(*m1_, *m2_);
 }
 
 class MutatorSingleFieldTest : public MutatorTest {};
