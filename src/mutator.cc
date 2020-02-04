@@ -561,6 +561,7 @@ void Mutator::CrossOver(const Message& message1, Message* message2,
   messages.push_back(message2);
   ConstMessages sources;
   sources.push_back(&message1);
+  sources.push_back(message2);
   int size_increase_hint = static_cast<int>(max_size_hint) -
                            static_cast<int>(message2->ByteSizeLong());
   MutateImpl(sources, messages, true, size_increase_hint);
@@ -591,8 +592,6 @@ bool Mutator::MutateImpl(const ConstMessages& sources, const Messages& messages,
     MutationSampler mutation(keep_initialized_, mutations, &random_);
     for (Message* message : messages) mutation.Sample(message);
 
-    // Don't try same mutation next time.
-    mutations[static_cast<size_t>(mutation.mutation())] = false;
     switch (mutation.mutation()) {
       case Mutation::None:
         return true;
@@ -610,7 +609,11 @@ bool Mutator::MutateImpl(const ConstMessages& sources, const Messages& messages,
         DataSourceSampler source_sampler(mutation.field(), &random_,
                                          size_increase_hint);
         for (const Message* source : sources) source_sampler.Sample(*source);
-        if (source_sampler.IsEmpty()) return true;  // CreateField is enough.
+        if (source_sampler.IsEmpty()) {
+          if (!IsProto3SimpleField(*mutation.field().descriptor()))
+            return true;  // CreateField is enough for proto2.
+          break;
+        }
         CopyField()(source_sampler.field(), mutation.field());
         return true;
       }
@@ -626,6 +629,9 @@ bool Mutator::MutateImpl(const ConstMessages& sources, const Messages& messages,
         assert(false && "unexpected mutation");
         return false;
     }
+
+    // Don't try same mutation next time.
+    mutations[static_cast<size_t>(mutation.mutation())] = false;
   }
   return false;
 }
