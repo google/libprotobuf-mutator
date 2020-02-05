@@ -20,6 +20,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "src/field_instance.h"
@@ -429,7 +430,7 @@ class PostProcessing {
       std::unordered_multimap<const Descriptor*, Mutator::PostProcess>;
 
   PostProcessing(bool keep_initialized, const PostProcessors& post_processors,
-                 UnpackedAny& any, RandomEngine* random)
+                 const UnpackedAny& any, RandomEngine* random)
       : keep_initialized_(keep_initialized),
         post_processors_(post_processors),
         any_(any),
@@ -498,7 +499,7 @@ class PostProcessing {
  private:
   bool keep_initialized_;
   const PostProcessors& post_processors_;
-  UnpackedAny& any_;
+  const UnpackedAny& any_;
   RandomEngine* random_;
 };
 
