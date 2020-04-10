@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cmath>
+#include <iostream>
 
 #include "examples/libfuzzer/libfuzzer_example.pb.h"
 #include "port/protobuf.h"
