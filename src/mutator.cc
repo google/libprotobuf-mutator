@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <random>
