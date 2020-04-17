@@ -30,6 +30,7 @@ bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
   TextFormat::Parser parser;
   parser.SetRecursionLimit(100);
   parser.AllowPartialMessage(true);
+  parser.AllowUnknownField(true);
   if (!parser.ParseFromString(data, output)) {
     output->Clear();
     return false;
