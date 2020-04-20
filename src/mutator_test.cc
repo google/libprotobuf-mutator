@@ -293,9 +293,12 @@ const char kOptionalInDeepAnyFields[] = R"(
   }
 )";
 
-const char kUnknownField[] = R"(
+const char kUnknownFieldInput[] = R"(
   optional_bool: true
   unknown_field: "test unknown field"
+)";
+
+const char kUnknownFieldExpected[] = R"(optional_bool: true
 )";
 
 class TestMutator : public Mutator {
@@ -673,10 +676,10 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
   }
 }
 
-TYPED_TEST(MutatorTypedTest, UnknownSerialization) {
+TYPED_TEST(MutatorTypedTest, UnknownFieldTextFormat) {
   typename TestFixture::Message parsed;
-  EXPECT_TRUE(ParseTextMessage(kUnknownField, &parsed));
-  EXPECT_NE(SaveMessageAsText(parsed), kUnknownField);
+  EXPECT_TRUE(ParseTextMessage(kUnknownFieldInput, &parsed));
+  EXPECT_EQ(SaveMessageAsText(parsed), kUnknownFieldExpected);
 }
 
 TYPED_TEST(MutatorTypedTest, DeepRecursion) {
