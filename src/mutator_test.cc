@@ -678,7 +678,7 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
 
 TYPED_TEST(MutatorTypedTest, UnknownFieldTextFormat) {
   typename TestFixture::Message parsed;
-  EXPECT_TRUE(ParseTextMessage(kUnknownFieldInput, &parsed));
+  EXPECT_FALSE(ParseTextMessage(kUnknownFieldInput, &parsed));
   EXPECT_NE(SaveMessageAsText(parsed), kUnknownFieldExpected);
 }
 
