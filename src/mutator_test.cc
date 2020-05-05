@@ -679,7 +679,7 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
 TYPED_TEST(MutatorTypedTest, UnknownFieldTextFormat) {
   typename TestFixture::Message parsed;
   EXPECT_TRUE(ParseTextMessage(kUnknownFieldInput, &parsed));
-  EXPECT_NE(SaveMessageAsText(parsed), kUnknownFieldExpected);
+  EXPECT_EQ(SaveMessageAsText(parsed), kUnknownFieldExpected);
 }
 
 TYPED_TEST(MutatorTypedTest, DeepRecursion) {
