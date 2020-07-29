@@ -17,12 +17,26 @@
 #include "src/mutator_test_proto2.pb.h"
 
 static bool reached = false;
+static bool postprocessed = false;
 
-DEFINE_PROTO_FUZZER(const protobuf_mutator::Msg::EmptyMessage& message) {
+protobuf_mutator::libfuzzer::PostProcessorRegistration<protobuf_mutator::Msg>
+    reg = {[](protobuf_mutator::Msg* message, unsigned int seed) {
+      static unsigned int first_seed = seed;
+      EXPECT_EQ(seed, first_seed);
+      postprocessed = true;
+    }};
+
+DEFINE_TEXT_PROTO_FUZZER(const protobuf_mutator::Msg& message) {
   reached = true;
+  EXPECT_TRUE(message.IsInitialized());
+  EXPECT_TRUE(postprocessed);
 }
 
-TEST(LibFuzzerTest, Basic) {
-  LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
-  EXPECT_TRUE(reached);
+TEST(LibFuzzerTest, LLVMFuzzerTestOneInput) {
+  for (int i = 0; i < 10; ++i) {
+    reached = false;
+    postprocessed = false;
+    LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
+    EXPECT_TRUE(reached);
+  }
 }

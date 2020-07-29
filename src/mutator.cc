@@ -625,6 +625,15 @@ struct CreateField : public FieldFunction<CreateField> {
 
 void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
+void Mutator::Fix(Message* message) {
+  UnpackedAny any;
+  UnpackAny(*message, &any);
+
+  PostProcessing(keep_initialized_, post_processors_, any, &random_)
+      .Run(message, kMaxInitializeDepth);
+  assert(IsInitialized(*message));
+}
+
 void Mutator::Mutate(Message* message, size_t max_size_hint) {
   UnpackedAny any;
   UnpackAny(*message, &any);

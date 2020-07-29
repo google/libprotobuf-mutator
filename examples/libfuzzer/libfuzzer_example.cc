@@ -21,32 +21,30 @@
 
 protobuf_mutator::protobuf::LogSilencer log_silincer;
 
+protobuf_mutator::libfuzzer::PostProcessorRegistration<libfuzzer_example::Msg>
+    reg = {[](libfuzzer_example::Msg* message, unsigned int seed) {
+      message->set_optional_uint64(
+          std::hash<std::string>{}(message->optional_string()));
+
+      if (message->has_any()) {
+        auto* any = message->mutable_any();
+
+        // Guide mutator to usefull 'Any' types.
+        static const char* const expected_types[] = {
+            "type.googleapis.com/google.protobuf.DescriptorProto",
+            "type.googleapis.com/google.protobuf.FileDescriptorProto",
+        };
+
+        if (!std::count(std::begin(expected_types), std::end(expected_types),
+                        any->type_url())) {
+          const size_t num =
+              (std::end(expected_types) - std::begin(expected_types));
+          any->set_type_url(expected_types[seed % num]);
+        }
+      }
+    }};
+
 DEFINE_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
-  static PostProcessorRegistration reg = {
-      [](libfuzzer_example::Msg* message, unsigned int seed) {
-        if (seed % 2) {
-          message->set_optional_uint64(
-              std::hash<std::string>{}(message->optional_string()));
-        }
-
-        if (message->has_any()) {
-          auto* any = message->mutable_any();
-
-          // Guide mutator to usefull 'Any' types.
-          static const char* const expected_types[] = {
-              "type.googleapis.com/google.protobuf.DescriptorProto",
-              "type.googleapis.com/google.protobuf.FileDescriptorProto",
-          };
-
-          if (!std::count(std::begin(expected_types), std::end(expected_types),
-                          any->type_url())) {
-            const size_t num =
-                (std::end(expected_types) - std::begin(expected_types));
-            any->set_type_url(expected_types[seed % num]);
-          }
-        }
-      }};
-
   protobuf_mutator::protobuf::FileDescriptorProto file;
 
   // Emulate a bug.

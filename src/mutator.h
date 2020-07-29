@@ -60,6 +60,9 @@ class Mutator {
   void CrossOver(const protobuf::Message& message1, protobuf::Message* message2,
                  size_t max_size_hint);
 
+  // Makes message initialized and calls post processors to make it valid.
+  void Fix(protobuf::Message* message);
+
   // Callback to postprocess mutations.
   // Implementation should use seed to initialize random number generators.
   using PostProcess =
