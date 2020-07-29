@@ -98,17 +98,22 @@ PostProcessorRegistration can be used to avoid such issue and guide your fuzzer 
 code. It registers callback which will be called for each message of particular type after each mutation.
 
 ```
-DEFINE_PROTO_FUZZER(const MyMessageType& input) {
-  static PostProcessorRegistration reg = {
-      [](MyMessageType* message, unsigned int seed) {
-        TweakMyMessage(message, seed);
-      }};
+static protobuf_mutator::libfuzzer::PostProcessorRegistration<MyMessageType> reg = {
+    [](MyMessageType* message, unsigned int seed) {
+      TweakMyMessage(message, seed);
+    }};
 
+DEFINE_PROTO_FUZZER(const MyMessageType& input) {
   // Code which needs to be fuzzed.
   ConsumeMyMessageType(input);
 }
 ```
 Optional: Use seed if callback uses random numbers. It may help later with debugging.
+
+Important: Callbacks should be deterministic and avoid modifying good messages.
+Callbacks are called for both: mutator generated and user provided inputs, like
+corpus or bug reproducer. So if callback performs unnecessary transformation it
+may corrupt the reproducer so it stops triggering the bug.
 
 Note: You can add callback for any nested message and you can add multiple callbacks for
 the same message type.

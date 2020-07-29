@@ -189,8 +189,12 @@ size_t CustomProtoCrossOver(bool binary, const uint8_t* data1, size_t size1,
 
 bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                     protobuf::Message* input) {
-  return binary ? ParseBinaryMessage(data, size, input)
-                : ParseTextMessage(data, size, input);
+  auto result = binary ? ParseBinaryMessage(data, size, input)
+                       : ParseTextMessage(data, size, input);
+  if (!result) return false;
+  GetMutator()->Seed(size);
+  GetMutator()->Fix(input);
+  return true;
 }
 
 void RegisterPostProcessor(
