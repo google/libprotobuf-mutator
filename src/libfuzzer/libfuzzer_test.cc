@@ -13,30 +13,57 @@
 // limitations under the License.
 
 #include "port/gtest.h"
+#include "port/protobuf.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/mutator_test_proto2.pb.h"
 
-static bool reached = false;
-static bool postprocessed = false;
+using protobuf_mutator::protobuf::util::MessageDifferencer;
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::DoAll;
+using ::testing::Ref;
+using ::testing::SaveArg;
+using ::testing::SaveArgPointee;
+using ::testing::StrictMock;
+
+static class MockFuzzer* mock_fuzzer;
+
+class MockFuzzer {
+ public:
+  MockFuzzer() { mock_fuzzer = this; }
+  ~MockFuzzer() { mock_fuzzer = nullptr; }
+  MOCK_METHOD(void, PostProcess,
+              (protobuf_mutator::Msg * message, unsigned int seed));
+  MOCK_METHOD(void, TestOneInput, (const protobuf_mutator::Msg& message));
+};
 
 protobuf_mutator::libfuzzer::PostProcessorRegistration<protobuf_mutator::Msg>
     reg = {[](protobuf_mutator::Msg* message, unsigned int seed) {
-      static unsigned int first_seed = seed;
-      EXPECT_EQ(seed, first_seed);
-      postprocessed = true;
+      mock_fuzzer->PostProcess(message, seed);
     }};
 
 DEFINE_TEXT_PROTO_FUZZER(const protobuf_mutator::Msg& message) {
-  reached = true;
-  EXPECT_TRUE(message.IsInitialized());
-  EXPECT_TRUE(postprocessed);
+  mock_fuzzer->TestOneInput(message);
 }
 
+MATCHER_P(IsMessageEq, msg, "") {
+  return MessageDifferencer::Equals(arg, msg.get());
+}
+MATCHER(IsInitialized, "") { return arg.IsInitialized(); }
+
 TEST(LibFuzzerTest, LLVMFuzzerTestOneInput) {
-  for (int i = 0; i < 10; ++i) {
-    reached = false;
-    postprocessed = false;
-    LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
-    EXPECT_TRUE(reached);
-  }
+  unsigned int seed = 0;
+  testing::StrictMock<MockFuzzer> mock;
+  protobuf_mutator::Msg msg;
+  EXPECT_CALL(mock, PostProcess(_, _))
+      .WillOnce(DoAll(SaveArgPointee<0>(&msg), SaveArg<1>(&seed)));
+  EXPECT_CALL(
+      mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
+  LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
+
+  EXPECT_CALL(mock, PostProcess(_, seed)).WillOnce(SaveArgPointee<0>(&msg));
+  EXPECT_CALL(
+      mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
+  LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
+}
 }
