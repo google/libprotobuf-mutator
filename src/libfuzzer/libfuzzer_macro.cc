@@ -15,6 +15,8 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 
 #include <algorithm>
+#include <memory>
+#include <vector>
 
 #include "src/binary_format.h"
 #include "src/libfuzzer/libfuzzer_mutator.h"
@@ -91,6 +93,35 @@ class BinaryOutputWriter : public OutputWriter {
   }
 };
 
+class LastMutationCache {
+ public:
+  void Store(const uint8_t* data, size_t size, protobuf::Message* message) {
+    if (!message_) message_.reset(message->New());
+    message->GetReflection()->Swap(message, message_.get());
+    data_.assign(data, data + size);
+  }
+
+  bool LoadIfSame(const uint8_t* data, size_t size,
+                  protobuf::Message* message) {
+    if (!message_ || size != data_.size() ||
+        !std::equal(data_.begin(), data_.end(), data))
+      return false;
+
+    message->GetReflection()->Swap(message, message_.get());
+    message_.reset();
+    return true;
+  }
+
+ private:
+  std::vector<uint8_t> data_;
+  std::unique_ptr<protobuf::Message> message_;
+};
+
+LastMutationCache* GetCache() {
+  static LastMutationCache cache;
+  return &cache;
+}
+
 Mutator* GetMutator() {
   static Mutator mutator;
   return &mutator;
@@ -111,6 +142,7 @@ size_t MutateMessage(unsigned int seed, const InputReader& input,
   GetMutator()->Mutate(message, max_size);
   if (size_t new_size = output->Write(*message)) {
     assert(new_size <= output->size());
+    GetCache()->Store(output->data(), new_size, message);
     return new_size;
   }
   return 0;
@@ -127,6 +159,7 @@ size_t CrossOverMessages(unsigned int seed, const InputReader& input1,
   GetMutator()->CrossOver(*message2, message1, max_size);
   if (size_t new_size = output->Write(*message1)) {
     assert(new_size <= output->size());
+    GetCache()->Store(output->data(), new_size, message1);
     return new_size;
   }
   return 0;
@@ -189,6 +222,7 @@ size_t CustomProtoCrossOver(bool binary, const uint8_t* data1, size_t size1,
 
 bool LoadProtoInput(bool binary, const uint8_t* data, size_t size,
                     protobuf::Message* input) {
+  if (GetCache()->LoadIfSame(data, size, input)) return true;
   auto result = binary ? ParseBinaryMessage(data, size, input)
                        : ParseTextMessage(data, size, input);
   if (!result) return false;
