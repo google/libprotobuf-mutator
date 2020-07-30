@@ -66,4 +66,32 @@ TEST(LibFuzzerTest, LLVMFuzzerTestOneInput) {
       mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
   LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
 }
+
+TEST(LibFuzzerTest, LLVMFuzzerCustomMutator) {
+  testing::StrictMock<MockFuzzer> mock;
+  protobuf_mutator::Msg msg;
+  EXPECT_CALL(mock, PostProcess(_, _)).WillOnce(SaveArgPointee<0>(&msg));
+  EXPECT_CALL(
+      mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
+
+  uint8_t buff[1024] = {};
+  size_t size = LLVMFuzzerCustomMutator(buff, 0, sizeof(buff), 5);
+  ASSERT_GT(size, 0U);
+  LLVMFuzzerTestOneInput(buff, size);
+}
+
+TEST(LibFuzzerTest, LLVMFuzzerCustomCrossOver) {
+  testing::StrictMock<MockFuzzer> mock;
+  protobuf_mutator::Msg msg;
+  EXPECT_CALL(mock, PostProcess(_, _)).WillOnce(SaveArgPointee<0>(&msg));
+  EXPECT_CALL(
+      mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
+
+  uint8_t buff1[1024] = {};
+  uint8_t buff2[1024] = {};
+  uint8_t buff3[1024] = {};
+  size_t size =
+      LLVMFuzzerCustomCrossOver(buff1, 0, buff2, 0, buff3, sizeof(buff3), 6);
+  ASSERT_GT(size, 0U);
+  LLVMFuzzerTestOneInput(buff3, size);
 }
