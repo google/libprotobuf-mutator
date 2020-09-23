@@ -60,5 +60,7 @@ if (LIB_PROTO_MUTATOR_TESTING)
 endif()
 
 install(TARGETS protobuf-mutator
+        EXPORT libprotobuf-mutatorTargets
         ARCHIVE DESTINATION ${LIB_DIR}
-        LIBRARY DESTINATION ${LIB_DIR})
+        LIBRARY DESTINATION ${LIB_DIR}
+        INCLUDES DESTINATION include/libprotobuf-mutator include/libprotobuf-mutator/src)

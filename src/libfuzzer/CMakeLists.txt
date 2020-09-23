@@ -23,8 +23,10 @@ set_target_properties(protobuf-mutator-libfuzzer PROPERTIES
                       SOVERSION 0)
 
 install(TARGETS protobuf-mutator-libfuzzer
+        EXPORT libprotobuf-mutatorTargets
         ARCHIVE DESTINATION ${LIB_DIR}
-        LIBRARY DESTINATION ${LIB_DIR})
+        LIBRARY DESTINATION ${LIB_DIR}
+        INCLUDES DESTINATION include/libprotobuf-mutator include/libprotobuf-mutator/src)
 
 if (LIB_PROTO_MUTATOR_TESTING)
   add_executable(libfuzzer_test
