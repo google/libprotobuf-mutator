@@ -150,6 +150,11 @@ if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
+install(EXPORT libprotobuf-mutatorTargets FILE libprotobuf-mutatorTargets.cmake
+  NAMESPACE libprotobuf-mutator:: DESTINATION lib/cmake/libprotobuf-mutator)
+configure_file(libprotobuf-mutatorConfig.cmake.in libprotobuf-mutatorConfig.cmake @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libprotobuf-mutatorConfig.cmake"
+  DESTINATION lib/cmake/libprotobuf-mutator)
 configure_file("libprotobuf-mutator.pc.in" "libprotobuf-mutator.pc" @ONLY)
 install(FILES "${CMAKE_BINARY_DIR}/libprotobuf-mutator.pc"
   DESTINATION ${PKG_CONFIG_PATH})
