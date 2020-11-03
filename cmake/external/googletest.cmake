@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include(GNUInstallDirs)
-
 set(GTEST_TARGET external.googletest)
 set(GTEST_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/${GTEST_TARGET})
 
@@ -27,12 +25,12 @@ set(GTEST_BOTH_LIBRARIES ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
 foreach(lib IN LISTS GTEST_BOTH_LIBRARIES)
   if (MSVC)
     if (CMAKE_BUILD_TYPE MATCHES Debug)
-      set(LIB_PATH ${GTEST_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/${lib}d.lib)
+      set(LIB_PATH ${GTEST_INSTALL_DIR}/lib/${lib}d.lib)
     else()
-      set(LIB_PATH ${GTEST_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/${lib}.lib)
+      set(LIB_PATH ${GTEST_INSTALL_DIR}/lib/${lib}.lib)
     endif()
   else()
-    set(LIB_PATH ${GTEST_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/lib${lib}.a)
+    set(LIB_PATH ${GTEST_INSTALL_DIR}/lib/lib${lib}.a)
   endif()
   list(APPEND GTEST_BUILD_BYPRODUCTS ${LIB_PATH})
 
@@ -52,5 +50,6 @@ ExternalProject_Add(${GTEST_TARGET}
                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
     CMAKE_ARGS ${CMAKE_ARGS}
                -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
+               -DCMAKE_INSTALL_LIBDIR=lib
     BUILD_BYPRODUCTS ${GTEST_BUILD_BYPRODUCTS}
 )
