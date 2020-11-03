@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include(GNUInstallDirs)
-
 # We only need protobuf_generate_cpp from FindProtobuf, and we are going to
 # override the rest with ExternalProject version.
 include (FindProtobuf)
@@ -33,9 +31,9 @@ ENDIF()
 
 foreach(lib ${PROTOBUF_LIBRARIES})
   if (MSVC)
-    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/lib${lib}.lib)
+    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.lib)
   else()
-    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/lib${lib}.a)
+    set(LIB_PATH ${PROTOBUF_INSTALL_DIR}/lib/lib${lib}.a)
   endif()
   list(APPEND PROTOBUF_BUILD_BYPRODUCTS ${LIB_PATH})
 
@@ -70,6 +68,7 @@ ExternalProject_Add(${PROTOBUF_TARGET}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOBUF_INSTALL_DIR}/src/${PROTOBUF_TARGET}/cmake
         -G${CMAKE_GENERATOR}
         -DCMAKE_INSTALL_PREFIX=${PROTOBUF_INSTALL_DIR}
+        -DCMAKE_INSTALL_LIBDIR=lib
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
