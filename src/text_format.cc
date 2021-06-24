@@ -22,7 +22,7 @@ using protobuf::Message;
 using protobuf::TextFormat;
 
 bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
-  return ParseTextMessage({data, data + size}, output);
+  return ParseTextMessage({reinterpret_cast<const char*>(data), size}, output);
 }
 
 bool ParseTextMessage(const std::string& data, protobuf::Message* output) {

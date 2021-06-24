@@ -19,7 +19,7 @@ namespace protobuf_mutator {
 using protobuf::Message;
 
 bool ParseBinaryMessage(const uint8_t* data, size_t size, Message* output) {
-  return ParseBinaryMessage({data, data + size}, output);
+  return ParseBinaryMessage({reinterpret_cast<const char*>(data), size}, output);
 }
 
 bool ParseBinaryMessage(const std::string& data, protobuf::Message* output) {
