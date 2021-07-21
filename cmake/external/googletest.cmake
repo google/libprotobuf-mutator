@@ -44,7 +44,7 @@ include (ExternalProject)
 ExternalProject_Add(${GTEST_TARGET}
     PREFIX ${GTEST_TARGET}
     GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG 3f05f651ae3621db58468153e32016bc1397800b
+    GIT_TAG release-1.11.0
     UPDATE_COMMAND ""
     CMAKE_CACHE_ARGS -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
