@@ -21,26 +21,29 @@
 
 protobuf_mutator::protobuf::LogSilencer log_silincer;
 
-protobuf_mutator::libfuzzer::PostProcessorRegistration<libfuzzer_example::Msg>
-    reg = {[](libfuzzer_example::Msg* message, unsigned int seed) {
+template <class Proto>
+using PostProcessor =
+    protobuf_mutator::libfuzzer::PostProcessorRegistration<Proto>;
+
+static PostProcessor<libfuzzer_example::Msg> reg1 = {
+    [](libfuzzer_example::Msg* message, unsigned int seed) {
       message->set_optional_uint64(
           std::hash<std::string>{}(message->optional_string()));
+    }};
 
-      if (message->has_any()) {
-        auto* any = message->mutable_any();
+static PostProcessor<google::protobuf::Any> reg2 = {
+    [](google::protobuf::Any* any, unsigned int seed) {
+      // Guide mutator to usefull 'Any' types.
+      static const char* const expected_types[] = {
+          "type.googleapis.com/google.protobuf.DescriptorProto",
+          "type.googleapis.com/google.protobuf.FileDescriptorProto",
+      };
 
-        // Guide mutator to usefull 'Any' types.
-        static const char* const expected_types[] = {
-            "type.googleapis.com/google.protobuf.DescriptorProto",
-            "type.googleapis.com/google.protobuf.FileDescriptorProto",
-        };
-
-        if (!std::count(std::begin(expected_types), std::end(expected_types),
-                        any->type_url())) {
-          const size_t num =
-              (std::end(expected_types) - std::begin(expected_types));
-          any->set_type_url(expected_types[seed % num]);
-        }
+      if (!std::count(std::begin(expected_types), std::end(expected_types),
+                      any->type_url())) {
+        const size_t num =
+            (std::end(expected_types) - std::begin(expected_types));
+        any->set_type_url(expected_types[seed % num]);
       }
     }};
 
