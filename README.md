@@ -118,20 +118,20 @@ may corrupt the reproducer so it stops triggering the bug.
 Note: You can add callback for any nested message and you can add multiple callbacks for
 the same message type.
 ```
-DEFINE_PROTO_FUZZER(const MyMessageType& input) {
-  static PostProcessorRegistration reg1 = {
-      [](MyMessageType* message, unsigned int seed) {
-        TweakMyMessage(message, seed);
-      }};
-  static PostProcessorRegistration reg2 = {
-      [](MyMessageType* message, unsigned int seed) {
-        DifferentTweakMyMessage(message, seed);
-      }};
-  static PostProcessorRegistration reg_nested = {
-      [](MyMessageType::Nested* message, unsigned int seed) {
-        TweakMyNestedMessage(message, seed);
-      }};
+static PostProcessorRegistration<MyMessageType> reg1 = {
+    [](MyMessageType* message, unsigned int seed) {
+      TweakMyMessage(message, seed);
+    }};
+static PostProcessorRegistration<MyMessageType> reg2 = {
+    [](MyMessageType* message, unsigned int seed) {
+      DifferentTweakMyMessage(message, seed);
+    }};
+static PostProcessorRegistration<MyMessageType::Nested> reg_nested = {
+    [](MyMessageType::Nested* message, unsigned int seed) {
+      TweakMyNestedMessage(message, seed);
+    }};
 
+DEFINE_PROTO_FUZZER(const MyMessageType& input) {
   // Code which needs to be fuzzed.
   ConsumeMyMessageType(input);
 }
