@@ -42,6 +42,7 @@ ExternalProject_Add(${LIBXML2_TARGET}
                                                     CXX=${CMAKE_CXX_COMPILER}
                                                     CFLAGS=${LIBXML2_CFLAGS}
                                                     CXXFLAGS=${LIBXML2_CXXFLAGS}
+                                                    --enable-shared=no
     BUILD_COMMAND make -j ${CPU_COUNT} all
     INSTALL_COMMAND make install
     BUILD_BYPRODUCTS ${LIBXML2_BUILD_BYPRODUCTS}
