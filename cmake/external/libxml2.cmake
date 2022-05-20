@@ -38,6 +38,7 @@ ExternalProject_Add(${LIBXML2_TARGET}
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${LIBXML2_SRC_DIR}/autogen.sh --without-python
                                                     --prefix=${LIBXML2_INSTALL_DIR}
+                                                    --enable-static
                                                     CC=${CMAKE_C_COMPILER}
                                                     CXX=${CMAKE_CXX_COMPILER}
                                                     CFLAGS=${LIBXML2_CFLAGS}
