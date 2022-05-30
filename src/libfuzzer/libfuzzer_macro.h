@@ -141,3 +141,4 @@ struct GetFirstParam<void (*)(Arg)> {
 }  // namespace protobuf_mutator
 
 #endif  // SRC_LIBFUZZER_LIBFUZZER_MACRO_H_
+
