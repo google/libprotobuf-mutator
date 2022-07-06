@@ -142,6 +142,14 @@ string should be UTF-8, however only "proto3" enforces that. So if fuzzer is
 applied to "proto2" type libprotobuf-mutator will generate any strings including
 invalid UTF-8. If it's a "proto3" message type, only valid UTF-8 will be used.
 
+## Extensions
+Currently the library does not mutate
+[extensions](https://developers.google.com/protocol-buffers/docs/proto#extensions).
+This can be a problem if extension contains required fields so the library will not
+be able to change the message into valid initialized state.
+You can use [post processing hooks](#mutation-post-processing-experimental) to
+cleanup/initialize the message as workaround.
+
 ## Users of the library
 * [Chromium](https://cs.chromium.org/search/?q=DEFINE_.*._PROTO_FUZZER%5C\()
 * [Envoy](https://github.com/envoyproxy/envoy/search?q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&unscoped_q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&type=Code)
