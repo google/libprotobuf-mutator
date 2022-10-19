@@ -88,12 +88,12 @@ std::string Mutator::MutateString(const std::string& value,
   // Use uint16_t because on Windows, uniform_int_distribution does not support
   // any 8 bit types.
   if (!std::uniform_int_distribution<uint16_t>(0, 20)(*random())) return {};
-  std::string result = value;
+  std::vector<char> result(value.begin(), value.end());
   int new_size = value.size() + size_increase_hint;
-  result.resize(std::max(1, new_size));
-  result.resize(LLVMFuzzerMutate(reinterpret_cast<uint8_t*>(&result[0]),
-                                 value.size(), result.size()));
-  return result;
+  result.resize(std::max(1, new_size), '\0');
+  result.resize(LLVMFuzzerMutate(
+      reinterpret_cast<uint8_t*>(result.data()), value.size(), result.size()));
+  return std::string(result.begin(), result.end());
 }
 
 }  // namespace libfuzzer
