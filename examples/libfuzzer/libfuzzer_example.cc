@@ -19,8 +19,6 @@
 #include "port/protobuf.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 
-protobuf_mutator::protobuf::LogSilencer log_silincer;
-
 template <class Proto>
 using PostProcessor =
     protobuf_mutator::libfuzzer::PostProcessorRegistration<Proto>;
