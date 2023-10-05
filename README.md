@@ -1,6 +1,5 @@
 # libprotobuf-mutator
 
-[![TravisCI Build Status](https://travis-ci.org/google/libprotobuf-mutator.svg?branch=master)](https://travis-ci.org/google/libprotobuf-mutator)
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libprotobuf-mutator.svg)](https://oss-fuzz-build-logs.storage.googleapis.com/index.html#libprotobuf-mutator)
 
 ## Overview
