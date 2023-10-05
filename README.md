@@ -154,6 +154,24 @@ cleanup/initialize the message as workaround.
 * [Envoy](https://github.com/envoyproxy/envoy/search?q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&unscoped_q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&type=Code)
 * [LLVM](https://github.com/llvm-mirror/clang/search?q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&unscoped_q=DEFINE_TEXT_PROTO_FUZZER+OR+DEFINE_PROTO_FUZZER+OR+DEFINE_BINARY_PROTO_FUZZER&type=Code)
 
+## Grammars
+* GIF, https://github.com/google/oss-fuzz/tree/master/projects/giflib
+* JSON
+  * https://github.com/google/oss-fuzz/tree/master/projects/jsoncpp
+  * https://github.com/officialcjunior/fuzzrtos/tree/c72e6670e566672ccf8023265cbfad616e75790d/protobufv2
+* Lua 5.1 Language,
+  * https://github.com/ligurio/lua-c-api-tests/tree/master/tests/luaL_loadbuffer_proto
+  * https://github.com/Spoookyyy/luaj/tree/main/fuzz
+* PNG, https://github.com/google/oss-fuzz/tree/master/projects/libpng-proto
+* SQL
+  * https://github.com/tarantool/tarantool/tree/master/test/fuzz/sql_fuzzer
+  * https://chromium.googlesource.com/chromium/src/third_party/+/refs/heads/main/sqlite/fuzz
+* Solidity Language, https://github.com/ethereum/solidity/tree/develop/test/tools/ossfuzz
+* XML
+  * https://github.com/google/oss-fuzz/tree/master/projects/xerces-c
+  * https://github.com/google/libprotobuf-mutator/tree/master/examples/xml
+* JPEG, https://source.chromium.org/chromium/chromium/src/+/main:media/gpu/vaapi/fuzzers/jpeg_decoder/
+
 ## Bugs found with help of the library
 
 ### Chromium
