@@ -11,7 +11,7 @@ It could be used together with guided fuzzing engines, such as [libFuzzer](http:
 
 Install prerequisites:
 
-```
+```sh
 sudo apt-get update
 sudo apt-get install protobuf-compiler libprotobuf-dev binutils cmake \
   ninja-build liblzma-dev libz-dev pkg-config autoconf libtool
@@ -19,7 +19,7 @@ sudo apt-get install protobuf-compiler libprotobuf-dev binutils cmake \
 
 Compile and test everything:
 
-```
+```sh
 mkdir build
 cd build
 cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug
@@ -35,7 +35,7 @@ build a working version of protobuf.
 
 Installation:
 
-```
+```sh
 ninja
 sudo ninja install
 ```
@@ -58,7 +58,7 @@ using [libFuzzer](http://libfuzzer.info)'s mutators.
 
 To apply one mutation to a protobuf object do the following:
 
-```
+```c++
 class MyProtobufMutator : public protobuf_mutator::Mutator {
  public:
   // Optionally redefine the Mutate* methods to perform more sophisticated mutations.
@@ -76,7 +76,7 @@ See also the `ProtobufMutatorMessagesTest.UsageExample` test from
 ## Integrating with libFuzzer
 LibFuzzerProtobufMutator can help to integrate with libFuzzer. For example 
 
-```
+```c++
 #include "src/libfuzzer/libfuzzer_macro.h"
 
 DEFINE_PROTO_FUZZER(const MyMessageType& input) {
@@ -96,7 +96,7 @@ for fuzzer even if it's capable of inserting acceptable values with time.
 PostProcessorRegistration can be used to avoid such issue and guide your fuzzer towards interesting
 code. It registers callback which will be called for each message of particular type after each mutation.
 
-```
+```c++
 static protobuf_mutator::libfuzzer::PostProcessorRegistration<MyMessageType> reg = {
     [](MyMessageType* message, unsigned int seed) {
       TweakMyMessage(message, seed);
@@ -116,7 +116,7 @@ may corrupt the reproducer so it stops triggering the bug.
 
 Note: You can add callback for any nested message and you can add multiple callbacks for
 the same message type.
-```
+```c++
 static PostProcessorRegistration<MyMessageType> reg1 = {
     [](MyMessageType* message, unsigned int seed) {
       TweakMyMessage(message, seed);
