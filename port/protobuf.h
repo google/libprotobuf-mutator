@@ -51,9 +51,6 @@ namespace protobuf_mutator {
 
 namespace protobuf = google::protobuf;
 
-// String type used by google::protobuf.
-using String = std::string;
-
 }  // namespace protobuf_mutator
 
 #endif  // PORT_PROTOBUF_H_
