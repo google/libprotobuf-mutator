@@ -29,6 +29,7 @@
 
 namespace protobuf_mutator {
 
+using protobuf::DownCastToGenerated;
 using protobuf::util::MessageDifferencer;
 using testing::TestWithParam;
 using testing::ValuesIn;
@@ -622,7 +623,7 @@ TYPED_TEST(MutatorTypedTest, RegisterPostProcessor) {
         TestFixture::Message::descriptor(),
         [=](protobuf::Message* message, unsigned int seed) {
           auto test_message =
-              static_cast<typename TestFixture::Message*>(message);
+              DownCastToGenerated<typename TestFixture::Message>(message);
           if (seed % 2) test_message->set_optional_string(v);
         });
   }

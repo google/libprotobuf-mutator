@@ -24,6 +24,29 @@
 #include "google/protobuf/util/message_differencer.h"
 #include "google/protobuf/wire_format.h"
 
+#include "google/protobuf/port_def.inc"  // MUST be last header included
+#if PROTOBUF_VERSION < 4025000
+
+namespace google {
+namespace protobuf {
+
+template <typename T>
+const T* DownCastToGenerated(const Message* message) {
+  return static_cast<const T*>(message);
+}
+
+template <typename T>
+T* DownCastToGenerated(Message* message) {
+  const Message* message_const = message;
+  return const_cast<T*>(DownCastToGenerated<T>(message_const));
+}
+
+}  // namespace protobuf
+}  // namespace google
+#endif  // PROTOBUF_VERSION
+#include "google/protobuf/port_undef.inc"
+
+
 namespace protobuf_mutator {
 
 namespace protobuf = google::protobuf;
