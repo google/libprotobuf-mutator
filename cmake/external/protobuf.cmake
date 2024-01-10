@@ -69,6 +69,7 @@ list(APPEND PROTOBUF_LIBRARIES
   absl_hash
   absl_hashtablez_sampler
   absl_int128
+  absl_kernel_timeout_internal
   absl_leak_check
   absl_log_entry
   absl_log_flags
@@ -107,6 +108,7 @@ list(APPEND PROTOBUF_LIBRARIES
   absl_statusor
   absl_str_format_internal
   absl_strerror
+  absl_string_view
   absl_strings
   absl_strings_internal
   absl_symbolize
@@ -151,7 +153,7 @@ include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
     PREFIX ${PROTOBUF_TARGET}
     GIT_REPOSITORY https://github.com/google/protobuf.git
-    GIT_TAG v24.4
+    GIT_TAG v25.2
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOBUF_INSTALL_DIR}/src/${PROTOBUF_TARGET}
         -G${CMAKE_GENERATOR}
