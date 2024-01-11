@@ -1,7 +1,7 @@
 # libprotobuf-mutator
 
-[![Build Status](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml/badge.svg?event=push)](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml?event=push)
-[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libprotobuf-mutator.svg)](https://oss-fuzz-build-logs.storage.googleapis.com/index.html#libprotobuf-mutator?query=event%3Apush)
+[![Build Status](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml/badge.svg?event=push)](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml?query=event%3Apush)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libprotobuf-mutator.svg)](https://oss-fuzz-build-logs.storage.googleapis.com/index.html#libprotobuf-mutator)
 
 ## Overview
 libprotobuf-mutator is a library to randomly mutate
