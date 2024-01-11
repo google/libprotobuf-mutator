@@ -1,6 +1,6 @@
 # libprotobuf-mutator
 
-![example workflow](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml/badge.svg)
+[![Build Status](https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml/badge.svg)]https://github.com/vitalybuka/libprotobuf-mutator/actions/workflows/cmake-multi-platform.yml
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/libprotobuf-mutator.svg)](https://oss-fuzz-build-logs.storage.googleapis.com/index.html#libprotobuf-mutator)
 
 ## Overview
