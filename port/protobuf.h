@@ -24,7 +24,9 @@
 #include "google/protobuf/util/message_differencer.h"
 #include "google/protobuf/wire_format.h"
 
+// clang-format off
 #include "google/protobuf/port_def.inc"  // MUST be last header included
+// clang-format on
 #if PROTOBUF_VERSION < 4025000
 
 namespace google {
