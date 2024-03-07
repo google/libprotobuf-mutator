@@ -21,6 +21,7 @@ using protobuf_mutator::protobuf::util::MessageDifferencer;
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::DoAll;
+using ::testing::Eq;
 using ::testing::Ref;
 using ::testing::SaveArg;
 using ::testing::SaveArgPointee;
@@ -42,9 +43,24 @@ protobuf_mutator::libfuzzer::PostProcessorRegistration<protobuf_mutator::Msg>
       mock_fuzzer->PostProcess(message, seed);
     }};
 
-DEFINE_TEXT_PROTO_FUZZER(const protobuf_mutator::Msg& message) {
+#if defined(LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE) || \
+    defined(TEST_RETURN_OVERLOAD)
+const int returnCode = 5;
+#endif
+
+#ifdef TEST_RETURN_OVERLOAD
+DEFINE_TEXT_PROTO_FUZZER_RET(const protobuf_mutator::Msg& message) {
   mock_fuzzer->TestOneInput(message);
-}
+  return returnCode;
+  }
+#else
+  DEFINE_TEXT_PROTO_FUZZER(const protobuf_mutator::Msg& message) {
+    mock_fuzzer->TestOneInput(message);
+  #ifdef LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE
+    return returnCode;
+  #endif
+  }
+#endif
 
 MATCHER_P(IsMessageEq, msg, "") {
   return MessageDifferencer::Equals(arg, msg.get());
@@ -59,7 +75,12 @@ TEST(LibFuzzerTest, LLVMFuzzerTestOneInput) {
       .WillOnce(DoAll(SaveArgPointee<0>(&msg), SaveArg<1>(&seed)));
   EXPECT_CALL(
       mock, TestOneInput(AllOf(IsMessageEq(std::cref(msg)), IsInitialized())));
+#if defined(LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE) || \
+    defined(TEST_RETURN_VARIANT)
+  EXPECT_THAT(LLVMFuzzerTestOneInput((const uint8_t*)"", 0), Eq(returnCode));
+#else
   LLVMFuzzerTestOneInput((const uint8_t*)"", 0);
+#endif
 
   EXPECT_CALL(mock, PostProcess(_, seed)).WillOnce(SaveArgPointee<0>(&msg));
   EXPECT_CALL(
