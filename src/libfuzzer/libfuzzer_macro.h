@@ -26,13 +26,23 @@
 // Defines custom mutator, crossover and test functions using default
 // serialization format. Default is text.
 #define DEFINE_PROTO_FUZZER(arg) DEFINE_TEXT_PROTO_FUZZER(arg)
+// Same as 'DEFINE_PROTO_FUZZER' but supports a return code to reject invalid
+// inputs.
+#define DEFINE_PROTO_FUZZER_RET(arg) DEFINE_TEXT_PROTO_FUZZER_RET(arg)
 // Defines custom mutator, crossover and test functions using text
 // serialization. This format is more convenient to read.
 #define DEFINE_TEXT_PROTO_FUZZER(arg) DEFINE_PROTO_FUZZER_IMPL(false, arg)
+// Same as 'DEFINE_TEXT_PROTO_FUZZER' but supports a return code to reject invalid
+// inputs.
+#define DEFINE_TEXT_PROTO_FUZZER_RET(arg) DEFINE_PROTO_FUZZER_RET_IMPL(false, arg)
 // Defines custom mutator, crossover and test functions using binary
 // serialization. This makes mutations faster. However often test function is
 // significantly slower than mutator, so fuzzing rate may stay unchanged.
 #define DEFINE_BINARY_PROTO_FUZZER(arg) DEFINE_PROTO_FUZZER_IMPL(true, arg)
+// Same as 'DEFINE_BINARY_PROTO_FUZZER' but supports a return code to reject invalid
+// inputs.
+#define DEFINE_BINARY_PROTO_FUZZER_RET(arg) \
+  DEFINE_PROTO_FUZZER_RET_IMPL(true, arg)
 
 // Registers the callback as a potential mutation performed on the parent
 // message of a field. This must be called inside an initialization code block.
@@ -78,20 +88,45 @@
     return 0;                                                               \
   }
 
+#define DEFINE_TEST_ONE_PROTO_INPUT_RET_IMPL(use_binary, Proto)             \
+  extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) { \
+    using protobuf_mutator::libfuzzer::LoadProtoInput;                      \
+    Proto input;                                                            \
+    if (LoadProtoInput(use_binary, data, size, &input))                     \
+      return TestOneProtoInput(input);                                      \
+    return -1;                                                              \
+  }
+
 #define DEFINE_POST_PROCESS_PROTO_MUTATION_IMPL(Proto) \
   using PostProcessorRegistration =                    \
       protobuf_mutator::libfuzzer::PostProcessorRegistration<Proto>;
 
-#define DEFINE_PROTO_FUZZER_IMPL(use_binary, arg)                 \
-  static void TestOneProtoInput(arg);                             \
-  using FuzzerProtoType =                                         \
-      protobuf_mutator::libfuzzer::macro_internal::GetFirstParam< \
-          decltype(&TestOneProtoInput)>::type;                    \
-  DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, FuzzerProtoType)   \
-  DEFINE_CUSTOM_PROTO_CROSSOVER_IMPL(use_binary, FuzzerProtoType) \
-  DEFINE_TEST_ONE_PROTO_INPUT_IMPL(use_binary, FuzzerProtoType)   \
-  DEFINE_POST_PROCESS_PROTO_MUTATION_IMPL(FuzzerProtoType)        \
+#ifdef LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE
+#define DEFINE_PROTO_FUZZER_IMPL(use_binary, arg) \
+  DEFINE_PROTO_FUZZER_RET_IMPL(use_binary, arg)
+#else
+#define DEFINE_PROTO_FUZZER_IMPL(use_binary, arg)                          \
+  static void TestOneProtoInput(arg);                                      \
+  using FuzzerProtoType =                                                  \
+      protobuf_mutator::libfuzzer::macro_internal::GetFirstParam<decltype( \
+          &TestOneProtoInput)>::type;                                      \
+  DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, FuzzerProtoType)            \
+  DEFINE_CUSTOM_PROTO_CROSSOVER_IMPL(use_binary, FuzzerProtoType)          \
+  DEFINE_TEST_ONE_PROTO_INPUT_IMPL(use_binary, FuzzerProtoType)            \
+  DEFINE_POST_PROCESS_PROTO_MUTATION_IMPL(FuzzerProtoType)                 \
   static void TestOneProtoInput(arg)
+#endif
+
+#define DEFINE_PROTO_FUZZER_RET_IMPL(use_binary, arg)                      \
+  static int TestOneProtoInput(arg);                                       \
+  using FuzzerProtoType =                                                  \
+      protobuf_mutator::libfuzzer::macro_internal::GetFirstParam<decltype( \
+          &TestOneProtoInput)>::type;                                      \
+  DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, FuzzerProtoType)            \
+  DEFINE_CUSTOM_PROTO_CROSSOVER_IMPL(use_binary, FuzzerProtoType)          \
+  DEFINE_TEST_ONE_PROTO_INPUT_RET_IMPL(use_binary, FuzzerProtoType)        \
+  DEFINE_POST_PROCESS_PROTO_MUTATION_IMPL(FuzzerProtoType)                 \
+  static int TestOneProtoInput(arg)
 
 namespace protobuf_mutator {
 namespace libfuzzer {
@@ -129,11 +164,11 @@ namespace macro_internal {
 template <typename T>
 struct GetFirstParam;
 
-template <class Arg>
-struct GetFirstParam<void (*)(Arg)> {
-  using type = typename std::remove_const<
-      typename std::remove_reference<Arg>::type>::type;
-};
+template <class Ret, class Arg>
+  struct GetFirstParam<Ret (*)(Arg)> {
+    using type = typename std::remove_const<
+        typename std::remove_reference<Arg>::type>::type;
+  };
 
 }  // namespace macro_internal
 
