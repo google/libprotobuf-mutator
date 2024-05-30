@@ -21,6 +21,7 @@ target_link_libraries(protobuf-mutator-libfuzzer
 set_target_properties(protobuf-mutator-libfuzzer PROPERTIES
                       COMPILE_FLAGS "${NO_FUZZING_FLAGS}"
                       SOVERSION 0)
+target_compile_features(protobuf-mutator-libfuzzer PRIVATE cxx_std_14)
 
 install(TARGETS protobuf-mutator-libfuzzer
         EXPORT libprotobuf-mutatorTargets
