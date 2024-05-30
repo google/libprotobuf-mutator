@@ -42,10 +42,6 @@ include_directories(${LIBLZMA_INCLUDE_DIRS})
 find_package(ZLIB)
 include_directories(${ZLIB_INCLUDE_DIRS})
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 include_directories(${PROJECT_SOURCE_DIR})
 
 if (MSVC)
