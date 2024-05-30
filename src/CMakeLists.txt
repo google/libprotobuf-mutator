@@ -24,7 +24,7 @@ target_link_libraries(protobuf-mutator
 set_target_properties(protobuf-mutator PROPERTIES
                       COMPILE_FLAGS "${NO_FUZZING_FLAGS}"
                       SOVERSION 0)
-target_compile_features(protobuf-mutator PRIVATE cxx_std_14)
+target_compile_features(protobuf-mutator PUBLIC cxx_std_14)
 
 if (LIB_PROTO_MUTATOR_TESTING)
   protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
