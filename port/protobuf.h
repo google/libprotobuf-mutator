@@ -27,25 +27,36 @@
 // clang-format off
 #include "google/protobuf/port_def.inc"  // MUST be last header included
 // clang-format on
-#if PROTOBUF_VERSION < 4025000
-
 namespace google {
 namespace protobuf {
+#if PROTOBUF_VERSION < 4025000
 
 template <typename T>
-const T* DownCastToGenerated(const Message* message) {
+const T* DownCastMessage(const Message* message) {
   return static_cast<const T*>(message);
 }
 
 template <typename T>
-T* DownCastToGenerated(Message* message) {
+T* DownCastMessage(Message* message) {
   const Message* message_const = message;
-  return const_cast<T*>(DownCastToGenerated<T>(message_const));
+  return const_cast<T*>(DownCastMessage<T>(message_const));
 }
 
+#elif PROTOBUF_VERSION < 5029000
+
+template <typename T>
+const T* DownCastMessage(const Message* message) {
+  return DownCastToGenerated<T>(message);
+}
+
+template <typename T>
+T* DownCastMessage(Message* message) {
+  return DownCastToGenerated<T>(message);
+}
+
+#endif  // PROTOBUF_VERSION
 }  // namespace protobuf
 }  // namespace google
-#endif  // PROTOBUF_VERSION
 #include "google/protobuf/port_undef.inc"
 
 
