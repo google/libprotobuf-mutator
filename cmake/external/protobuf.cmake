@@ -53,7 +53,6 @@ list(APPEND PROTOBUF_LIBRARIES
   absl_examine_stack
   absl_exponential_biased
   absl_failure_signal_handler
-  absl_flags
   absl_flags_commandlineflag
   absl_flags_commandlineflag_internal
   absl_flags_config
@@ -153,7 +152,7 @@ include (ExternalProject)
 ExternalProject_Add(${PROTOBUF_TARGET}
     PREFIX ${PROTOBUF_TARGET}
     GIT_REPOSITORY https://github.com/google/protobuf.git
-    GIT_TAG v25.2
+    GIT_TAG v27.1
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOBUF_INSTALL_DIR}/src/${PROTOBUF_TARGET}
         -G${CMAKE_GENERATOR}
