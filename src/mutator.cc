@@ -381,13 +381,13 @@ std::unique_ptr<Message> UnpackAny(const Any& any) {
 
 const Any* CastToAny(const Message* message) {
   return Any::GetDescriptor() == message->GetDescriptor()
-             ? protobuf::DownCastToGenerated<Any>(message)
+             ? protobuf::DownCastMessage<Any>(message)
              : nullptr;
 }
 
 Any* CastToAny(Message* message) {
   return Any::GetDescriptor() == message->GetDescriptor()
-             ? protobuf::DownCastToGenerated<Any>(message)
+             ? protobuf::DownCastMessage<Any>(message)
              : nullptr;
 }
 
