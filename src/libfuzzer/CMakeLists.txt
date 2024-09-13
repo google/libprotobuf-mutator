@@ -30,14 +30,20 @@ install(TARGETS protobuf-mutator-libfuzzer
         INCLUDES DESTINATION include/libprotobuf-mutator include/libprotobuf-mutator/src)
 
 if (LIB_PROTO_MUTATOR_TESTING)
-  add_executable(libfuzzer_test
-                 libfuzzer_test.cc)
-  target_link_libraries(libfuzzer_test
-                        protobuf-mutator
-                        protobuf-mutator-libfuzzer
-                        mutator-test-proto
-                        ${GTEST_BOTH_LIBRARIES}
-                        ${CMAKE_THREAD_LIBS_INIT})
-  add_test(test.protobuf_libfuzzer_test libfuzzer_test --gtest_color=yes AUTO)
-  add_dependencies(check libfuzzer_test)
+  list(APPEND TARGETS libfuzzer_test libfuzzer_return_enabled_test libfuzzer_return_overload_test)
+  list(APPEND FLAGS "" LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE TEST_RETURN_OVERLOAD)
+
+  foreach(TARGET FLAG IN ZIP_LISTS TARGETS FLAGS)
+      add_executable(${TARGET}
+                     libfuzzer_test.cc)
+      target_compile_definitions(${TARGET} PRIVATE ${FLAG})
+      target_link_libraries(${TARGET}
+                            protobuf-mutator
+                            protobuf-mutator-libfuzzer
+                            mutator-test-proto
+                            ${GTEST_BOTH_LIBRARIES}
+                            ${CMAKE_THREAD_LIBS_INIT})
+      add_test(test.protobuf_${TARGET} ${TARGET} --gtest_color=yes AUTO)
+      add_dependencies(check ${TARGET})
+  endforeach()
 endif()
