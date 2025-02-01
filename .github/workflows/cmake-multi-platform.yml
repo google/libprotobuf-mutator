@@ -52,7 +52,9 @@ jobs:
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_CXX_FLAGS='-Werror'
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_C_FLAGS='-Werror'
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON
         -GNinja
