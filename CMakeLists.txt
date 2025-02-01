@@ -80,7 +80,7 @@ unset(CMAKE_REQUIRED_FLAGS)
 check_cxx_compiler_flag(-Wstring-conversion LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
 
 if (NOT MSVC)
-  set(EXTRA_FLAGS "-fno-exceptions -Werror -Wall")
+  set(EXTRA_FLAGS "-fno-exceptions -Wall")
   if (LIB_PROTO_MUTATOR_HAS_WSTRING_CONVERSION)
     set(EXTRA_FLAGS "${EXTRA_FLAGS} -Wstring-conversion")
   endif()
