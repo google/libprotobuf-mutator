@@ -801,7 +801,7 @@ std::string Mutator::MutateUtf8String(const std::string& value,
 
 bool Mutator::IsInitialized(const Message& message) const {
   if (!keep_initialized_ || message.IsInitialized()) return true;
-  std::cerr << "Uninitialized: " << absl::StrCat(message) << "\n";
+  std::cerr << "Uninitialized: " << protobuf::ShortFormat(message) << "\n";
   return false;
 }
 
