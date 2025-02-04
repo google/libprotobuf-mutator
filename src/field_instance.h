@@ -195,9 +195,9 @@ class ConstFieldInstance {
   const protobuf::FieldDescriptor* descriptor() const { return descriptor_; }
 
   std::string DebugString() const {
-    std::string s = absl::StrCat(*descriptor_);
-    if (is_repeated()) s += absl::StrCat("[", index_, "]");
-    return s + " of\n" + absl::StrCat(*message_);
+    std::string s = descriptor_->DebugString();
+    if (is_repeated()) s += "[" + std::to_string(index_) + "]";
+    return s + " of\n" + protobuf::ShortFormat(*message_);
   }
 
  protected:

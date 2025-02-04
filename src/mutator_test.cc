@@ -410,8 +410,8 @@ bool Mutate(const protobuf::Message& from, const protobuf::Message& to,
   }
 
   ADD_FAILURE() << "Failed to get from:\n"
-                << absl::StrCat(from) << "\nto:\n"
-                << absl::StrCat(to);
+                << protobuf::ShortFormat(from) << "\nto:\n"
+                << protobuf::ShortFormat(to);
   return false;
 }
 
