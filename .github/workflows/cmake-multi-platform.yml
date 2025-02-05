@@ -29,12 +29,25 @@ jobs:
         build_type: [Release, Debug]
         c_compiler: [clang]
         cpp_compiler: [clang++]
+        bundled_protobuf: ['ON', 'OFF']
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Install Deps
-      run: sudo apt install -y liblzma-dev ninja-build
+      run: |
+        ubuntu_packages=(
+          liblzma-dev
+          ninja-build
+        )
+        if [[ ${{ matrix.bundled_protobuf }} == OFF ]]; then
+          ubuntu_packages+=(
+            libprotobuf-dev
+            protobuf-compiler
+          )
+        fi
+        set -x
+        sudo apt install -y "${ubuntu_packages[@]}"
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -53,7 +66,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_C_FLAGS='-Werror'
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON
+        -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=${{ matrix.bundled_protobuf }}
         -GNinja
         -S ${{ github.workspace }}
 
