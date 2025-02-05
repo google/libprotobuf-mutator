@@ -205,7 +205,7 @@ class ConstFieldInstance {
   std::string DebugString() const {
     std::string s = descriptor_->DebugString();
     if (is_repeated()) s += "[" + std::to_string(index_) + "]";
-    return s + " of\n" + protobuf::ShortFormat(*message_);
+    return s + " of\n" + message_->DebugString();
   }
 
  protected:
