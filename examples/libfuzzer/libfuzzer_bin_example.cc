@@ -55,7 +55,7 @@ DEFINE_BINARY_PROTO_FUZZER(const libfuzzer_example::Msg& message) {
       !std::isnan(message.optional_float()) &&
       std::fabs(message.optional_float()) > 1000 &&
       message.any().UnpackTo(&file) && !file.name().empty()) {
-    std::cerr << protobuf_mutator::protobuf::ShortFormat(message) << "\n";
+    std::cerr << message.DebugString() << "\n";
     abort();
   }
 }
