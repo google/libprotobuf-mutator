@@ -28,10 +28,7 @@ jobs:
         os: [ubuntu-24.04]
         build_type: [Release, Debug]
         c_compiler: [clang]
-        include:
-          - os: ubuntu-24.04
-            c_compiler: clang
-            cpp_compiler: clang++
+        cpp_compiler: [clang++]
 
     steps:
     - uses: actions/checkout@v3
