@@ -190,7 +190,15 @@ class ConstFieldInstance {
     return descriptor_->message_type();
   }
 
-  bool EnforceUtf8() const { return descriptor_->requires_utf8_validation(); }
+  bool EnforceUtf8() const {
+#if PROTOBUF_VERSION >= 4022000  // v3(!).22.0 (commit d85c9944c55fb38f4eae149979a0f680ea125ecb) for requires_utf8_validation
+    return descriptor_->requires_utf8_validation();
+#else
+    return descriptor_->type() == protobuf::FieldDescriptor::TYPE_STRING &&
+           descriptor()->file()->syntax() ==
+               protobuf::FileDescriptor::SYNTAX_PROTO3;
+#endif
+  }
 
   const protobuf::FieldDescriptor* descriptor() const { return descriptor_; }
 
