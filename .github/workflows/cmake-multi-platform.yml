@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    name: Build (Bundled ${{ matrix.bundled_protobuf }}, ${{ matrix.build_type }})
     runs-on: ${{ matrix.os }}
 
     strategy:
