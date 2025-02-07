@@ -19,6 +19,7 @@ enable_language(C)
 enable_language(CXX)
 
 option(LIB_PROTO_MUTATOR_TESTING "Enable test building" ON)
+option(LIB_PROTO_MUTATOR_EXAMPLES "Enable examples building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
@@ -143,8 +144,8 @@ endif()
 
 add_subdirectory(src)
 
-if (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
-    NOT "${FUZZING_FLAGS}" STREQUAL "")
+if (LIB_PROTO_MUTATOR_EXAMPLES AND (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
+                                    NOT "${FUZZING_FLAGS}" STREQUAL ""))
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
