@@ -1,0 +1,207 @@
+From 44a8109e6b187ee877a5cb676cd5408b401c3497 Mon Sep 17 00:00:00 2001
+From: Sebastian Pipping <sebastian@pipping.org>
+Date: Sat, 8 Feb 2025 02:08:01 +0100
+Subject: [PATCH 2/2] Drop support for any language but C++ from protoc
+
+Signed-off-by: Sebastian Pipping <sebastian@pipping.org>
+---
+ src/file_lists.cmake                 | 99 ----------------------------
+ src/google/protobuf/compiler/main.cc | 62 -----------------
+ 2 files changed, 161 deletions(-)
+
+diff --git a/src/file_lists.cmake b/src/file_lists.cmake
+index 104a296d1..68758b844 100644
+--- a/src/file_lists.cmake
++++ b/src/file_lists.cmake
+@@ -312,108 +312,9 @@ set(libprotoc_srcs
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/parse_function_generator.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/service.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/tracker.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_field_base.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_helpers.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_map_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_primitive_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_reflection_class.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_enum_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_message_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_primitive_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_source_generator_base.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_wrapper_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/names.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/context.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/doc_comment.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/field_common.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/file.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/enum.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/enum_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/extension.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/generator_factory.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/make_field_gens.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/map_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/message_builder.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/message_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/primitive_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/service.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/full/string_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/helpers.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/internal_helpers.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/java_features.pb.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/enum.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/enum_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/extension.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/generator_factory.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/make_field_gens.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/map_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/message_builder.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/message_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/primitive_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/lite/string_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_serialization.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/name_resolver.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/names.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/shared_code_generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/kotlin/file.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/kotlin/generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/kotlin/message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/extension.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/file.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/helpers.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/import_writer.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/line_consumer.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/map_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/names.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/oneof.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/primitive_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/tf_decode_data.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/names.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/php_generator.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.pb.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/helpers.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/pyi_generator.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/retention.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/ruby/ruby_generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/accessor_case.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/accessors.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/default_value.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/map.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/repeated_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_cord.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_string.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/unsupported_field.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/with_presence.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/context.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/crate_mapping.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/enum.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/generator.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/message.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/naming.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/oneof.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/relative_path.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/rust_field_type.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/rust_keywords.cc
+-  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/upb_helpers.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/subprocess.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/versions.cc
+   ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/zip_writer.cc
+diff --git a/src/google/protobuf/compiler/main.cc b/src/google/protobuf/compiler/main.cc
+index babede8fa..8242651ec 100644
+--- a/src/google/protobuf/compiler/main.cc
++++ b/src/google/protobuf/compiler/main.cc
+@@ -8,15 +8,6 @@
+ #include "absl/log/initialize.h"
+ #include "google/protobuf/compiler/command_line_interface.h"
+ #include "google/protobuf/compiler/cpp/generator.h"
+-#include "google/protobuf/compiler/csharp/csharp_generator.h"
+-#include "google/protobuf/compiler/java/generator.h"
+-#include "google/protobuf/compiler/kotlin/generator.h"
+-#include "google/protobuf/compiler/objectivec/generator.h"
+-#include "google/protobuf/compiler/php/php_generator.h"
+-#include "google/protobuf/compiler/python/generator.h"
+-#include "google/protobuf/compiler/python/pyi_generator.h"
+-#include "google/protobuf/compiler/ruby/ruby_generator.h"
+-#include "google/protobuf/compiler/rust/generator.h"
+ 
+ #ifdef DISABLE_PROTOC_CONFIG
+ #include "google/protobuf/compiler/allowlists/allowlist.h"
+@@ -53,59 +44,6 @@ int ProtobufMain(int argc, char* argv[]) {
+   cpp_generator.set_runtime_include_base(GOOGLE_PROTOBUF_RUNTIME_INCLUDE_BASE);
+ #endif
+ 
+-  // Proto2 Java
+-  java::JavaGenerator java_generator;
+-  cli.RegisterGenerator("--java_out", "--java_opt", &java_generator,
+-                        "Generate Java source file.");
+-
+-#ifdef GOOGLE_PROTOBUF_RUNTIME_INCLUDE_BASE
+-  java_generator.set_opensource_runtime(true);
+-#endif
+-
+-  // Proto2 Kotlin
+-  kotlin::KotlinGenerator kt_generator;
+-  cli.RegisterGenerator("--kotlin_out", "--kotlin_opt", &kt_generator,
+-                        "Generate Kotlin file.");
+-
+-
+-  // Proto2 Python
+-  python::Generator py_generator;
+-  cli.RegisterGenerator("--python_out", "--python_opt", &py_generator,
+-                        "Generate Python source file.");
+-
+-#ifdef GOOGLE_PROTOBUF_RUNTIME_INCLUDE_BASE
+-  py_generator.set_opensource_runtime(true);
+-#endif
+-
+-  // Python pyi
+-  python::PyiGenerator pyi_generator;
+-  cli.RegisterGenerator("--pyi_out", &pyi_generator,
+-                        "Generate python pyi stub.");
+-
+-  // PHP
+-  php::Generator php_generator;
+-  cli.RegisterGenerator("--php_out", "--php_opt", &php_generator,
+-                        "Generate PHP source file.");
+-
+-  // Ruby
+-  ruby::Generator rb_generator;
+-  cli.RegisterGenerator("--ruby_out", "--ruby_opt", &rb_generator,
+-                        "Generate Ruby source file.");
+-
+-  // CSharp
+-  csharp::Generator csharp_generator;
+-  cli.RegisterGenerator("--csharp_out", "--csharp_opt", &csharp_generator,
+-                        "Generate C# source file.");
+-
+-  // Objective-C
+-  objectivec::ObjectiveCGenerator objc_generator;
+-  cli.RegisterGenerator("--objc_out", "--objc_opt", &objc_generator,
+-                        "Generate Objective-C header and source.");
+-
+-  // Rust
+-  rust::RustGenerator rust_generator;
+-  cli.RegisterGenerator("--rust_out", "--rust_opt", &rust_generator,
+-                        "Generate Rust sources.");
+ #ifdef DISABLE_PROTOC_CONFIG
+   auto cleanup = internal::DisableAllowlistInternalOnly();
+ #endif  // DISABLE_PROTOC_CONFIG
+-- 
+2.47.0
+

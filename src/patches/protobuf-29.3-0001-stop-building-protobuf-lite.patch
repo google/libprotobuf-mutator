@@ -1,0 +1,75 @@
+From 31694d4eaad98f547ff3e07955fb4b805c742c6f Mon Sep 17 00:00:00 2001
+From: Sebastian Pipping <sebastian@pipping.org>
+Date: Sat, 8 Feb 2025 02:01:51 +0100
+Subject: [PATCH 1/2] Strip protobuf-lite from CMakeLists.txt and
+ cmake/install.cmake
+
+Signed-off-by: Sebastian Pipping <sebastian@pipping.org>
+---
+ CMakeLists.txt      | 6 ------
+ cmake/install.cmake | 6 ++----
+ 2 files changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 878ef2e3d..1e94bdc07 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -303,10 +303,6 @@ include(${protobuf_SOURCE_DIR}/cmake/abseil-cpp.cmake)
+ 
+ if (protobuf_BUILD_PROTOBUF_BINARIES)
+   include(${protobuf_SOURCE_DIR}/cmake/utf8_range.cmake)
+-  include(${protobuf_SOURCE_DIR}/cmake/libprotobuf-lite.cmake)
+-  if (NOT DEFINED protobuf_LIB_PROTOBUF_LITE)
+-    set(protobuf_LIB_PROTOBUF_LITE libprotobuf-lite)
+-  endif ()
+   include(${protobuf_SOURCE_DIR}/cmake/libprotobuf.cmake)
+   if (NOT DEFINED protobuf_LIB_PROTOBUF)
+     set(protobuf_LIB_PROTOBUF libprotobuf)
+@@ -336,7 +332,6 @@ else ()
+     set(protobuf_PROTOC_EXE protobuf::protoc)
+     set(protobuf_LIB_PROTOC protobuf::libprotoc)
+     set(protobuf_LIB_PROTOBUF protobuf::libprotobuf)
+-    set(protobuf_LIB_PROTOBUF_LITE protobuf::libprotobuf-lite)
+     set(protobuf_LIB_UPB protobuf::libupb)
+     message(STATUS "CMake installation of Protobuf found.")
+   endif ()
+@@ -351,7 +346,6 @@ if (protobuf_BUILD_TESTS OR protobuf_BUILD_CONFORMANCE OR protobuf_BUILD_EXAMPLE
+   if(protobuf_VERBOSE)
+     message(STATUS "Using protoc : ${protobuf_PROTOC_EXE}")
+     message(STATUS "Using libprotobuf : ${protobuf_LIB_PROTOBUF}")
+-    message(STATUS "Using libprotobuf-lite : ${protobuf_LIB_PROTOBUF_LITE}")
+     message(STATUS "Using libprotoc : ${protobuf_LIB_PROTOC}")
+     message(STATUS "Using libupb : ${protobuf_LIB_UPB}")
+   endif(protobuf_VERBOSE)
+diff --git a/cmake/install.cmake b/cmake/install.cmake
+index b383a98c5..0e8e6befc 100644
+--- a/cmake/install.cmake
++++ b/cmake/install.cmake
+@@ -22,14 +22,12 @@ endif ()
+ 
+ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/protobuf.pc.cmake
+                ${CMAKE_CURRENT_BINARY_DIR}/protobuf.pc @ONLY)
+-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/protobuf-lite.pc.cmake
+-               ${CMAKE_CURRENT_BINARY_DIR}/protobuf-lite.pc @ONLY)
+ if (protobuf_BUILD_LIBUPB)
+   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/upb.pc.cmake
+                 ${CMAKE_CURRENT_BINARY_DIR}/upb.pc @ONLY)
+ endif ()
+ 
+-set(_protobuf_libraries libprotobuf-lite libprotobuf)
++set(_protobuf_libraries libprotobuf)
+ if (protobuf_BUILD_LIBPROTOC)
+     list(APPEND _protobuf_libraries libprotoc)
+ endif (protobuf_BUILD_LIBPROTOC)
+@@ -75,7 +73,7 @@ if (protobuf_BUILD_PROTOC_BINARIES)
+   endforeach ()
+ endif (protobuf_BUILD_PROTOC_BINARIES)
+ 
+-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/protobuf.pc ${CMAKE_CURRENT_BINARY_DIR}/protobuf-lite.pc DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/protobuf.pc DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+ if (protobuf_BUILD_LIBUPB)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pc DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+ endif ()
+-- 
+2.47.0
+

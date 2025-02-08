@@ -151,6 +151,12 @@ ExternalProject_Add(${PROTOBUF_TARGET}
     GIT_TAG v29.3
     GIT_SHALLOW ON
     UPDATE_COMMAND ""
+    PATCH_COMMAND
+        git
+            -c user.name=dummy -c user.email=dummy@dummy.invalid
+            am
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/patches/protobuf-29.3-0001-stop-building-protobuf-lite.patch
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/patches/protobuf-29.3-0002-drop-everything-but-cxx.patch
     CONFIGURE_COMMAND ${CMAKE_COMMAND} ${PROTOBUF_INSTALL_DIR}/src/${PROTOBUF_TARGET}
         -G${CMAKE_GENERATOR}
         -DCMAKE_INSTALL_PREFIX=${PROTOBUF_INSTALL_DIR}
