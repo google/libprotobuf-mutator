@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Build (Bundled ${{ matrix.bundled_protobuf }}, ${{ matrix.build_type }})
+    name: Build (${{ matrix.os }}, bundled ${{ matrix.bundled_protobuf }}, ${{ matrix.build_type }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -31,6 +31,17 @@ jobs:
         c_compiler: [clang]
         cpp_compiler: [clang++]
         bundled_protobuf: ['ON', 'OFF']
+        include:
+          - os: ubuntu-22.04
+            build_type: Release
+            c_compiler: clang
+            cpp_compiler: clang++
+            bundled_protobuf: 'OFF'
+          - os: ubuntu-22.04
+            build_type: Debug
+            c_compiler: clang
+            cpp_compiler: clang++
+            bundled_protobuf: 'OFF'
 
     steps:
     - uses: actions/checkout@v3
