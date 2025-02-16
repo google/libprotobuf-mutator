@@ -20,16 +20,14 @@
 #include "google/protobuf/any.pb.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/message.h"
+#include "google/protobuf/stubs/common.h"  // for GOOGLE_PROTOBUF_VERSION
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "google/protobuf/wire_format.h"
 
-// clang-format off
-#include "google/protobuf/port_def.inc"  // MUST be last header included
-// clang-format on
 namespace google {
 namespace protobuf {
-#if PROTOBUF_VERSION < 4025000
+#if GOOGLE_PROTOBUF_VERSION < 4025000
 
 template <typename T>
 const T* DownCastMessage(const Message* message) {
@@ -42,7 +40,7 @@ T* DownCastMessage(Message* message) {
   return const_cast<T*>(DownCastMessage<T>(message_const));
 }
 
-#elif PROTOBUF_VERSION < 5029000
+#elif GOOGLE_PROTOBUF_VERSION < 5029000
 
 template <typename T>
 const T* DownCastMessage(const Message* message) {
@@ -54,11 +52,9 @@ T* DownCastMessage(Message* message) {
   return DownCastToGenerated<T>(message);
 }
 
-#endif  // PROTOBUF_VERSION
+#endif  // GOOGLE_PROTOBUF_VERSION
 }  // namespace protobuf
 }  // namespace google
-#include "google/protobuf/port_undef.inc"
-
 
 namespace protobuf_mutator {
 
