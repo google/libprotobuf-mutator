@@ -390,13 +390,23 @@ std::unique_ptr<Message> UnpackAny(const Any& any) {
 }
 
 const Any* CastToAny(const Message* message) {
-  return Any::GetDescriptor() == message->GetDescriptor()
+#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit 1467e08d7c26a7087e5e5b14a4ab2755926e7249 of >=3.8.0
+  const Descriptor* any_descriptor = Any::GetDescriptor();
+#else
+  const Descriptor* any_descriptor = Any::descriptor();
+#endif
+  return any_descriptor == message->GetDescriptor()
              ? protobuf::DownCastMessage<Any>(message)
              : nullptr;
 }
 
 Any* CastToAny(Message* message) {
-  return Any::GetDescriptor() == message->GetDescriptor()
+#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit 1467e08d7c26a7087e5e5b14a4ab2755926e7249 of >=3.8.0
+  const Descriptor* any_descriptor = Any::GetDescriptor();
+#else
+  const Descriptor* any_descriptor = Any::descriptor();
+#endif
+  return any_descriptor == message->GetDescriptor()
              ? protobuf::DownCastMessage<Any>(message)
              : nullptr;
 }
