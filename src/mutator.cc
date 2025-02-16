@@ -87,7 +87,17 @@ bool GetRandomBool(RandomEngine* random, size_t n = 2) {
 }
 
 bool IsProto3SimpleField(const FieldDescriptor& field) {
-  return !field.is_repeated() && !field.has_presence();
+#if GOOGLE_PROTOBUF_VERSION >= 3012000 // commit bb30225f06c36399757dc698b409d5f79738e8d1 of >=3.12.0
+  const bool has_presence = field.has_presence();
+#else
+  // NOTE: This mimics Protobuf 3.21.12 ("3021012")
+  const bool has_presence = ! field.is_repeated() && (
+    field.cpp_type() == FieldDescriptor::CppType::CPPTYPE_MESSAGE
+    || field.containing_oneof()
+    || field.file()->syntax() == FileDescriptor::SYNTAX_PROTO2
+  );
+#endif
+  return !field.is_repeated() && !has_presence;
 }
 
 struct CreateDefaultField : public FieldFunction<CreateDefaultField> {
