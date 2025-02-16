@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.10)
 project(LibProtobufMutator CXX)
 
 enable_language(C)
@@ -121,6 +121,7 @@ if(CMAKE_USE_PTHREADS_INIT)
 endif()
 
 if (LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF)
+  cmake_minimum_required(VERSION 3.24)  # due to use of LINK_GROUP
   include(protobuf)
 else()
   find_package(Protobuf REQUIRED)
