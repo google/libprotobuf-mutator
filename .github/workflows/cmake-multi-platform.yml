@@ -4,9 +4,7 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
   schedule:
     - cron: '0 2 * * 5'  # Every Friday at 2am
 
