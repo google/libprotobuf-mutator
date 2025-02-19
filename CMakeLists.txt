@@ -23,6 +23,8 @@ option(LIB_PROTO_MUTATOR_EXAMPLES "Enable examples building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
+option(LIB_PROTO_MUTATOR_OSS_FUZZ "Target OSS-Fuzz (do not enable outside of OSS-Fuzz!)" OFF)
+mark_as_advanced(LIB_PROTO_MUTATOR_OSS_FUZZ)
 set(PKG_CONFIG_PATH "share/pkgconfig" CACHE STRING "Directory to install pkgconfig file")
 set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
