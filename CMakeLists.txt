@@ -23,6 +23,7 @@ option(LIB_PROTO_MUTATOR_EXAMPLES "Enable examples building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
+option(LIB_PROTO_MUTATOR_EXAMPLES_USE_LATEST "Use latest libexpat/libxml2 for expat_example/libxml2_example" OFF)
 set(PKG_CONFIG_PATH "share/pkgconfig" CACHE STRING "Directory to install pkgconfig file")
 set(LIB_PROTO_MUTATOR_FUZZER_LIBRARIES "" CACHE STRING "Fuzzing engine libs")
 
