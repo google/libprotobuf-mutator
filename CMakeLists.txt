@@ -60,6 +60,10 @@ if (MSVC)
   endif (LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF OR LIB_PROTO_MUTATOR_MSVC_STATIC_RUNTIME)
 endif (MSVC)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL Clang AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12)
+    message(SEND_ERROR "Clang/libFuzzer >=12.0.0 is needed but you are using ${CMAKE_CXX_COMPILER_VERSION}, please fix.")
+endif()
+
 set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
 check_cxx_compiler_flag(-fsanitize=address LIB_PROTO_MUTATOR_HAS_SANITIZE_ADDRESS)
 check_cxx_compiler_flag("-fsanitize=address -fsanitize-address-use-after-scope"
@@ -147,6 +151,11 @@ add_subdirectory(src)
 
 if (LIB_PROTO_MUTATOR_EXAMPLES AND (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
                                     NOT "${FUZZING_FLAGS}" STREQUAL ""))
+  # NOTE: We need the maximum from:
+  # - CMake >=3.10 for libexpat Git master
+  # - CMake >=3.13 for googletest 1.15.0
+  # - CMake >=3.18 for libxml2 Git master
+  cmake_minimum_required(VERSION 3.18)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
