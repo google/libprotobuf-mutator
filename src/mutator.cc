@@ -482,7 +482,7 @@ class PostProcessing {
           Run(It->second.get(), max_depth);
           std::string value;
           It->second->SerializePartialToString(&value);
-          *any->mutable_value() = value;
+          *any->mutable_value() = std::move(value);
         }
       }
     }
