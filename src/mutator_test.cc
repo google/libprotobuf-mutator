@@ -678,12 +678,23 @@ TYPED_TEST(MutatorTypedTest, Serialization) {
 }
 
 TYPED_TEST(MutatorTypedTest, UnknownFieldTextFormat) {
+  // NOTE: This test has little chance of passing when method
+  //       TextFormat::Parser::AllowUnknownField is not available
+#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0
   typename TestFixture::Message parsed;
   EXPECT_TRUE(ParseTextMessage(kUnknownFieldInput, &parsed));
   EXPECT_EQ(SaveMessageAsText(parsed), kUnknownFieldExpected);
+#else
+  (void)kUnknownFieldExpected;
+  (void)kUnknownFieldInput;
+  GTEST_SKIP();
+#endif  // GOOGLE_PROTOBUF_VERSION
 }
 
 TYPED_TEST(MutatorTypedTest, DeepRecursion) {
+  // NOTE: This test has little chance of passing when method
+  //       TextFormat::Parser::SetRecursionLimit is not available
+#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
   typename TestFixture::Message message;
   typename TestFixture::Message* last = &message;
   for (int i = 0; i < 150; ++i) {
@@ -695,6 +706,9 @@ TYPED_TEST(MutatorTypedTest, DeepRecursion) {
     EXPECT_EQ(i < 100,
               ParseBinaryMessage(SaveMessageAsBinary(message), &parsed));
   }
+#else
+  GTEST_SKIP();
+#endif  // GOOGLE_PROTOBUF_VERSION
 }
 
 TYPED_TEST(MutatorTypedTest, EmptyMessage) {
