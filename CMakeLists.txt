@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(LibProtobufMutator CXX)
 
 enable_language(C)
@@ -154,7 +154,6 @@ if (LIB_PROTO_MUTATOR_EXAMPLES AND (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" 
                                     NOT "${FUZZING_FLAGS}" STREQUAL ""))
   # NOTE: We need the maximum from:
   # - CMake >=3.10 for libexpat 2.6.4
-  # - CMake >=3.13 for GoogleTest 1.15.0
   # - CMake >=3.18 for libxml2 2.13.6
   cmake_minimum_required(VERSION 3.18)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
