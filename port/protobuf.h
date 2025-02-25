@@ -27,7 +27,7 @@
 
 namespace google {
 namespace protobuf {
-#if GOOGLE_PROTOBUF_VERSION < 4025000
+#if GOOGLE_PROTOBUF_VERSION <= 4025000
 
 template <typename T>
 const T* DownCastMessage(const Message* message) {
@@ -40,7 +40,7 @@ T* DownCastMessage(Message* message) {
   return const_cast<T*>(DownCastMessage<T>(message_const));
 }
 
-#elif GOOGLE_PROTOBUF_VERSION < 5029000
+#elif GOOGLE_PROTOBUF_VERSION <= 5028000
 
 template <typename T>
 const T* DownCastMessage(const Message* message) {
@@ -63,7 +63,7 @@ namespace protobuf = google::protobuf;
 inline bool RequiresUtf8Validation(
     const google::protobuf::FieldDescriptor& descriptor) {
   // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >= v3.22.0
-#if GOOGLE_PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION > 3021005
   return descriptor.requires_utf8_validation();
 #else
   return descriptor.type() == google::protobuf::FieldDescriptor::TYPE_STRING &&
@@ -74,7 +74,7 @@ inline bool RequiresUtf8Validation(
 
 inline bool HasPresence(const google::protobuf::FieldDescriptor& descriptor) {
   // commit bb30225f06c36399757dc698b409d5f79738e8d1 of >=3.12.0
-#if GOOGLE_PROTOBUF_VERSION >= 3012000
+#if GOOGLE_PROTOBUF_VERSION > 3011004
   return descriptor.has_presence();
 #else
   // NOTE: This mimics Protobuf 3.21.12 ("3021012")
@@ -89,20 +89,22 @@ inline bool HasPresence(const google::protobuf::FieldDescriptor& descriptor) {
 
 inline void PrepareTextParser(google::protobuf::TextFormat::Parser& parser) {
   // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
-#if GOOGLE_PROTOBUF_VERSION >= 3008000
+#if GOOGLE_PROTOBUF_VERSION > 3006001
   parser.SetRecursionLimit(100);
+#endif
+#if GOOGLE_PROTOBUF_VERSION > 3007000
   parser.AllowUnknownField(true);
 #endif
 }
 
 constexpr bool TextParserCanSetRecursionLimit() {
   // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
-  return GOOGLE_PROTOBUF_VERSION >= 3008000;
+  return GOOGLE_PROTOBUF_VERSION > 3006001;
 }
 
 constexpr bool TextParserCanAllowUnknownField() {
   // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0
-  return GOOGLE_PROTOBUF_VERSION >= 3008000;
+  return GOOGLE_PROTOBUF_VERSION > 3007000;
 }
 
 }  // namespace protobuf_mutator
