@@ -60,6 +60,51 @@ namespace protobuf_mutator {
 
 namespace protobuf = google::protobuf;
 
+inline bool RequiresUtf8Validation(
+    const google::protobuf::FieldDescriptor& descriptor) {
+  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >= v3.22.0
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
+  return descriptor.requires_utf8_validation();
+#else
+  return descriptor.type() == google::protobuf::FieldDescriptor::TYPE_STRING &&
+         descriptor.file()->syntax() ==
+             google::protobuf::FileDescriptor::SYNTAX_PROTO3;
+#endif
+}
+
+inline bool HasPresence(const google::protobuf::FieldDescriptor& descriptor) {
+  // commit bb30225f06c36399757dc698b409d5f79738e8d1 of >=3.12.0
+#if GOOGLE_PROTOBUF_VERSION >= 3012000
+  return descriptor.has_presence();
+#else
+  // NOTE: This mimics Protobuf 3.21.12 ("3021012")
+  return !descriptor.is_repeated() &&
+         (descriptor.cpp_type() ==
+              google::protobuf::FieldDescriptor::CppType::CPPTYPE_MESSAGE ||
+          descriptor.containing_oneof() ||
+          descriptor.file()->syntax() ==
+              google::protobuf::FileDescriptor::SYNTAX_PROTO2);
+#endif
+}
+
+inline void PrepareTextParser(google::protobuf::TextFormat::Parser& parser) {
+  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
+#if GOOGLE_PROTOBUF_VERSION >= 3008000
+  parser.SetRecursionLimit(100);
+  parser.AllowUnknownField(true);
+#endif
+}
+
+constexpr bool TextParserCanSetRecursionLimit() {
+  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
+  return GOOGLE_PROTOBUF_VERSION >= 3008000;
+}
+
+constexpr bool TextParserCanAllowUnknownField() {
+  // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0
+  return GOOGLE_PROTOBUF_VERSION >= 3008000;
+}
+
 }  // namespace protobuf_mutator
 
 #endif  // PORT_PROTOBUF_H_

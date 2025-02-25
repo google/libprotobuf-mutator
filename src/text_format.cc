@@ -28,13 +28,8 @@ bool ParseTextMessage(const uint8_t* data, size_t size, Message* output) {
 bool ParseTextMessage(const std::string& data, protobuf::Message* output) {
   output->Clear();
   TextFormat::Parser parser;
-#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
-  parser.SetRecursionLimit(100);
-#endif
   parser.AllowPartialMessage(true);
-#if GOOGLE_PROTOBUF_VERSION >= 3008000  // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0
-  parser.AllowUnknownField(true);
-#endif
+  PrepareTextParser(parser);
   if (!parser.ParseFromString(data, output)) {
     output->Clear();
     return false;
