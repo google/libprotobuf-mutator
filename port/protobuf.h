@@ -62,7 +62,7 @@ namespace protobuf = google::protobuf;
 
 inline bool RequiresUtf8Validation(
     const google::protobuf::FieldDescriptor& descriptor) {
-  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >= v3.22.0
+  // commit d85c9944c55fb38f4eae149979a0f680ea125ecb of >= v3(!).22.0
 #if GOOGLE_PROTOBUF_VERSION >= 4022000
   return descriptor.requires_utf8_validation();
 #else
@@ -88,7 +88,8 @@ inline bool HasPresence(const google::protobuf::FieldDescriptor& descriptor) {
 }
 
 inline void PrepareTextParser(google::protobuf::TextFormat::Parser& parser) {
-  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0
+  // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0 for .SetRecursionLimit
+  // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0 for .AllowUnknownField
 #if GOOGLE_PROTOBUF_VERSION >= 3008000
   parser.SetRecursionLimit(100);
   parser.AllowUnknownField(true);
