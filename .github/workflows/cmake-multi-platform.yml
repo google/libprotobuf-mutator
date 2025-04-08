@@ -57,7 +57,8 @@ jobs:
           )
         fi
         set -x
-        sudo apt install -y "${ubuntu_packages[@]}"
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y "${ubuntu_packages[@]}"
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
