@@ -40,16 +40,6 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
             bundled_protobuf: 'OFF'
-          - os: ubuntu-20.04
-            build_type: Release
-            c_compiler: clang-12
-            cpp_compiler: clang++-12
-            bundled_protobuf: 'OFF'
-          - os: ubuntu-20.04
-            build_type: Debug
-            c_compiler: clang-12
-            cpp_compiler: clang++-12
-            bundled_protobuf: 'OFF'
 
     steps:
     - uses: actions/checkout@v3
