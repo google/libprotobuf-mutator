@@ -9,3 +9,4 @@ bazel_dep(
     version = "26.0.bcr.1",
     repo_name = "com_google_protobuf",
 )
+bazel_dep(name = "rules_cc", version = "0.1.5")
