@@ -93,6 +93,38 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
 
 Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as an example.
 
+### Reject unwanted inputs
+To reject adding unwanted inputs in corpus:
+
+Either define `LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE` macro in your code and return `-1` for inputs to be rejected:
+
+```
+#define LIBPROTOBUFMUTATOR_ENABLE_RETURN_CODE
+#include "src/libfuzzer/libfuzzer_macro.h"
+
+DEFINE_PROTO_FUZZER(const MyMessageType& input) {
+  // Code which needs to be fuzzed.
+  ConsumeMyMessageType(input);
+  // If 'input' is to be rejected
+  return -1;
+}
+```
+
+or use another macro `DEFINE_PROTO_FUZZER_RET` supporting return code:
+
+```
+#include "src/libfuzzer/libfuzzer_macro.h"
+
+DEFINE_PROTO_FUZZER_RET(const MyMessageType& input) {
+  // Code which needs to be fuzzed.
+  ConsumeMyMessageType(input);
+  // If 'input' is to be rejected
+  return -1;
+}
+```
+
+Refer https://llvm.org/docs/LibFuzzer.html#rejecting-unwanted-inputs for details.
+
 ### Mutation post-processing (experimental)
 Sometimes it's necessary to keep particular values in some fields without which the proto
 is going to be rejected by fuzzed code. E.g. code may expect consistency between some fields
