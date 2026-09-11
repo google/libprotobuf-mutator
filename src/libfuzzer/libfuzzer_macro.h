@@ -19,9 +19,9 @@
 
 #include <cstdint>
 #include <functional>
-#include <type_traits>
 
 #include "port/protobuf.h"
+#include "src/mutation_io.h"
 
 // Defines custom mutator, crossover and test functions using default
 // serialization format. Default is text.
@@ -84,9 +84,8 @@
 
 #define DEFINE_PROTO_FUZZER_IMPL(use_binary, arg)                 \
   static void TestOneProtoInput(arg);                             \
-  using FuzzerProtoType =                                         \
-      protobuf_mutator::libfuzzer::macro_internal::GetFirstParam< \
-          decltype(&TestOneProtoInput)>::type;                    \
+  using FuzzerProtoType = protobuf_mutator::macro_internal::      \
+      GetFirstParam<decltype(&TestOneProtoInput)>::type;          \
   DEFINE_CUSTOM_PROTO_MUTATOR_IMPL(use_binary, FuzzerProtoType)   \
   DEFINE_CUSTOM_PROTO_CROSSOVER_IMPL(use_binary, FuzzerProtoType) \
   DEFINE_TEST_ONE_PROTO_INPUT_IMPL(use_binary, FuzzerProtoType)   \
@@ -123,19 +122,6 @@ struct PostProcessorRegistration {
         });
   }
 };
-
-namespace macro_internal {
-
-template <typename T>
-struct GetFirstParam;
-
-template <class Arg>
-struct GetFirstParam<void (*)(Arg)> {
-  using type = typename std::remove_const<
-      typename std::remove_reference<Arg>::type>::type;
-};
-
-}  // namespace macro_internal
 
 }  // namespace libfuzzer
 }  // namespace protobuf_mutator

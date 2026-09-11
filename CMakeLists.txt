@@ -22,6 +22,17 @@ option(LIB_PROTO_MUTATOR_TESTING "Enable test building" ON)
 option(LIB_PROTO_MUTATOR_EXAMPLES "Enable examples building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
        "Automatically download working protobuf" OFF)
+option(LIB_PROTO_MUTATOR_WITH_AFLPLUSPLUS
+       "Build the AFL++ custom mutator library" OFF)
+set(LIB_PROTO_MUTATOR_AFLPLUSPLUS_REPOSITORY
+    "https://github.com/AFLplusplus/AFLplusplus.git"
+    CACHE STRING "AFLplusplus git repository")
+set(LIB_PROTO_MUTATOR_AFLPLUSPLUS_TAG "stable"
+    CACHE STRING "AFLplusplus git tag")
+set(LIB_PROTO_MUTATOR_AFLPLUSPLUS_SOURCE_DIR ""
+    CACHE PATH "Use this AFLplusplus checkout instead of downloading one")
+option(LIB_PROTO_MUTATOR_QUIET
+       "Silence all libprotobuf logging in the process" OFF)
 option(LIB_PROTO_MUTATOR_WITH_ASAN "Enable address sanitizer" OFF)
 option(LIB_PROTO_MUTATOR_EXAMPLES_USE_LATEST "Use latest libexpat/libxml2 for expat_example/libxml2_example" OFF)
 set(PKG_CONFIG_PATH "share/pkgconfig" CACHE STRING "Directory to install pkgconfig file")
@@ -132,6 +143,12 @@ else()
   find_package(Protobuf REQUIRED)
   include_directories(${PROTOBUF_INCLUDE_DIRS})
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+if (LIB_PROTO_MUTATOR_WITH_AFLPLUSPLUS)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(PC_AFLPLUSPLUS_LIB " -lprotobuf-mutator-aflplusplus")
+  include(aflplusplus)
 endif()
 
 set(LIB_DIR "lib${LIB_SUFFIX}")

@@ -171,9 +171,7 @@ class ConstFieldInstance {
 
   bool CanStore(const std::string& value) const {
     if (!EnforceUtf8()) return true;
-    using protobuf::internal::WireFormatLite;
-    return WireFormatLite::VerifyUtf8String(value.data(), value.length(),
-                                            WireFormatLite::PARSE, "");
+    return IsValidUtf8(value);
   }
 
   std::string name() const { return std::string(descriptor_->name()); }

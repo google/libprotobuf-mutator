@@ -87,6 +87,17 @@ inline bool HasPresence(const google::protobuf::FieldDescriptor& descriptor) {
 #endif
 }
 
+inline bool IsValidUtf8(const std::string& value) {
+#if GOOGLE_PROTOBUF_VERSION < 4025000
+  return google::protobuf::internal::IsStructurallyValidUTF8(
+      value.data(), static_cast<int>(value.size()));
+#else
+  using google::protobuf::internal::WireFormatLite;
+  return WireFormatLite::VerifyUtf8String(
+      value.data(), static_cast<int>(value.size()), WireFormatLite::PARSE, "");
+#endif
+}
+
 inline void PrepareTextParser(google::protobuf::TextFormat::Parser& parser) {
   // commit d8c2501b43c1b56e3efa74048a18f8ce06ba07fe of >=3.8.0 for .SetRecursionLimit
   // commit 176f7db11d8242b36a3ea6abb1cc436fca5bf75d of >=3.8.0 for .AllowUnknownField

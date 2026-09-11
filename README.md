@@ -6,12 +6,14 @@
 ## Overview
 libprotobuf-mutator is a library to randomly mutate
 [protobuffers](https://github.com/google/protobuf). <BR>
-It could be used together with guided fuzzing engines, such as [libFuzzer](http://libfuzzer.info).
+It could be used together with guided fuzzing engines, such as [libFuzzer](http://libfuzzer.info)
+and [AFL++](https://github.com/AFLplusplus/AFLplusplus).
 
 The core of libprotobuf-mutator has the following dependencies:
 
 - Protobuf >=3.6.1.3 (library and compiler)
 - Clang >=12.0.0 including libFuzzer
+- AFL++ >=4.08c headers, for the AFL++ integration only; cmake fetches them
 
 ## Quick start on Debian/Ubuntu
 
@@ -141,6 +143,66 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
   ConsumeMyMessageType(input);
 }
 ```
+## Integrating with AFL++
+AflplusplusProtobufMutator plugs into AFL++ as a
+[custom mutator](https://github.com/AFLplusplus/AFLplusplus/blob/stable/docs/custom_mutators.md).
+Unlike the libFuzzer integration this is two binaries: a shared object that
+`afl-fuzz` loads, and the fuzz target itself.
+
+Pass `-DLIB_PROTO_MUTATOR_WITH_AFLPLUSPLUS=ON` to cmake to build
+`libprotobuf-mutator-aflplusplus`. The AFL++ headers it needs are fetched by
+cmake; `LIB_PROTO_MUTATOR_AFLPLUSPLUS_TAG` picks the revision and
+`LIB_PROTO_MUTATOR_AFLPLUSPLUS_SOURCE_DIR` builds against a checkout you already
+have.
+
+The mutator library is a single translation unit built as a shared object:
+
+```c++
+#include "src/aflplusplus/aflplusplus_macro.h"
+
+DEFINE_AFLPLUSPLUS_PROTO_MUTATOR_LIBRARY(MyMessageType)
+```
+
+The fuzz target looks like the libFuzzer one:
+
+```c++
+#include "src/aflplusplus/aflplusplus_macro.h"
+
+DEFINE_AFLPLUSPLUS_PROTO_FUZZER(const MyMessageType& input) {
+  // Code which needs to be fuzzed.
+  ConsumeMyMessageType(input);
+}
+```
+
+Run it with:
+
+```sh
+AFL_CUSTOM_MUTATOR_LIBRARY=./custom_mutator.so \
+AFL_CUSTOM_MUTATOR_ONLY=1 \
+afl-fuzz -i in -o out -- ./my_fuzz_target
+```
+
+`AFL_CUSTOM_MUTATOR_ONLY` is not optional. AFL++'s own stages mutate bytes and
+would feed the target inputs that no longer parse as a protobuf, so the mutator
+refuses to start without it.
+
+Both macros default to the text serialization, same as `DEFINE_PROTO_FUZZER`.
+`DEFINE_BINARY_AFLPLUSPLUS_PROTO_MUTATOR_LIBRARY` and
+`DEFINE_BINARY_AFLPLUSPLUS_PROTO_FUZZER` switch to binary. The mutator library
+and the target have to agree: text with text, binary with binary.
+
+The library also implements AFL++'s trimming API. It drops one set field or one
+repeated element per step instead of cutting bytes out of the serialized
+message, which would leave most of the queue unparseable.
+
+The mutator casts the `void*` it receives from `afl-fuzz` to `afl_state_t*`, so
+the AFL++ revision it was built against has to match the `afl-fuzz` binary that
+loads it.
+
+Please see [aflplusplus_example_mutator.cc](/examples/aflplusplus/aflplusplus_example_mutator.cc)
+and [aflplusplus_example.cc](/examples/aflplusplus/aflplusplus_example.cc) as an
+example.
+
 ## UTF-8 strings
 "proto2" and "proto3" handle invalid UTF-8 strings differently. In both cases
 string should be UTF-8, however only "proto3" enforces that. So if fuzzer is

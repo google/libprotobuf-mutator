@@ -6,4 +6,4 @@ Name: libprotobuf-mutator
 Description: randomly mutate protobuffers for fuzzing
 Version: 0
 Cflags: -I${includedir} -I${includedir}/src
-Libs: -L${libdir} -lprotobuf-mutator-libfuzzer -lprotobuf-mutator
+Libs: -L${libdir} -lprotobuf-mutator-libfuzzer@PC_AFLPLUSPLUS_LIB@ -lprotobuf-mutator

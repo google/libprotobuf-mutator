@@ -16,3 +16,7 @@ add_subdirectory(xml)
 add_subdirectory(expat)
 add_subdirectory(libfuzzer)
 add_subdirectory(libxml2)
+
+if (LIB_PROTO_MUTATOR_WITH_AFLPLUSPLUS)
+  add_subdirectory(aflplusplus)
+endif()
