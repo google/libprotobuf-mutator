@@ -1,0 +1,9 @@
+syntax = "proto2";
+package aflplusplus_example;
+
+message Msg {
+  optional float optional_float = 1;
+  optional uint64 optional_uint64 = 2;
+  optional string optional_string = 3;
+  repeated Msg nested = 4;
+}

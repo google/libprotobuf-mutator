@@ -14,8 +14,13 @@
 
 add_subdirectory(libfuzzer)
 
+if (LIB_PROTO_MUTATOR_WITH_AFLPLUSPLUS)
+  add_subdirectory(aflplusplus)
+endif()
+
 add_library(protobuf-mutator
             binary_format.cc
+            mutation_io.cc
             mutator.cc
             text_format.cc
             utf8_fix.cc)
@@ -25,6 +30,10 @@ set_target_properties(protobuf-mutator PROPERTIES
                       COMPILE_FLAGS "${NO_FUZZING_FLAGS}"
                       SOVERSION 0)
 target_compile_features(protobuf-mutator PUBLIC cxx_std_14)
+
+if (LIB_PROTO_MUTATOR_QUIET)
+  target_compile_definitions(protobuf-mutator PRIVATE LIB_PROTO_MUTATOR_QUIET)
+endif()
 
 if (LIB_PROTO_MUTATOR_TESTING)
   protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
