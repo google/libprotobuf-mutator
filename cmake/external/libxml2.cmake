@@ -36,7 +36,7 @@ endforeach(lib)
 if (LIB_PROTO_MUTATOR_EXAMPLES_USE_LATEST)
   set(LIBXML2_GIT_TAG "master")
 else()
-  set(LIBXML2_GIT_TAG "v2.13.6")
+  set(LIBXML2_GIT_TAG "v2.15.4")
 endif()
 
 include (ExternalProject)
