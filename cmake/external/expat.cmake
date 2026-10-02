@@ -43,7 +43,7 @@ endif()
 if (LIB_PROTO_MUTATOR_EXAMPLES_USE_LATEST)
   set(EXPAT_GIT_TAG "master")
 else()
-  set(EXPAT_GIT_TAG "R_2_6_4")
+  set(EXPAT_GIT_TAG "R_2_8_5")
 endif()
 
 include (ExternalProject)

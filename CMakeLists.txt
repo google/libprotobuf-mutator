@@ -18,6 +18,10 @@ project(LibProtobufMutator CXX)
 enable_language(C)
 enable_language(CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(LIB_PROTO_MUTATOR_TESTING "Enable test building" ON)
 option(LIB_PROTO_MUTATOR_EXAMPLES "Enable examples building" ON)
 option(LIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF
@@ -153,8 +157,8 @@ add_subdirectory(src)
 if (LIB_PROTO_MUTATOR_EXAMPLES AND (NOT "${LIB_PROTO_MUTATOR_FUZZER_LIBRARIES}" STREQUAL "" OR
                                     NOT "${FUZZING_FLAGS}" STREQUAL ""))
   # NOTE: We need the maximum from:
-  # - CMake >=3.10 for libexpat 2.6.4
-  # - CMake >=3.18 for libxml2 2.13.6
+  # - CMake >=3.10 for libexpat 2.8.5
+  # - CMake >=3.18 for libxml2 2.15.4
   cmake_minimum_required(VERSION 3.18)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
