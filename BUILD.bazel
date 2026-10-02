@@ -1,0 +1,27 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Apache 2
+
+cc_library(
+    name = "protobuf-mutator",
+    srcs = glob(
+        [
+            "src/**/*.cc",
+        ],
+        exclude = ["**/*_test.cc"],
+    ),
+    hdrs = glob(["src/**/*.h"]) + ["port/protobuf.h"],
+    include_prefix = "libprotobuf_mutator",
+    includes = [
+        "port",
+        "src",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:protobuf"],
+)
+
+alias(
+    name = "libprotobuf-mutator",
+    actual = ":protobuf-mutator",
+    visibility = ["//visibility:public"],
+)
