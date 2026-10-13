@@ -96,10 +96,8 @@ class BinaryOutputWriter : public OutputWriter {
 class LastMutationCache {
  public:
   void Store(const uint8_t* data, size_t size, protobuf::Message* message) {
-    if (!message_ || message_->GetDescriptor() != message->GetDescriptor() ||
-        message_->GetReflection() != message->GetReflection()) {
+    if (!message_ || message_->GetReflection() != message->GetReflection())
       message_.reset(message->New());
-    }
     message->GetReflection()->Swap(message, message_.get());
     data_.assign(data, data + size);
   }
