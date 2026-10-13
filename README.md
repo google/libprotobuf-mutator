@@ -52,8 +52,10 @@ headers are put in `/usr/local/include/libprotobuf-mutator`.
 
 ## Usage
 
-To use libprotobuf-mutator simply include [mutator.h](/src/mutator.h) and
-[mutator.cc](/src/mutator.cc) into your build files.
+To use libprotobuf-mutator simply include
+[mutator.h](/src/mutator.h) and
+[mutator.cc](/src/mutator.cc) into
+your build files.
 
 The `ProtobufMutator` class implements mutations of the protobuf tree structure
 and mutations of individual fields. The field mutation logic is very basic --
@@ -91,8 +93,9 @@ DEFINE_PROTO_FUZZER(const MyMessageType& input) {
 }
 ```
 
-Please see [libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc) as
-an example.
+Please see
+[libfuzzer_example.cc](/examples/libfuzzer/libfuzzer_example.cc)
+as an example.
 
 ### Mutation post-processing (experimental)
 
