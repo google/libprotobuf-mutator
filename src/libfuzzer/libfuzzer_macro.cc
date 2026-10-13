@@ -104,12 +104,9 @@ class LastMutationCache {
 
   bool LoadIfSame(const uint8_t* data, size_t size,
                   protobuf::Message* message) {
-    if (!message_ || message_->GetDescriptor() != message->GetDescriptor() ||
-        message_->GetReflection() != message->GetReflection() ||
-        size != data_.size() ||
-        !std::equal(data_.begin(), data_.end(), data)) {
+    if (!message_ || message_->GetReflection() != message->GetReflection() ||
+        !std::equal(data_.begin(), data_.end(), data, data + size))
       return false;
-    }
 
     message->GetReflection()->Swap(message, message_.get());
     message_.reset();
