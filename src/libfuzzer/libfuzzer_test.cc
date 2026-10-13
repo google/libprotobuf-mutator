@@ -39,11 +39,11 @@ class MockFuzzer {
 
 protobuf_mutator::libfuzzer::PostProcessorRegistration<protobuf_mutator::Msg>
     reg = {[](protobuf_mutator::Msg* message, unsigned int seed) {
-      mock_fuzzer->PostProcess(message, seed);
+      if (mock_fuzzer) mock_fuzzer->PostProcess(message, seed);
     }};
 
 DEFINE_TEXT_PROTO_FUZZER(const protobuf_mutator::Msg& message) {
-  mock_fuzzer->TestOneInput(message);
+  if (mock_fuzzer) mock_fuzzer->TestOneInput(message);
 }
 
 MATCHER_P(IsMessageEq, msg, "") {
@@ -94,4 +94,27 @@ TEST(LibFuzzerTest, LLVMFuzzerCustomCrossOver) {
       LLVMFuzzerCustomCrossOver(buff1, 0, buff2, 0, buff3, sizeof(buff3), 6);
   ASSERT_GT(size, 0U);
   LLVMFuzzerTestOneInput(buff3, size);
+}
+
+TEST(LibFuzzerTest, MultipleProtoTypes) {
+  protobuf_mutator::Msg msg1;
+  protobuf_mutator::Msg::SubMsg msg2;
+  uint8_t buff1[1024] = {};
+  uint8_t buff2[1024] = {};
+  size_t size1 = protobuf_mutator::libfuzzer::CustomProtoMutator(
+      false, buff1, 0, sizeof(buff1), 1, &msg1);
+  ASSERT_GT(size1, 0U);
+  // Mutating a different proto type sequentially should not trigger reflection
+  // type mismatch assertion failures or crashes in LastMutationCache.
+  size_t size2 = protobuf_mutator::libfuzzer::CustomProtoMutator(
+      false, buff2, 0, sizeof(buff2), 2, &msg2);
+  ASSERT_GT(size2, 0U);
+  protobuf_mutator::Msg loaded_msg1;
+  protobuf_mutator::Msg::SubMsg loaded_msg2;
+  EXPECT_TRUE(protobuf_mutator::libfuzzer::LoadProtoInput(
+      false, buff2, size2, &loaded_msg1));
+  EXPECT_TRUE(protobuf_mutator::libfuzzer::LoadProtoInput(
+      false, buff2, size2, &loaded_msg2));
+  EXPECT_TRUE(protobuf_mutator::libfuzzer::LoadProtoInput(
+      false, buff1, size1, &loaded_msg1));
 }
