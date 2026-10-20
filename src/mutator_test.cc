@@ -701,6 +701,34 @@ TYPED_TEST(MutatorTypedTest, DeepRecursion) {
   }
 }
 
+TYPED_TEST(MutatorTypedTest, DeepAny) {
+  // Any nested into Any is not limited by the parser recursion limit. Unpacked
+  // levels deeper than kMaxInitializeDepth are dropped by post processing and
+  // must not be unpacked at all, as each level holds a copy of the rest.
+  protobuf::Any any;
+  for (int i = 0; i < 1000; ++i) {
+    protobuf::Any outer;
+    outer.set_type_url("type.googleapis.com/google.protobuf.Any");
+    outer.set_value(any.SerializeAsString());
+    any.Swap(&outer);
+  }
+  typename TestFixture::Message message;
+  *message.mutable_any() = any;
+
+  TestMutator mutator(false);
+  mutator.Fix(&message);
+
+  int depth = 0;
+  any = message.any();
+  while (any.Is<protobuf::Any>()) {
+    protobuf::Any inner;
+    ASSERT_TRUE(any.UnpackTo(&inner));
+    any.Swap(&inner);
+    ++depth;
+  }
+  EXPECT_EQ(depth, 199);
+}
+
 TYPED_TEST(MutatorTypedTest, EmptyMessage) {
   typename TestFixture::Message::EmptyMessage message;
   TestMutator mutator(false);
