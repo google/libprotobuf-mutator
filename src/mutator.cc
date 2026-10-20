@@ -396,9 +396,15 @@ std::unique_ptr<Message> UnpackIfAny(const Message& message) {
   return {};
 }
 
-void UnpackAny(const Message& message, UnpackedAny* result) {
+void UnpackAny(const Message& message, UnpackedAny* result, int max_depth) {
+  // PostProcessing::Run clears everything nested deeper than this, so there
+  // is no point in unpacking it. Each level of a nested Any holds a copy of
+  // the remaining payload, so unpacking without a limit costs
+  // O(depth * size) memory for a deeply nested input.
+  if (--max_depth < 0) return;
+
   if (std::unique_ptr<Message> any = UnpackIfAny(message)) {
-    UnpackAny(*any, result);
+    UnpackAny(*any, result, max_depth);
     result->emplace(&message, std::move(any));
     return;
   }
@@ -412,10 +418,11 @@ void UnpackAny(const Message& message, UnpackedAny* result) {
       if (field->is_repeated()) {
         const int field_size = reflection->FieldSize(message, field);
         for (int j = 0; j < field_size; ++j) {
-          UnpackAny(reflection->GetRepeatedMessage(message, field, j), result);
+          UnpackAny(reflection->GetRepeatedMessage(message, field, j), result,
+                    max_depth);
         }
       } else if (reflection->HasField(message, field)) {
-        UnpackAny(reflection->GetMessage(message, field), result);
+        UnpackAny(reflection->GetMessage(message, field), result, max_depth);
       }
     }
   }
@@ -623,7 +630,7 @@ void Mutator::Seed(uint32_t value) { random_.seed(value); }
 
 void Mutator::Fix(Message* message) {
   UnpackedAny any;
-  UnpackAny(*message, &any);
+  UnpackAny(*message, &any, kMaxInitializeDepth);
 
   PostProcessing(keep_initialized_, post_processors_, any, &random_)
       .Run(message, kMaxInitializeDepth);
@@ -632,7 +639,7 @@ void Mutator::Fix(Message* message) {
 
 void Mutator::Mutate(Message* message, size_t max_size_hint) {
   UnpackedAny any;
-  UnpackAny(*message, &any);
+  UnpackAny(*message, &any, kMaxInitializeDepth);
 
   Messages messages;
   messages.reserve(any.size() + 1);
@@ -652,14 +659,14 @@ void Mutator::Mutate(Message* message, size_t max_size_hint) {
 void Mutator::CrossOver(const Message& message1, Message* message2,
                         size_t max_size_hint) {
   UnpackedAny any;
-  UnpackAny(*message2, &any);
+  UnpackAny(*message2, &any, kMaxInitializeDepth);
 
   Messages messages;
   messages.reserve(any.size() + 1);
   messages.push_back(message2);
   for (auto& kv : any) messages.push_back(kv.second.get());
 
-  UnpackAny(message1, &any);
+  UnpackAny(message1, &any, kMaxInitializeDepth);
 
   ConstMessages sources;
   sources.reserve(any.size() + 2);
