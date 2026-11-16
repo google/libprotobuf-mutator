@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package protobuf_mutator.utf8fix;
+
+// String-heavy proto3 schema: proto3 string fields are UTF-8 validated, so
+// the mutator routes every string mutation through MutateUtf8String ->
+// FixUtf8String (src/utf8_fix.cc). Long fields and a long-campaign harness
+// give the UTF-8 fixer many large, random buffers to walk, exercising the
+// multi-byte sequence branches (2/3/4-byte sequences, surrogate-half
+// redistribution, out-of-range redraws) that short-campaign runs miss.
+
+message Texts {
+  string text = 1;
+  repeated string rep_text = 2;
+  string more = 3;
+}
