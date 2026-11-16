@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package protobuf_mutator.depth;
+
+// Recursive message with an Any payload for exercising the mutator engine's
+// deep-nesting guards: PostProcessing::Run's depth-limit clearing of deep
+// optional fields and deep Any fields (the guards that prevent stack
+// overflow in the engine's recursive walkers). Paired with
+// depth_guard_fuzzer.cc, which builds chains deeper than the limit
+// deterministically.
+
+import "google/protobuf/any.proto";
+
+message Node {
+  Node child = 1;
+  google.protobuf.Any payload = 2;
+  string data = 3;
+}
