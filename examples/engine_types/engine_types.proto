@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package protobuf_mutator.engine_types;
+
+// Exercises every protobuf C++ field type through the mutator engine:
+// singular and repeated scalars of all cpp types, enum, oneof with scalar and
+// message alternatives, UTF-8 validated strings, bytes, and nested/recursive
+// messages. Paired with engine_types_fuzzer.cc (binary format).
+
+enum Kind {
+  KIND_NONE = 0;
+  KIND_A = 1;
+  KIND_B = 2;
+  KIND_C = 3;
+}
+
+message Leaf {
+  int32 i32 = 1;
+  int64 i64 = 2;
+  uint32 u32 = 3;
+  uint64 u64 = 4;
+  float f32 = 5;
+  double f64 = 6;
+  bool b = 7;
+  Kind kind = 8;
+  string utf8 = 9;
+  bytes blob = 10;
+
+  repeated int32 rep_i32 = 11;
+  repeated int64 rep_i64 = 12;
+  repeated uint32 rep_u32 = 13;
+  repeated uint64 rep_u64 = 14;
+  repeated float rep_f32 = 15;
+  repeated double rep_f64 = 16;
+  repeated bool rep_b = 17;
+  repeated Kind rep_kind = 18;
+  repeated string rep_utf8 = 19;
+  repeated bytes rep_blob = 20;
+}
+
+message Mid {
+  Leaf leaf = 1;
+  repeated Leaf rep_leaf = 2;
+  oneof choice {
+    int32 o_i32 = 3;
+    uint64 o_u64 = 4;
+    double o_f64 = 5;
+    Kind o_kind = 6;
+    string o_utf8 = 7;
+    Leaf o_leaf = 8;
+  }
+}
+
+message Node {
+  // Recursion is bounded by the parsed-wire recursion limit and by the
+  // mutator adding one nesting level per mutation.
+  Node child = 1;
+  Leaf leaf = 2;
+  Mid mid = 3;
+}
+
+message Root {
+  Node node = 1;
+  repeated Node rep_node = 2;
+  Leaf leaf = 3;
+  repeated Leaf rep_leaf = 4;
+  Mid mid = 5;
+}
