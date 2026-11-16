@@ -1,0 +1,31 @@
+syntax = "proto2";
+
+package protobuf_mutator.engine_any;
+
+// Exercises the mutator engine's Any and post-processor machinery: singular
+// and repeated google.protobuf.Any fields (unpack/repack paths, type_url
+// resolution on attacker-controlled strings), a required field (initialized
+// by PostProcessing and never offered Delete by the mutation sampler), and
+// nested messages for the post-processing recursion. Paired with
+// engine_any_fuzzer.cc (text format + registered post-processors).
+
+import "google/protobuf/any.proto";
+
+message Payload {
+  optional string name = 1;
+  optional int64 id = 2;
+}
+
+message Inner {
+  optional string tag = 1;
+  repeated Payload rep_payload = 2;
+}
+
+message Holder {
+  optional google.protobuf.Any any = 1;
+  repeated google.protobuf.Any rep_any = 2;
+  optional Inner inner = 3;
+  required string label = 4;
+  optional double ratio = 5;
+  repeated uint64 rep_u64 = 6;
+}
